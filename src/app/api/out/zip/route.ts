@@ -1,41 +1,54 @@
+// src/app/api/out/zip/route.ts
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 import archiver from "archiver";
+import { createClientServer } from "@/lib/supabaseServer";
 
-export const runtime = "nodejs";
-
+export const dynamic = "force-dynamic";
 export async function GET() {
-  // Sur Vercel on utilise /tmp/out, en local public/out
-  const OUT_DIR = process.env.VERCEL ? "/tmp/out" : path.join(process.cwd(), "public", "out");
+  const supabase = createClientServer();
+  const bucket = process.env.SUPABASE_BUCKET!;
 
-  if (!fs.existsSync(OUT_DIR)) {
-    return NextResponse.json({ error: "Aucun fichier à zipper." }, { status: 404 });
-  }
+  // Liste des objets
+  const { data: list, error } = await supabase.storage.from(bucket).list("", { limit: 500 });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // On crée un flux PassThrough pour streamer le zip directement en réponse
-  const { PassThrough } = await import("stream");
-  const stream = new PassThrough();
+  // Crée un stream ZIP
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
 
   const archive = archiver("zip", { zlib: { level: 9 } });
   archive.on("error", (err) => {
-    stream.emit("error", err);
+    try { writer.abort(err); } catch {}
   });
+  // Pipe archive → writer
+  const stream = archive as unknown as NodeJS.ReadableStream;
+  (async () => {
+    const reader = stream as any;
+    const encoder = new TextEncoder();
 
-  // On pipe l'archive vers le flux de réponse
-  archive.pipe(stream);
+    // @ts-ignore – web stream adapter
+    for await (const chunk of reader) {
+      await writer.write(chunk as Uint8Array);
+    }
+    await writer.close();
+  })();
 
-  // Ajoute tout le répertoire OUT_DIR à la racine du zip
-  archive.directory(OUT_DIR, false);
-  archive.finalize();
+  // Ajoute chaque fichier au zip via son URL publique
+  for (const item of list ?? []) {
+    if (!item.name) continue;
+    const { data } = supabase.storage.from(bucket).getPublicUrl(item.name);
+    const url = data.publicUrl;
+    const res = await fetch(url);
+    if (!res.ok) continue;
+    archive.append(Buffer.from(await res.arrayBuffer()), { name: item.name });
+  }
 
-  return new NextResponse(stream as any, {
-    status: 200,
+  await archive.finalize();
+
+  return new NextResponse(readable as any, {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="out.zip"`,
-      // Empêche la mise en cache
-      "Cache-Control": "no-store",
+      "Content-Disposition": `attachment; filename="outputs.zip"`,
     },
   });
 }
