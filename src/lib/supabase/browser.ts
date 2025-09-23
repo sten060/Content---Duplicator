@@ -3,11 +3,13 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 
-export function supabaseBrowser() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+// Default export (recommended in client pages)
+export default function createClientBrowser() {
+  return createBrowserClient(url, anon);
 }
 
-export default supabaseBrowser;
+// Also provide a named export for flexibility
+export { createClientBrowser as createClient };

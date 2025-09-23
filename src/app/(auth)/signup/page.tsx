@@ -1,68 +1,72 @@
+// src/app/(auth)/signup/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/browser';
+import createClient from '@/lib/supabase/browser';
 
 export default function SignupPage() {
   const router = useRouter();
   const supabase = createClient();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ok, setOk] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
-    if (error) return setError(error.message);
+    setOk(null);
 
-    // si “Confirm email” est activé dans Supabase, l’utilisateur doit valider l’email
-    // on l’emmène au login
-    router.push('/login');
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/account` },
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    setOk("Vérifie ta boîte mail pour valider l'inscription.");
+    // Si tu n'utilises pas la confirmation email, tu peux router directement :
+    // router.push('/account');
   }
 
   return (
-    <main className="min-h-screen bg-gray-900 text-white grid place-items-center p-6">
-      <div className="w-full max-w-sm bg-black/40 border border-white/10 rounded-xl p-6">
-        <h1 className="text-2xl font-bold mb-4">Créer un compte</h1>
+    <main className="max-w-md mx-auto p-6">
+      <h1 className="text-2xl font-semibold mb-4">Créer un compte</h1>
 
-        <form onSubmit={onSubmit} className="grid gap-3">
-          <input
-            type="email"
-            required
-            placeholder="Email"
-            className="px-3 py-2 rounded bg-black/60 border border-white/10"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            required
-            placeholder="Mot de passe (min. 6 caractères)"
-            className="px-3 py-2 rounded bg-black/60 border border-white/10"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+      <form onSubmit={onSubmit} className="grid gap-4">
+        <input
+          type="email"
+          placeholder="Email"
+          className="input"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          className="input"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <button disabled={loading} className="btn btn-primary">
+          {loading ? 'Création…' : "S'inscrire"}
+        </button>
+      </form>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-1 rounded bg-indigo-600 hover:bg-indigo-500 px-4 py-2 font-semibold disabled:opacity-60"
-          >
-            {loading ? 'Création…' : 'Créer mon compte'}
-          </button>
-        </form>
-
-        <p className="text-sm text-gray-400 mt-4">
-          Déjà inscrit ? <a href="/login" className="text-indigo-400 underline">Se connecter</a>
-        </p>
-      </div>
+      {error && <p className="text-red-500 mt-3">{error}</p>}
+      {ok && <p className="text-green-600 mt-3">{ok}</p>}
     </main>
   );
 }
