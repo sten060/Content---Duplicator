@@ -1,12 +1,14 @@
 // src/lib/supabase/server.ts
-import { cookies } from 'next/headers';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-// Default export (recommended in server code)
-export default function createClientServer() {
+/**
+ * Client Supabase côté serveur (SSR/RSC)
+ * Utilise les cookies (persistence de session) + variables publiques.
+ */
+export function createClientServer() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const cookieStore = cookies();
 
   return createServerClient(url, anon, {
@@ -14,15 +16,14 @@ export default function createClientServer() {
       get(name: string) {
         return cookieStore.get(name)?.value;
       },
-      set(name: string, value: string, options: CookieOptions) {
+      set(name: string, value: string, options: any) {
         cookieStore.set({ name, value, ...options });
       },
-      remove(name: string, options: CookieOptions) {
-        cookieStore.set({ name, value: '', ...options });
+      remove(name: string, options: any) {
+        cookieStore.set({ name, value: "", ...options });
       },
     },
   });
 }
 
-// Named export too, if you prefer
-export { createClientServer };
+export default createClientServer;

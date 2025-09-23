@@ -1,15 +1,19 @@
 // src/lib/supabase/browser.ts
-'use client';
+"use client";
 
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-// Default export (recommended in client pages)
-export default function createClientBrowser() {
-  return createBrowserClient(url, anon);
+/**
+ * Client Supabase côté navigateur (CSR)
+ * Utilise les variables publiques (Vercel / .env) :
+ *   NEXT_PUBLIC_SUPABASE_URL
+ *   NEXT_PUBLIC_SUPABASE_ANON_KEY
+ */
+export function createClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  return createSupabaseClient(url, anon);
 }
 
-// Also provide a named export for flexibility
-export { createClientBrowser as createClient };
+// on exporte AUSSI en défaut pour que les deux syntaxes marchent
+export default createClient;
