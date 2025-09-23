@@ -2,14 +2,12 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
-/**
- * Client Supabase côté serveur (SSR/RSC)
- * Utilise les cookies (persistence de session) + variables publiques.
- */
-export function createClientServer() {
+export async function createClientServer() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const cookieStore = cookies();
+
+  // cookies() retourne une Promise → il faut await
+  const cookieStore = await cookies();
 
   return createServerClient(url, anon, {
     cookies: {
