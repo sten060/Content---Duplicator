@@ -1,8 +1,47 @@
 // src/app/dashboard/page.tsx
+"use client";
+import { createClientBrowser } from "@/lib/supabaseClient";
+
+export default function SignOutButton() {
+  const supabase = createClientBrowser();
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    // Recharge la page ou renvoie sur /login
+    window.location.href = "/login";
+  }
+
+  return (
+    <button
+      className="text-sm underline"
+      onClick={signOut}
+      type="button"
+    >
+      Se déconnecter
+    </button>
+  );
+}
 import path from "path";
 import fs from "fs/promises";
 import Link from "next/link";
+// --- Auth protection (serveur) ---
+import { redirect } from "next/navigation";
+import { createClientServer } from "@/lib/supabaseClient";
 
+export default async function DashboardPage() {
+  const supabase = createClientServer();
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data?.user) {
+    redirect("/login"); // pas connecté -> login
+  }
+
+  // ... ici ton code existant du dashboard ...
+
+  // Exemple d’inclusion du bouton sign out (en haut à droite)
+  // import SignOutButton from "@/components/SignOutButton";  <-- mets l'import avec les autres
+  // puis dans le JSX: <SignOutButton />
+}
 // ⚙️ Nos Server Actions (déjà créées dans src/app/dashboard/actions.ts)
 import { duplicate, deleteAll } from "./actions";
 

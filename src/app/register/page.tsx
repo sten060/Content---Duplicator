@@ -1,10 +1,11 @@
+// src/app/register/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClientBrowser } from "@/lib/supabaseClient";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const supabase = createClientBrowser();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -16,15 +17,16 @@ export default function LoginPage() {
     e.preventDefault();
     setErr(null);
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signUp({ email, password });
     setLoading(false);
     if (error) return setErr(error.message);
+    // Option : tu peux forcer une validation email dans Supabase.
     router.replace("/dashboard");
   }
 
   return (
     <main className="mx-auto max-w-md p-6">
-      <h1 className="text-2xl font-bold mb-4">Connexion</h1>
+      <h1 className="text-2xl font-bold mb-4">Créer un compte</h1>
       <form onSubmit={onSubmit} className="grid gap-3">
         <input
           className="border rounded p-2"
@@ -44,10 +46,10 @@ export default function LoginPage() {
           className="bg-black text-white rounded py-2"
           disabled={loading}
         >
-          {loading ? "Connexion..." : "Se connecter"}
+          {loading ? "Création..." : "Créer mon compte"}
         </button>
-        <a className="text-sm underline" href="/register">
-          Pas de compte ? Créer un compte
+        <a className="text-sm underline" href="/login">
+          Déjà inscrit ? Se connecter
         </a>
       </form>
     </main>
