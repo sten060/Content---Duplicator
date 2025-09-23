@@ -1,41 +1,39 @@
+// src/app/account/page.tsx
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabaseClient";
+
+// On force le rendu côté serveur à chaque requête (pas de pré-rendu statique)
+export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
-  import { supabase } from "@/lib/supabaseClient";
+  // Récupère l'utilisateur connecté (session côté navigateur)
+  const { data, error } = await supabase.auth.getUser();
 
-const { data, error } = await supabase.auth.getUser();
-
-if (!data?.user) {
-  redirect("/login");
-}
-
-  if (!data.user) {
-    redirect("/login");
+  if (error) {
+    console.error("supabase.auth.getUser error:", error);
   }
 
-  async function signOut() {
-    "use server";
-    const s = createClient();
-    await s.auth.signOut();
-    redirect("/login");
+  // Si pas d'utilisateur => on envoie vers la page de login
+  if (!data?.user) {
+    redirect("/login"); // Assure-toi que /login existe dans ton app
   }
+
+  const user = data.user;
 
   return (
-    <main className="min-h-screen bg-gray-900 text-white px-6 py-12">
-      <div className="mx-auto max-w-xl space-y-6 rounded-xl border border-white/10 bg-gray-800 p-6">
-        <h1 className="text-2xl font-bold">Mon compte</h1>
+    <main className="max-w-3xl mx-auto py-10">
+      <h1 className="text-2xl font-semibold">Mon compte</h1>
 
-        <div className="rounded-md bg-black/40 p-4 text-sm">
-          <div><span className="text-gray-400">ID:</span> {data.user.id}</div>
-          <div><span className="text-gray-400">Email:</span> {data.user.email}</div>
-        </div>
+      <div className="mt-6 grid gap-4">
+        <section className="rounded-lg border p-4">
+          <p className="text-sm text-gray-500">Email</p>
+          <p className="font-medium">{user.email}</p>
+        </section>
 
-        <form action={signOut}>
-          <button className="rounded-md bg-gray-700 px-4 py-2 font-semibold hover:bg-gray-600">
-            Se déconnecter
-          </button>
-        </form>
+        <section className="rounded-lg border p-4">
+          <p className="text-sm text-gray-500">ID utilisateur</p>
+          <p className="font-mono text-xs break-all">{user.id}</p>
+        </section>
       </div>
     </main>
   );
