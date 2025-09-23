@@ -1,9 +1,13 @@
 // src/lib/supabase/browser.ts
-import { createBrowserClient } from "@supabase/ssr";
+'use client';
 
-export const createClient = () =>
-  createBrowserClient(
+import { createBrowserClient } from '@supabase/ssr';
+
+export function supabaseBrowser() {
+  return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookieOptions: { sameSite: "lax" } }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+}
+
+export default supabaseBrowser;
