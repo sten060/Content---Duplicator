@@ -1,72 +1,55 @@
-// src/app/(auth)/signup/page.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import createClient from '@/lib/supabase/browser';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClientBrowser } from "@/lib/supabaseClient";
 
-export default function SignupPage() {
+export default function LoginPage() {
+  const supabase = createClientBrowser();
   const router = useRouter();
-  const supabase = createClient();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setErr(null);
     setLoading(true);
-    setError(null);
-    setOk(null);
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${window.location.origin}/account` },
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-
-    if (error) {
-      setError(error.message);
-      return;
-    }
-
-    setOk("Vérifie ta boîte mail pour valider l'inscription.");
-    // Si tu n'utilises pas la confirmation email, tu peux router directement :
-    // router.push('/account');
+    if (error) return setErr(error.message);
+    router.replace("/dashboard");
   }
 
   return (
-    <main className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-semibold mb-4">Créer un compte</h1>
-
-      <form onSubmit={onSubmit} className="grid gap-4">
+    <main className="mx-auto max-w-md p-6">
+      <h1 className="text-2xl font-bold mb-4">Connexion</h1>
+      <form onSubmit={onSubmit} className="grid gap-3">
         <input
-          type="email"
-          placeholder="Email"
-          className="input"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          className="border rounded p-2"
+          type="email" placeholder="Email"
+          value={email} onChange={(e) => setEmail(e.target.value)}
           required
         />
         <input
-          type="password"
-          placeholder="Mot de passe"
-          className="input"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          className="border rounded p-2"
+          type="password" placeholder="Mot de passe"
+          value={password} onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button disabled={loading} className="btn btn-primary">
-          {loading ? 'Création…' : "S'inscrire"}
+        {err && <p className="text-red-500 text-sm">{err}</p>}
+        <button
+          type="submit"
+          className="bg-black text-white rounded py-2"
+          disabled={loading}
+        >
+          {loading ? "Connexion..." : "Se connecter"}
         </button>
+        <a className="text-sm underline" href="/register">
+          Pas de compte ? Créer un compte
+        </a>
       </form>
-
-      {error && <p className="text-red-500 mt-3">{error}</p>}
-      {ok && <p className="text-green-600 mt-3">{ok}</p>}
     </main>
   );
 }
