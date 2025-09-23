@@ -1,158 +1,73 @@
 // src/app/dashboard/page.tsx
-"use client";
-import { createClientBrowser } from "@/lib/supabaseClient";
+import Link from 'next/link';
+import { duplicate, deleteAll, listOutputs } from './actions';
 
-export default function SignOutButton() {
-  const supabase = createClientBrowser();
-
-  async function signOut() {
-    await supabase.auth.signOut();
-    // Recharge la page ou renvoie sur /login
-    window.location.href = "/login";
-  }
-
-  return (
-    <button
-      className="text-sm underline"
-      onClick={signOut}
-      type="button"
-    >
-      Se déconnecter
-    </button>
-  );
-}
-import path from "path";
-import fs from "fs/promises";
-import Link from "next/link";
-// --- Auth protection (serveur) ---
-import { redirect } from "next/navigation";
-import { createClientServer } from "@/lib/supabaseClient";
+export const dynamic = 'force-dynamic'; // on veut recharger la liste après actions
 
 export default async function DashboardPage() {
-  const supabase = createClientServer();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    redirect("/login"); // pas connecté -> login
-  }
-
-  // ... ici ton code existant du dashboard ...
-
-  // Exemple d’inclusion du bouton sign out (en haut à droite)
-  // import SignOutButton from "@/components/SignOutButton";  <-- mets l'import avec les autres
-  // puis dans le JSX: <SignOutButton />
-}
-// ⚙️ Nos Server Actions (déjà créées dans src/app/dashboard/actions.ts)
-import { duplicate, deleteAll } from "./actions";
-
-// 👉 Wrappers "use server" pour que <form action={...}> ait bien un type Promise<void>
-async function handleDuplicate(formData: FormData) {
-  "use server";
-  // On délègue à la vraie action (qui retourne { files: string[] })
-  await duplicate(formData);
-}
-
-async function handleDeleteAll() {
-  "use server";
-  await deleteAll();
-}
-
-// 🗂️ Lit les fichiers sortis dans /public/out (côté serveur)
-async function getFiles(): Promise<string[]> {
-  try {
-    const OUT_DIR = path.join(process.cwd(), "public", "out");
-    const entries = await fs.readdir(OUT_DIR);
-    // On ne liste que quelques extensions courantes
-    return entries
-      .filter((n) =>
-        [".mp4", ".mov", ".m4v", ".jpg", ".jpeg", ".png", ".webp"].some((ext) =>
-          n.toLowerCase().endsWith(ext)
-        )
-      )
-      .sort()
-      .reverse();
-  } catch {
-    return [];
-  }
-}
-
-export default async function DashboardPage() {
-  const files = await getFiles();
+  const files = await listOutputs();
 
   return (
-    <main className="mx-auto max-w-3xl p-6 space-y-8">
-      <h1 className="text-3xl font-bold">Content Duplicator</h1>
+    <main className="max-w-3xl mx-auto p-6 space-y-8">
+      <h1 className="text-2xl font-bold">Content Duplicator</h1>
 
-      {/* Barre d’actions */}
+      {/* Actions globales */}
       <div className="flex gap-3">
-        <Link
-          href="/api/out/zip"
-          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          Télécharger tout (.zip)
-        </Link>
-
-        <form action={handleDeleteAll}>
+        <form action={deleteAll}>
           <button
             type="submit"
-            className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+            className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
           >
             Tout effacer
           </button>
         </form>
+
+        <a
+          href="/api/out/zip"
+          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          Télécharger tout (.zip)
+        </a>
       </div>
 
-      {/* Formulaire de duplication (upload + nombre) */}
-      <form
-        action={handleDuplicate}
-        className="grid gap-4 max-w-xl"
-        encType="multipart/form-data"
-      >
+      {/* Formulaire de duplication */}
+      <form action={duplicate} className="grid gap-4 max-w-xl">
         <div>
           <label className="block text-sm font-medium mb-1">Choisir un fichier</label>
-          <input
-            type="file"
-            name="file"
-            required
-            className="block w-full rounded border p-2"
-          />
+          <input name="file" type="file" required className="block w-full" />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Nombre de duplications
-          </label>
+          <label className="block text-sm font-medium mb-1">Nombre de copies</label>
           <input
-            type="number"
             name="count"
+            type="number"
             min={1}
+            max={20}
             defaultValue={3}
-            className="block w-40 rounded border p-2"
+            className="block w-32"
           />
         </div>
 
         <button
           type="submit"
-          className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
+          className="px-4 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white"
         >
           Dupliquer
         </button>
       </form>
 
       {/* Liste des fichiers générés */}
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">Fichiers générés</h2>
+      <section>
+        <h2 className="text-lg font-semibold mb-2">Fichiers générés</h2>
         {files.length === 0 ? (
-          <p className="text-sm text-neutral-500">Aucun fichier généré pour l’instant.</p>
+          <p className="text-sm opacity-70">Aucun fichier généré pour l’instant.</p>
         ) : (
-          <ul className="list-disc pl-5 space-y-1">
-            {files.map((f) => (
-              <li key={f}>
-                <Link
-                  href={`/out/${encodeURIComponent(f)}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {f}
+          <ul className="space-y-1">
+            {files.map((href) => (
+              <li key={href}>
+                <Link className="text-blue-400 hover:underline" href={href}>
+                  {href.split('/').pop()}
                 </Link>
               </li>
             ))}
