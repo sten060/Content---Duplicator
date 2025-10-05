@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getSession } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function Home() {
   const session = await getSession(); // null si non connecté
   return (
