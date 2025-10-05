@@ -1,7 +1,7 @@
 // src/app/dashboard/layout.tsx
 import type { ReactNode } from "react";
 import Sidebar from "./sidebar";
-import { getSession } from "@/lib/supabase/server";
+import { getSessionRSC } from "@/lib/supabase/server-rsc";
 import { redirect } from "next/navigation";
 import UserHeader from "./UserHeader";
 
@@ -10,10 +10,8 @@ export const revalidate = 0;
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   // 1) Récupérer la session côté serveur
-  const session = await getSession();
-
-  // 2) Si pas connecté → redirection vers /login
-  if (!session) redirect("/login");
+  const session = await getSessionRSC();
+if (!session) redirect("/login");
 
   // 3) Layout du dashboard
   return (

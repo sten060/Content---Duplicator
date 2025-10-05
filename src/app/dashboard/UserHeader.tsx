@@ -1,7 +1,7 @@
-import { getSession } from "@/lib/supabase/server";
+import { getSessionRSC } from "@/lib/supabase/server-rsc";
 
 export default async function UserHeader() {
-  const session = await getSession();
+  const session = await getSessionRSC();
   const email = session?.user?.email ?? "Utilisateur inconnu";
 
   return (

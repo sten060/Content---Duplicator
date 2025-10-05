@@ -1,20 +1,16 @@
 // src/app/dashboard/utils.ts
 import path from "path";
 import fs from "fs/promises";
-import { createClient as createSbServer } from "@/lib/supabase/server";
+import { createClientRSC } from "@/lib/supabase/server-rsc";
 
 const OUT_BASE = process.env.OUT_BASE || path.join(process.cwd(), "public", "out");
 
 /** 🔐 Récupère le user côté serveur via les cookies Supabase */
-async function getCurrentUser() {
-  const supabase = createSbServer();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) throw new Error("Not authenticated");
-  return user;
+export async function getCurrentUser() {
+  const supabase = createClientRSC();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) return null;
+  return data.user ?? null;
 }
 
 /** 📁 Crée (si besoin) un dossier unique par utilisateur */
