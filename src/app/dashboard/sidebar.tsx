@@ -11,6 +11,7 @@ const items = [
   { href: "/dashboard/images", label: "Duplication Images" },
   { href: "/dashboard/videos", label: "Duplication Vidéos" },
   { href: "/dashboard/similarity", label: "Détecteur (vert)", accent: "green" },
+  { href: "/dashboard/generate", label: "Génération IA" },
 ];
 
 export default function Sidebar() {
