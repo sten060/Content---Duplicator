@@ -2,11 +2,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { generateAction } from "./actions";
 
 type Status = "idle" | "submitting" | "error";
 
-export default function GenerateFormClient() {
+type Props = {
+  action: (formData: FormData) => Promise<void>;
+};
+
+export default function GenerateFormClient({ action }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [n, setN] = useState(4);
@@ -23,7 +26,7 @@ export default function GenerateFormClient() {
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  // drag & drop sans lib
+  // drag & drop
   useEffect(() => {
     const el = dropRef.current;
     if (!el) return;
@@ -62,8 +65,8 @@ export default function GenerateFormClient() {
       const fd = new FormData(formRef.current!);
       if (file) fd.set("image", file);
       fd.set("n", String(n));
-      await generateAction(fd);
-      // la route server redirige vers /dashboard/images
+      await action(fd); // ← utilise la prop action
+      // la server action redirige vers /dashboard/images
     } catch (err: any) {
       setStatus("error");
       setError(err?.message ?? "Une erreur est survenue.");
@@ -83,18 +86,11 @@ export default function GenerateFormClient() {
         {/* Colonne gauche : upload */}
         <div className="lg:col-span-5">
           <div className="glass border-gradient relative overflow-hidden">
-            <label
-              ref={dropRef}
-              className="group block cursor-pointer p-4"
-            >
+            <label ref={dropRef} className="group block cursor-pointer p-4">
               <input type="file" accept="image/*" className="hidden" onChange={onPick} />
               <div className="aspect-[4/5] w-full overflow-hidden rounded-xl bg-white/5 ring-inset transition">
                 {preview ? (
-                  <img
-                    src={preview}
-                    alt="aperçu"
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={preview} alt="aperçu" className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-white/60">
                     <div className="rounded-full bg-white/5 px-3 py-1 text-xs">Glisser-déposer</div>
@@ -109,11 +105,7 @@ export default function GenerateFormClient() {
             <div className="flex items-center justify-between p-4">
               <div className="text-sm text-white/70">Nombre d’images</div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setN((v) => Math.max(1, v - 1))}
-                  className="btn bg-white/10"
-                >−</button>
+                <button type="button" onClick={() => setN((v) => Math.max(1, v - 1))} className="btn bg-white/10">−</button>
                 <input
                   name="n"
                   value={n}
@@ -123,11 +115,7 @@ export default function GenerateFormClient() {
                   type="number"
                   className="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-center"
                 />
-                <button
-                  type="button"
-                  onClick={() => setN((v) => Math.min(8, v + 1))}
-                  className="btn bg-white/10"
-                >+</button>
+                <button type="button" onClick={() => setN((v) => Math.min(8, v + 1))} className="btn bg-white/10">+</button>
               </div>
             </div>
           </div>
@@ -136,36 +124,16 @@ export default function GenerateFormClient() {
         {/* Colonne droite : prompt */}
         <div className="lg:col-span-7">
           <div className="glass space-y-5 p-5">
-            <Field
-              label="Décor / Lieu / Ambiance"
-              name="decor"
-              placeholder="Ex. loft minimaliste, lumière douce, plantes, tons chauds"
-            />
-            <Field
-              label="Tenue / Style vestimentaire"
-              name="tenue"
-              placeholder="Ex. robe noire satin, talons, silhouette élégante"
-            />
-            <Field
-              label="Accessoires / Props"
-              name="accessoires"
-              placeholder="Ex. sac à main, lunettes de soleil, boucles d’oreilles or"
-            />
-            <Field
-              label="Style global / Éclairage"
-              name="style"
-              placeholder="Ex. photographie éditoriale, 50mm, bokeh léger, peau naturelle"
-            />
+            <Field label="Décor / Lieu / Ambiance" name="decor" placeholder="Ex. loft minimaliste, lumière douce, plantes, tons chauds" />
+            <Field label="Tenue / Style vestimentaire" name="tenue" placeholder="Ex. robe noire satin, talons, silhouette élégante" />
+            <Field label="Accessoires / Props" name="accessoires" placeholder="Ex. sac à main, lunettes de soleil, boucles d’oreilles or" />
+            <Field label="Style global / Éclairage" name="style" placeholder="Ex. photographie éditoriale, 50mm, bokeh léger, peau naturelle" />
 
             <div className="flex items-center justify-between pt-2">
               <p className="text-xs text-white/60">
                 Astuce : sois descriptif mais concis. L’identité du modèle est automatiquement conservée.
               </p>
-              <button
-                type="submit"
-                disabled={status === "submitting"}
-                className="btn btn-primary px-5 py-2"
-              >
+              <button type="submit" disabled={status === "submitting"} className="btn btn-primary px-5 py-2">
                 {status === "submitting" ? "Génération…" : "Générer"}
               </button>
             </div>
