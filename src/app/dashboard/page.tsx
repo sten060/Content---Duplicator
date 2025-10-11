@@ -1,57 +1,72 @@
+// /src/app/dashboard/page.tsx
 import Link from "next/link";
 
 export default function DashboardPage() {
+  const modules = [
+    {
+      title: "Duplication Images",
+      desc: "Variations fondamentales & visuelles, export en lot.",
+      color: "from-pink-500 to-fuchsia-500",
+      href: "/dashboard/images",
+    },
+    {
+      title: "Duplication Vidéos",
+      desc: "Ré-encodage léger, FPS/GOP/bitrate, variations vidéo.",
+      color: "from-indigo-500 to-blue-500",
+      href: "/dashboard/videos",
+    },
+    {
+      title: "Détecteur de similarité",
+      desc: "Mesure la proximité visuelle + métadonnées.",
+      color: "from-green-500 to-emerald-500",
+      href: "/dashboard/similarity",
+    },
+    {
+      title: "Génération IA",
+      desc: "Crée des variations automatiques grâce à l’intelligence artificielle.",
+      color: "from-fuchsia-500 to-indigo-500",
+      href: "/dashboard/generate",
+    },
+  ];
+
   return (
-    <main className="max-w-7xl mx-auto px-6 lg:px-8 py-12 space-y-10">
-      <header className="space-y-2">
-        <h1 className="h1">Bienvenue</h1>
-        <p className="muted">Choisis un module pour dupliquer ou comparer tes contenus.</p>
-      </header>
+    <div className="pt-4">
+      {/* En-tête */}
+      <div className="mb-10">
+        <h1 className="text-6xl md:text-7xl font-extrabold mb-3 tracking-tight bg-gradient-to-r from-indigo-400 via-fuchsia-400 to-pink-400 text-transparent bg-clip-text drop-shadow-[0_0_8px_rgba(232,121,249,.4)]">
+  Laboratoire
+</h1>
+        <p className="text-white/60">
+          Choisis un module pour travailler tes contenus dans ton labo.
+        </p>
+      </div>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* --- Images (rose) --- */}
-        <Link
-          href="/dashboard/images"
-          className="relative card border-gradient-pink glow-pink hover:scale-[1.015] transition group overflow-hidden"
-        >
-          {/* halo décoratif */}
-          <div className="pointer-events-none absolute -inset-20 opacity-30 blur-3xl transition group-hover:opacity-50"
-               style={{ background: "radial-gradient(600px 200px at 80% -20%, rgba(255,63,209,.45), transparent 60%)" }} />
-          <h2 className="h2 mb-2">Duplication Images</h2>
-          <p className="muted">Variations fondamentales & visuelles, export en lot.</p>
-          <div className="mt-5">
-            <span className="btn bg-gradient-to-r from-[#FF3FD1] to-[#FF85E0] text-white">Ouvrir</span>
+      {/* Grille de modules */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {modules.map((m) => (
+          <div
+            key={m.title}
+            className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md hover:bg-white/[0.05] transition-all duration-300"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[13px] text-emerald-400 font-medium">
+                Module actif
+              </span>
+              <div
+                className={`h-2 w-2 rounded-full bg-gradient-to-r ${m.color} shadow-[0_0_10px_currentColor]`}
+              />
+            </div>
+            <h2 className="text-lg font-semibold mb-1">{m.title}</h2>
+            <p className="text-sm text-white/60 mb-6">{m.desc}</p>
+            <Link
+              href={m.href}
+              className={`px-4 py-2 text-sm font-medium rounded-md text-white bg-gradient-to-r ${m.color} hover:opacity-90 transition`}
+            >
+              Ouvrir
+            </Link>
           </div>
-        </Link>
-
-        {/* --- Vidéos (bleu) --- */}
-        <Link
-          href="/dashboard/videos"
-          className="relative card border-gradient-blue glow-blue hover:scale-[1.015] transition group overflow-hidden"
-        >
-          <div className="pointer-events-none absolute -inset-24 opacity-30 blur-3xl transition group-hover:opacity-50"
-               style={{ background: "radial-gradient(600px 200px at 80% -20%, rgba(91,91,234,.45), transparent 60%)" }} />
-          <h2 className="h2 mb-2">Duplication Vidéos</h2>
-          <p className="muted">Ré-encodage léger, FPS/GOP/bitrate, variations vidéo.</p>
-          <div className="mt-5">
-            <span className="btn bg-gradient-to-r from-[#5B5BEA] to-[#9AA0FF] text-white">Ouvrir</span>
-          </div>
-        </Link>
-
-        {/* --- Détecteur (vert) --- */}
-        <Link
-          href="/dashboard/similarity"
-          className="relative card border-gradient-green glow-green hover:scale-[1.015] transition group overflow-hidden"
-        >
-          <div className="pointer-events-none absolute -inset-24 opacity-30 blur-3xl transition group-hover:opacity-50"
-               style={{ background: "radial-gradient(600px 200px at 80% -20%, rgba(34,197,94,.45), transparent 60%)" }} />
-          <h2 className="h2 mb-2">Détecteur de similarité</h2>
-          <p className="muted">Mesure la proximité visuelle + métadonnées.</p>
-          <div className="mt-5">
-            <span className="btn bg-gradient-to-r from-[#22C55E] to-[#34D399] text-white">Ouvrir</span>
-          </div>
-        </Link>
-      </section>
-    </main>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -2,13 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ========= Variables de thème ========= */
+/* ---------- Tokens ---------- */
 :root{
-  --bg-start:#0A0A12;
-  --bg-end:#101022;
+  /* fonds */
+  --bg-start:#0B0F1A;   /* zbg */
+  --bg-end:#101429;     /* zbg.soft */
+
+  /* accents Zeno */
+  --zeno-indigo:#5B5BEA;
+  --zeno-fuchsia:#FF3FD1;
+  --zeno-teal:#21E6C1;
+
+  /* couches UI */
+  --glass: rgba(255,255,255,0.04);
+  --stroke: rgba(255,255,255,0.08);
+  --shadow-glass: 0 8px 40px rgba(0,0,0,0.35);
 }
 
 html, body { height:100%; }
+
 body{
   @apply text-white antialiased;
   background:
@@ -17,66 +29,517 @@ body{
     linear-gradient(180deg, var(--bg-start), var(--bg-end));
 }
 
-/* ========= Utilitaires design ========= */
-.glass { @apply bg-brand-glass backdrop-blur-md border border-brand-stroke rounded-2xl shadow-glass; }
-.glow  { @apply shadow-glow; }
-.btn { @apply px-4 py-2 rounded-xl font-medium transition hover:scale-[1.02] active:scale-95; }
-.btn-primary { @apply bg-gradient-to-r from-brand-indigo to-brand-fuchsia text-white; }
-.card { @apply glass p-6; }
-.h1 { @apply text-3xl md:text-5xl font-semibold leading-tight; }
+/* ---------- Utilitaires thème ---------- */
+.container-zeno { @apply max-w-6xl mx-auto px-6; }
+
+.glass {
+  @apply backdrop-blur-md rounded-2xl border;
+  background: var(--glass);
+  border-color: var(--stroke);
+  box-shadow: var(--shadow-glass);
+}
+
+.grad {
+  background-image: linear-gradient(90deg, var(--zeno-indigo), var(--zeno-fuchsia));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+.pill {
+  @apply text-xs font-medium px-2.5 py-1 rounded-full border;
+  border-color: var(--stroke); background: rgba(255,255,255,.04);
+}
+
+.h1 { @apply text-4xl md:text-6xl font-semibold leading-[1.05]; }
 .h2 { @apply text-2xl md:text-3xl font-semibold; }
+.lead { @apply text-white/70 text-base md:text-lg; }
 .muted { @apply text-white/70; }
 
-/* ========= Bordures dégradées ========= */
-.border-gradient {
-  position: relative;
+/* ---------- Boutons ---------- */
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 font-medium transition hover:scale-[1.02] active:scale-95; }
+
+.btn-primary{
+  @apply text-white shadow;
+  background-image: linear-gradient(90deg, var(--zeno-indigo), var(--zeno-fuchsia));
 }
-.border-gradient::before {
+
+.btn-ghost{
+  @apply border border-white/15 bg-white/5 hover:bg-white/10 text-white/90;
+}
+
+/* ---------- Petits helpers ---------- */
+.section { @apply py-16; }
+
+/* ==== Dashboard: sidebar texture + module cards ==== */
+
+/* Sidebar texturée en verre */
+.sidebar-panel {
+  position: relative;
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 40px rgba(0,0,0,.35);
+  overflow: hidden;
+}
+.sidebar-panel::before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.05;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/></filter><rect width="180" height="180" filter="url(%23n)" opacity=".8"/></svg>');
+}
+.sidebar-panel::after{
+  content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+
+/* Cartes modules sobres + futuristes */
+.module-card{
+  position: relative;
+  border-radius: 16px;
+  padding: 18px;
+  background: rgba(255,255,255,.045);
+  border: 1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(8px);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease, background .25s ease;
+}
+.module-card::before{
+  content:""; position:absolute; inset:-1px; border-radius:16px; z-index:-1; opacity:.0;
+  background: radial-gradient(600px 250px at 20% 0%, rgba(91,91,234,.18), transparent 60%),
+              radial-gradient(500px 250px at 100% 40%, rgba(255,63,209,.14), transparent 60%);
+  transition: opacity .25s ease;
+}
+.module-card:hover{
+  transform: translateY(-2px);
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.16);
+  box-shadow: 0 20px 50px rgba(0,0,0,.45);
+}
+.module-card:hover::before{ opacity:.7; }
+
+/* petit point vert pour le statut */
+.badge-dot{ width:8px; height:8px; border-radius:9999px; background: var(--zeno-teal); }
+/* ==== Sidebar : liens full-width, texture verre ==== */
+.side-link{
+  display:block; width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  color:rgba(255,255,255,.92);
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.10);
+  backdrop-filter:blur(6px);
+  transition:background .2s ease,border-color .2s ease,transform .15s ease;
+  text-align:left;
+}
+.side-link:hover{ 
+  background:rgba(255,255,255,.07);
+  border-color:rgba(255,255,255,.16);
+  transform:translateY(-1px);
+}
+.side-link--danger{ color:#f87171; }
+.side-link--danger:hover{ background:rgba(248,113,113,.08); border-color:rgba(248,113,113,.25); }
+
+/* (déjà ajoutés avant, mais rappel pour cohérence visuelle) */
+.sidebar-panel{
+  position:relative; border-radius:16px; overflow:hidden;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 10px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(10px);
+}
+.sidebar-panel::before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.05;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/></filter><rect width="180" height="180" filter="url(%23n)" opacity=".9"/></svg>');
+}
+.badge-dot{ width:8px; height:8px; border-radius:9999px; background:var(--zeno-teal); }
+
+/* Cards modules (si pas déjà en place) */
+.module-card{
+  position:relative; border-radius:16px; padding:18px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.10);
+  backdrop-filter:blur(8px);
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease, background .25s ease;
+}
+.module-card::before{
+  content:""; position:absolute; inset:-1px; border-radius:16px; z-index:-1; opacity:.0;
+  background: radial-gradient(600px 250px at 20% 0%, rgba(91,91,234,.18), transparent 60%),
+              radial-gradient(500px 250px at 100% 40%, rgba(255,63,209,.14), transparent 60%);
+  transition: opacity .25s ease;
+}
+.module-card:hover{
+  transform:translateY(-2px);
+  background:rgba(255,255,255,.06);
+  border-color:rgba(255,255,255,.16);
+  box-shadow:0 20px 50px rgba(0,0,0,.45);
+}
+.module-card:hover::before{ opacity:.7; }
+/* ===== Sidebar persistante & modules néon ===== */
+
+.side-link {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease;
+}
+.side-link:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* couleurs spécifiques par module */
+.side-link-pink:hover {
+  color: #ff3fd1;
+  text-shadow: 0 0 6px rgba(255, 63, 209, 0.7);
+}
+.side-link-blue:hover {
+  color: #5b5bea;
+  text-shadow: 0 0 6px rgba(91, 91, 234, 0.7);
+}
+.side-link-green:hover {
+  color: #21e6c1;
+  text-shadow: 0 0 6px rgba(33, 230, 193, 0.7);
+}
+.side-link-violet:hover {
+  color: #c084fc;
+  text-shadow: 0 0 6px rgba(192, 132, 252, 0.7);
+}
+
+/* déconnexion */
+.side-link--danger {
+  color: #f87171;
+}
+.side-link--danger:hover {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+/* sidebar background avec texture */
+.sidebar-panel {
+  position: relative;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.sidebar-panel::before {
   content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.9'/></svg>");
+}
+/* ---- Animated brand word ("Zeno") ---- */
+.grad-zeno{
+  background-image: linear-gradient(90deg, var(--zeno-indigo), var(--zeno-fuchsia));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  background-size: 200% 100%;
+  animation: gradShift 6s ease-in-out infinite;
+}
+@keyframes gradShift{
+  0%{ background-position: 0% 50%; }
+  50%{ background-position: 100% 50%; }
+  100%{ background-position: 0% 50%; }
+}
+
+/* ---- Hover cards (sobre, futuriste) ---- */
+.card-zeno {
+  @apply rounded-2xl border border-white/10 bg-white/[0.04] p-6;
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+}
+.card-zeno:hover {
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  border-color: rgba(255,255,255,0.16);
+}
+
+/* ---- Mini neon dot (couleur par module) ---- */
+.dot { @apply inline-block w-2 h-2 rounded-full; }
+
+/* ---- Gradient titles per module ---- */
+.title-fuchsia {
+  background: linear-gradient(90deg, #ec4899, #a855f7);
+  -webkit-background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation: gradientMove 6s ease-in-out infinite;
+}
+
+.title-indigo {
+  background: linear-gradient(90deg, #6366f1, #3b82f6);
+  -webkit-background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation: gradientMove 6s ease-in-out infinite;
+}
+
+.title-green {
+  background: linear-gradient(90deg, #10b981, #22d3ee);
+  -webkit-background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation: gradientMove 6s ease-in-out infinite;
+}
+
+.title-purple {
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation: gradientMove 6s ease-in-out infinite;
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* === TITRES AVEC DÉGRADÉ ANIMÉ === */
+
+/* Effet générique comme "Laboratoire" */
+.glow-title {
+  font-weight: 700;
+  background: linear-gradient(90deg, #a855f7, #ec4899, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: moveGradient 6s ease-in-out infinite;
+  letter-spacing: -0.02em;
+}
+
+@keyframes moveGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* === VARIANTES PAR MODULE === */
+
+/* Images → rose/fuchsia */
+.glow-image {
+  background: linear-gradient(90deg, #ec4899, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: moveGradient 5s ease-in-out infinite;
+}
+
+/* Vidéos → bleu/indigo */
+.glow-video {
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: moveGradient 5s ease-in-out infinite;
+}
+
+/* Détecteur → vert/cyan */
+.glow-detector {
+  background: linear-gradient(90deg, #10b981, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: moveGradient 5s ease-in-out infinite;
+}
+
+/* Génération IA → violet/rose */
+.glow-ia {
+  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: moveGradient 5s ease-in-out infinite;
+}
+/* === Neon gradient titles (animated + outer glow like "Laboratoire") === */
+@keyframes zenoMove {
+  0%   { background-position: 0% 50% }
+  50%  { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+
+/* Base: clip text + animate gradient */
+.neon {
+  position: relative;
+  display: inline-block;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: zenoMove 6s ease-in-out infinite;
+  /* subtle inner crispness like a tube */
+  text-shadow: 0 0 1px rgba(255,255,255,.15);
+}
+
+/* Outer glow using a blurred pseudo-element with the same text */
+.neon::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-size: 200% 100%;
+  filter: blur(14px);
+  opacity: .55;
+  animation: inherit;            /* same animation as .neon */
+  will-change: filter, background-position;
+}
+
+/* ===== Palettes ===== */
+/* Brand (Studio pro / Résultat clean) – mauve/rose/indigo */
+.neon-brand,
+.neon-brand::after {
+  background-image: linear-gradient(90deg, #a855f7, #ec4899, #6366f1);
+}
+
+/* Duplication Images – fuchsia */
+.neon-image,
+.neon-image::after {
+  background-image: linear-gradient(90deg, #ec4899, #a855f7);
+}
+
+/* Duplication Vidéos – bleu/indigo */
+.neon-video,
+.neon-video::after {
+  background-image: linear-gradient(90deg, #3b82f6, #6366f1);
+}
+
+/* Détecteur – vert/cyan */
+.neon-detector,
+.neon-detector::after {
+  background-image: linear-gradient(90deg, #10b981, #22d3ee);
+}
+
+/* Génération IA – violet/rose */
+.neon-ia,
+.neon-ia::after {
+  background-image: linear-gradient(90deg, #8b5cf6, #ec4899);
+}
+
+/* Motion safety */
+@media (prefers-reduced-motion: reduce) {
+  .neon, .neon::after { animation: none }
+  .neon::after { filter: blur(10px) }
+}
+/* Titres néon (même vibe que “Laboratoire”) */
+.home-neon-title, .module-neon {
+  font-weight: 800;
+  font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+  position: relative;
+  display: inline-block;
+  background-image: linear-gradient(90deg, var(--zeno-indigo), var(--zeno-fuchsia));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 24px rgba(255,63,209,.22);
+}
+.home-neon-title::after, .module-neon::after {
+  content: attr(data-text);
   position: absolute; inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, #5B5BEA 0%, #FF3FD1 100%);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  filter: blur(10px); opacity: .35;
+  background: inherit; -webkit-background-clip: text; color: transparent;
   pointer-events: none;
 }
+/* variantes couleur par module */
+.neon-pink  { background-image: linear-gradient(90deg,#ff3fd1,#ffa1f0); }
+.neon-blue  { background-image: linear-gradient(90deg,#5b5bea,#88a6ff); }
+.neon-green { background-image: linear-gradient(90deg,#22c55e,#a7f3d0); }
+.neon-brand { background-image: linear-gradient(90deg,var(--zeno-indigo),var(--zeno-fuchsia)); }
 
-/* Glows colorés pour les cartes modules */
-.glow-pink  { box-shadow: 0 0 40px rgba(255,63,209,.28); }
-.glow-blue  { box-shadow: 0 0 40px rgba(91,91,234,.28); }
-.glow-green { box-shadow: 0 0 40px rgba(34,197,94,.28); }
+/* Slider fluide (marquee) */
+@keyframes scroll-x { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { width: 200%; animation: scroll-x 40s linear infinite; }
 
-/* Bordure dégradée – variantes directionnelles */
-.border-gradient-pink::before,
-.border-gradient-blue::before,
-.border-gradient-green::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+/* === Zeno — titres néon animés par couleur =================== */
+@keyframes glowShift {
+  0%   { background-position: 0% 50%; filter: drop-shadow(0 0 0px rgba(255,255,255,0.0)); }
+  50%  { background-position: 100% 50%; filter: drop-shadow(0 0 10px rgba(255,255,255,0.08)); }
+  100% { background-position: 0% 50%; }
 }
-.border-gradient-pink::before  { background: linear-gradient(135deg, #FF3FD1 0%, transparent 60%); }
-.border-gradient-blue::before  { background: linear-gradient(135deg, #5B5BEA 0%, transparent 60%); }
-.border-gradient-green::before { background: linear-gradient(135deg, #22C55E 0%, transparent 60%); }
 
-/* ========= Animations (email badge / titres) ========= */
-@keyframes glow {
-  0%   { background-position: 0% 50%;   }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%;   }
-}
-.animate-glow {
-  animation: glow 5s ease infinite;
+.neon-title {
+  position: relative;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
   background-size: 200% 200%;
+  animation: glowShift 10s ease infinite;
+  text-shadow:
+    0 0 0 rgba(0,0,0,0),             /* neutralise le lissage */
+    0 0 24px rgba(255,255,255,0.06); /* halo discret global   */
+}
+.neon-shadow { /* halo externe doux autour du texte */
+  text-shadow:
+    0 4px 28px rgba(99,102,241,0.10),
+    0 0 38px rgba(236,72,153,0.10);
 }
 
-@keyframes pulse-slow {
-  0%, 100% { opacity: 1;   }
-  50%      { opacity: .7;  }
+/* variantes couleurs (reprises du branding) */
+.neon-brand   { background-image: linear-gradient(90deg, var(--zeno-indigo), var(--zeno-fuchsia)); }
+.neon-images  { background-image: linear-gradient(90deg, #FF3FD1, #FF8BD1); }        /* rose */
+.neon-videos  { background-image: linear-gradient(90deg, #5B5BEA, #88A0FF); }        /* bleu */
+.neon-detect  { background-image: linear-gradient(90deg, #10B981, #34D399); }        /* vert */
+.neon-ia      { background-image: linear-gradient(90deg, #7C3AED, #EC4899 60%, #60A5FA); } /* violet/rose/bleu */
+
+/* cartes propres & sobres */
+.card-zeno { @apply glass border border-white/10 rounded-2xl p-6; }
+.card-ghost { @apply rounded-2xl p-6 border border-white/10 bg-white/[0.03] backdrop-blur; }
+
+/* bouton minimal (plein largeur si besoin) */
+.btn-min {
+  @apply w-full h-11 rounded-xl font-medium border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] transition;
 }
-.animate-pulse-slow {
-  animation: pulse-slow 3s ease-in-out infinite;
+.logo-glow {
+  animation: logoPulse 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(236,72,153,0.4)) drop-shadow(0 0 20px rgba(99,102,241,0.3));
 }
+
+@keyframes logoPulse {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(236,72,153,0.4)); }
+  50% { opacity: 0.9; filter: drop-shadow(0 0 14px rgba(99,102,241,0.6)); }
+}
+/* ---- Zeno — utilitaires page d'accueil/produit ---- */
+.divider { @apply border-t border-white/10 my-12 md:my-16; }
+
+/* Icônes néon (rose) */
+.neon-icon-pink {
+  color: #FF3FD1;
+  filter: drop-shadow(0 0 10px rgba(255,63,209,.35));
+}
+
+/* Titre néon dégradé (réutilisable) */
+.neon-title {
+  background-image: linear-gradient(90deg, var(--zeno-indigo), var(--zeno-fuchsia));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  text-shadow: 0 0 22px rgba(255,63,209,.18);
+}
+
+/* Bouton primaire large + glow léger */
+.btn-primary-lg { @apply btn text-white px-6 py-3 rounded-xl; }
+.btn-primary-lg:hover { box-shadow: 0 0 18px rgba(255,63,209,.22); transform: translateY(-1px); }
+
+/* Carte soft (stats / modules) */
+.card-soft { @apply glass rounded-2xl border border-white/10 p-6; }
+.card-soft:hover { @apply border-white/20; box-shadow: 0 10px 40px rgba(0,0,0,.35); }

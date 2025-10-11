@@ -1,35 +1,58 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+// tailwind.config.ts
+import type { Config } from "tailwindcss";
+
+const config: Config = {
   content: [
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}"
+    "./src/app/**/*.{ts,tsx,mdx}",
+    "./src/components/**/*.{ts,tsx,mdx}",
+    "./src/lib/**/*.{ts,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        brand: {
-          indigo: "#5B5BEA",
+        // Palette "Zeno"
+        zbg: {
+          DEFAULT: "#0B0F1A", // fond
+          soft: "#101429",
+        },
+        zink: {
+          50:  "#F8FAFC",
+          100: "#EEF2F7",
+          200: "#E3E8EF",
+          300: "#CDD5DF",
+          400: "#9AA4B2",
+          500: "#697586",
+          600: "#4B5565",
+          700: "#364152",
+          800: "#202939",
+          900: "#111827",
+        },
+        zaccent: {
+          indigo:  "#5B5BEA",
           fuchsia: "#FF3FD1",
-          dark: "#0B0B12",
-          glass: "rgba(255,255,255,0.08)",
-          stroke: "rgba(255,255,255,0.12)"
-        }
+          teal:    "#21E6C1",
+          amber:   "#F59E0B",
+        },
       },
       boxShadow: {
-        glass: "0 8px 30px rgba(0,0,0,0.25)",
-        glow: "0 0 40px rgba(91,91,234,0.35), 0 0 60px rgba(255,63,209,0.25)"
+        glass: "0 8px 40px rgba(0,0,0,0.35)",
+        glow:  "0 0 50px rgba(91,91,234,.25)",
       },
-      borderRadius: { xl: "16px", "2xl": "20px" },
-      animation: { "soft-pulse": "soft-pulse 3s ease-in-out infinite" },
-      keyframes: {
-        "soft-pulse": {
-          "0%,100%": { boxShadow: "0 0 0 rgba(255,63,209,0)" },
-          "50%": { boxShadow: "0 0 35px rgba(255,63,209,0.35)" }
-        }
-      }
-    }
+      borderColor: {
+        stroke: "rgba(255,255,255,0.08)",
+      },
+      backgroundColor: {
+        glass: "rgba(255,255,255,0.04)",
+      },
+      backdropBlur: {
+        xs: "2px",
+      },
+      fontWeight: {
+        extra: "900",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };
+
+export default config;

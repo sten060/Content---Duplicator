@@ -1,31 +1,29 @@
-// src/app/dashboard/layout.tsx
-import type { ReactNode } from "react";
+// /src/app/dashboard/layout.tsx
+import "@/app/globals.css";
 import Sidebar from "./sidebar";
-import { getSessionRSC } from "@/lib/supabase/server-rsc";
-import { redirect } from "next/navigation";
-import UserHeader from "./UserHeader";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  // 1) Récupérer la session côté serveur
-  const session = await getSessionRSC();
-if (!session) redirect("/login");
-
-  // 3) Layout du dashboard
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 grid grid-cols-1 md:grid-cols-[16rem_1fr] gap-8">
+    <div className="min-h-screen bg-[#0B0F1A] text-white">
+      {/* brand row */}
+      <div className="px-8 pt-6 pb-2">
+        <div className="inline-flex items-center gap-2">
+          <span className="text-xl md:text-2xl font-extrabold tracking-tight grad">Zeno</span>
+          <span className="text-white/70 font-semibold">Studio</span>
+        </div>
+      </div>
 
-        {/* 🟣 Colonne gauche : sidebar + user info */}
-        <aside className="card p-0">
-          <Sidebar />
-          <UserHeader /> {/* Affichage de l’email ici */}
-        </aside>
-
-        {/* 🟢 Colonne droite : contenu du dashboard */}
-        <section className="space-y-6">{children}</section>
+      {/* main rail + content */}
+      <div className="flex gap-6 px-6 md:px-8 pb-10">
+        <Sidebar />
+        <main className="flex-1 pt-2">{children}</main>
       </div>
     </div>
   );
