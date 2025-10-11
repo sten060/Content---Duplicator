@@ -1,19 +1,23 @@
+// app/layout.tsx
+"use client";
+
 import "./globals.css";
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import Header from "@/components/Header"; // ⚠️ adapte le nom si ton header s’appelle autrement
 
-export const dynamic = "force-dynamic";
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const isDashboard = pathname.startsWith("/dashboard");
 
-export const metadata: Metadata = {
-  title: "Ton SaaS — Metadata & Duplication",
-  description: "Outil OFM pour dupliquer et réécrire les métadonnées.",
-};
-
-export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
-      <body className="min-h-screen">
-        <div className="fixed inset-0 -z-10 pointer-events-none blur-3xl opacity-40 glow" />
+      <body className="bg-[#0B0F1A] text-white">
+        {/* Affiche le Header seulement en dehors du dashboard */}
+        {!isDashboard && <Header />}
         {children}
       </body>
     </html>

@@ -1,86 +1,72 @@
 "use server";
 
+import path from "path";
+import fs from "fs/promises";
 import crypto from "crypto";
 import { getOutDirForCurrentUser } from "@/app/dashboard/utils";
 import { generateImage } from "@/lib/ai/replicate";
+import { buildPrompt } from "@/lib/ai/prompt";
 
 function randSuffix() {
   return crypto.randomBytes(2).toString("hex");
 }
 
-function buildPrompt({
-  decor,
-  tenue,
-  accessoires,
-  style,
-}: {
-  decor?: string;
-  tenue?: string;
-  accessoires?: string;
-  style?: string;
-}) {
-  const base =
-    "Ultra photorealistic fashion photo of the SAME person as the reference photo. Preserve exact identity, face structure, body shape and skin tone. Sharp focus, realistic lighting, natural skin, professional color grading.";
-  const parts = [
-    decor && `Background / decor: ${decor}`,
-    tenue && `Outfit / clothing: ${tenue}`,
-    accessoires && `Accessories / props: ${accessoires}`,
-    style && `Style / mood / lighting: ${style}`,
-  ]
-    .filter(Boolean)
-    .join(". ");
-  return parts ? `${base} ${parts}.` : base;
-}
-
-/**
- * Nouvelle version : ne télécharge rien côté serveur.
- * Retourne simplement { ok, urls } ou { ok:false, error }.
- */
-export async function generateAction(formData: FormData): Promise<
-  | { ok: true; urls: string[] }
-  | { ok: false; error: string }
-> {
+export async function generateAction(formData: FormData) {
   try {
-    // champs
-    const n = Math.max(1, Math.min(8, Number(formData.get("n") ?? 3)));
-    const decor = String(formData.get("decor") || "").trim() || undefined;
-    const tenue = String(formData.get("tenue") || "").trim() || undefined;
-    const accessoires = String(formData.get("accessoires") || "").trim() || undefined;
-    const style = String(formData.get("style") || "").trim() || undefined;
+    const n = Math.max(1, Math.min(4, Number(formData.get("n") ?? 1)));
+    const decor = String(formData.get("decor") || "").trim();
+    const tenue = String(formData.get("tenue") || "").trim();
+    const accessoires = String(formData.get("accessoires") || "").trim();
+    const style = String(formData.get("style") || "").trim();
+const keepPose = formData.get("keepPose") === "on";
+const keepFace = formData.get("keepFace") === "on";
 
+// Valeurs par défaut
+let strength = 0.6;
+let ipAdapterScale = 0.8;
+
+// Ajuste selon les cases cochées
+if (keepPose) strength = 0.5;
+if (keepFace) ipAdapterScale = 0.9;
+
+    // 1) récupérer le fichier du champ name="image"
     const file = formData.get("image") as File | null;
-
-    // dossier user (on l’invoque pour récupérer userId même si on ne sauvegarde pas ici)
-    const { userId } = await getOutDirForCurrentUser();
-
-    // URL publique du site si jamais on devait exposer l’image d’entrée
-    const site =
-      (process.env.NEXT_PUBLIC_SITE_URL || process.env.RENDER_EXTERNAL_URL || "")
-        .replace(/\/+$/, "") || "http://localhost:3000";
-
-    // si l’utilisateur a fourni une image, on la passe telle quelle via blob URL (RSC ne peut pas lire ici),
-    // donc on ne la persiste pas côté serveur pour éviter Cloudflare. On envoie sans image si absent.
-    let imageUrl: string | undefined = undefined;
-
-    // NOTE: pour un vrai “image-to-image”, si le modèle exige une URL publique,
-    // on re-basculera vers un upload client -> Supabase Storage, puis on donnera cette URL au modèle.
-
-    const prompt = buildPrompt({ decor, tenue, accessoires, style });
-
-    const outputs = (await generateImage({
-      prompt,
-      imageUrl,
-      numOutputs: n,
-    })) as string[];
-
-    if (!outputs || outputs.length === 0) {
-      return { ok: false, error: "Aucune image générée par le modèle." };
+    if (!file || file.size === 0) {
+      return { ok: false as const, error: "Ajoute une image de référence." };
     }
 
-    // succès — on renvoie juste les URLs (hébergées par Replicate)
-    return { ok: true, urls: outputs };
-  } catch (err: any) {
-    console.error("generateAction error:", err);
-    return { ok: false, error: err?.message ?? "Erreur inconnue côté serveur." };
+    // 2) on sauvegarde localement et on fabrique une URL publique vers /out/...
+    const site =
+      (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "") ||
+      "http://localhost:3000";
+
+    const buf = Buffer.from(await file.arrayBuffer());
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const safeBase = file.name.replace(/\.[^.]+$/, "");
+    const name = `${safeBase || "ref"}.${ext}`;
+
+    const { dir, userId } = await getOutDirForCurrentUser(); // <- ta fonction existante
+    await fs.writeFile(path.join(dir, name), buf);
+
+    const imageUrl = `${site}/out/${userId}/${encodeURIComponent(name)}`;
+    console.log("➡ imageUrl envoyée à Replicate:", imageUrl);
+
+    // 3) construire le prompt
+const prompt = buildPrompt({ decor, tenue, accessoires, style });
+
+    // 4) appeler Replicate avec imageUrl
+    const urls = await generateImage({
+      imageUrl,
+  prompt,
+  numOutputs: n,
+});
+    if (!urls?.length) {
+      return { ok: false as const, error: "Aucune image générée." };
+    }
+
+    return { ok: true as const, urls };
+  } catch (e: any) {
+    console.error("generateAction error:", e);
+    return { ok: false as const, error: e?.message || "Erreur inconnue." };
   }
 }
