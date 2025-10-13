@@ -130,17 +130,17 @@ function removeLine(
     fd.append("output_quality", quality || "90");
     if (seed.trim()) fd.append("seed", seed.trim());
 
-    setBusy(true);
-    try {
-      await fetch("/api/generate", { method: "POST", body: fd })
-      const j = await r.json();
-      if (!r.ok || !j.ok) throw new Error(j?.error || "Erreur");
-      setResults(j.urls || []);
-    } catch (e: any) {
-      setErr(e?.message || "Erreur réseau.");
-    } finally {
-      setBusy(false);
-    }
+   setBusy(true);
+try {
+  const res = await fetch("/api/generate", { method: "POST", body: fd });
+  const j = await res.json();
+  if (!res.ok || !j.ok) throw new Error(j?.error || "Erreur");
+  setResults(j.urls || []);
+} catch (e: any) {
+  setErr(e?.message || "Erreur réseau.");
+} finally {
+  setBusy(false);
+}
   }
 
   // --- ZIP (toutes les variantes) ---
