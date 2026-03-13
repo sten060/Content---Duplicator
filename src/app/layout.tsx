@@ -35,6 +35,14 @@ export default function RootLayout({
             backgroundSize: "46px 46px",
           }}
         />
+        {/* Dark overlay — darkens the lighter bottom area for readability */}
+        <div
+          className="fixed inset-0 -z-20 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.40) 55%, rgba(0,0,0,0.60) 100%)",
+          }}
+        />
 
         {showHeader && <Header />}
         {/* Spacer so fixed header doesn't overlap content */}
