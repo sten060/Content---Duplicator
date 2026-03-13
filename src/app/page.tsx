@@ -58,11 +58,12 @@ function Hero() {
         </div>
 
         <h1 className="max-w-3xl text-5xl md:text-[4rem] font-bold leading-[1.08] tracking-tight text-white mb-5">
-          Le seul outil pour dupliquer ton contenu{" "}
-          <span className={G}>en illimité.</span>
+          Le seul outil pour dupliquer
+          <br />
+          ton contenu <span className={G}>en illimité.</span>
         </h1>
 
-        <p className="text-white/55 text-lg mb-9">
+        <p className="text-white/75 text-lg mb-9">
           Métadonnées modifiées automatiquement — chaque fichier unique aux yeux des plateformes.
         </p>
 
@@ -105,7 +106,7 @@ function ProblemSolution() {
             Tes meilleurs contenus méritent{" "}
             <span className={G}>d&apos;exister plus longtemps.</span>
           </h2>
-          <p className="text-white/45 text-base text-center max-w-xl mx-auto mb-14">
+          <p className="text-white/65 text-base text-center max-w-xl mx-auto mb-14">
             Les plateformes analysent l&apos;empreinte numérique de chaque fichier.
             Le recyclage de contenu n&apos;est pas une astuce — c&apos;est une stratégie.
             DuupFlow rend tes copies techniquement indétectables.
@@ -114,7 +115,7 @@ function ProblemSolution() {
           {/* Problem / Solution cards */}
           <div className="grid md:grid-cols-2 gap-5 mb-6">
             {/* Problem */}
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.04] p-7">
+            <div className="rounded-2xl border border-red-500/25 p-7" style={{ background: "rgba(30,5,5,0.70)" }}>
               <div className="flex items-center gap-3 mb-5">
                 <div className="h-9 w-9 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center">
                   <svg className="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -123,7 +124,7 @@ function ProblemSolution() {
                 </div>
                 <h3 className="font-semibold text-white text-base">Le Problème</h3>
               </div>
-              <p className="text-white/55 text-sm leading-relaxed mb-5">
+              <p className="text-white/75 text-sm leading-relaxed mb-5">
                 Instagram, TikTok, YouTube analysent l&apos;empreinte de chaque upload.
                 Si ton fichier correspond à un contenu déjà indexé — même renommé,
                 même légèrement compressé — l&apos;algorithme te pénalise en silence.
@@ -136,7 +137,7 @@ function ProblemSolution() {
             </div>
 
             {/* Solution */}
-            <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.04] p-7">
+            <div className="rounded-2xl border border-indigo-500/25 p-7" style={{ background: "rgba(5,8,40,0.75)" }}>
               <div className="flex items-center gap-3 mb-5">
                 <div className="h-9 w-9 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
                   <svg className="h-4 w-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -145,7 +146,7 @@ function ProblemSolution() {
                 </div>
                 <h3 className="font-semibold text-white text-base">La Solution DuupFlow</h3>
               </div>
-              <p className="text-white/55 text-sm leading-relaxed mb-5">
+              <p className="text-white/75 text-sm leading-relaxed mb-5">
                 DuupFlow régénère l&apos;empreinte numérique de chaque copie — métadonnées EXIF/XMP
                 uniques, ré-encodage vidéo, micro-variations imperceptibles. Les algorithmes
                 analysent un fichier techniquement nouveau à chaque fois.
@@ -160,8 +161,8 @@ function ProblemSolution() {
 
           {/* Result banner */}
           <div
-            className="rounded-2xl border border-white/[0.07] p-5 text-center"
-            style={{ background: "rgba(255,255,255,0.025)" }}
+            className="rounded-2xl border border-white/[0.10] p-5 text-center"
+            style={{ background: "rgba(8,12,35,0.65)" }}
           >
             <p className="text-sm text-white/70">
               <span className="text-white font-semibold">Résultat :</span>{" "}
@@ -378,10 +379,10 @@ function FeatureTabs() {
           <div className="grid md:grid-cols-[1fr_360px] gap-8 items-start">
             <div className="py-4">
               <h3 className="text-2xl font-semibold text-white mb-3">{desc.title}</h3>
-              <p className="text-white/55 leading-relaxed mb-6">{desc.desc}</p>
+              <p className="text-white/75 leading-relaxed mb-6">{desc.desc}</p>
               <Link href="/register" className="inline-flex items-center gap-2 text-sm font-medium text-indigo-400 hover:text-indigo-300 transition">Essayer maintenant →</Link>
             </div>
-            <div className="rounded-2xl border border-white/[0.10] bg-white/[0.025] p-5 backdrop-blur-sm overflow-hidden" style={{ minHeight: "480px" }}>
+            <div className="rounded-2xl border border-white/[0.12] p-5 backdrop-blur-sm overflow-hidden" style={{ minHeight: "480px", background: "rgba(8,12,35,0.75)" }}>
               {MOCKUPS[active]}
             </div>
           </div>
@@ -637,10 +638,10 @@ function FeatureRow({
             {badge}
           </div>
           <h3 className="text-3xl font-semibold text-white mb-4 tracking-tight leading-[1.15]">{title}</h3>
-          <p className="text-white/50 text-base leading-relaxed mb-7">{subtitle}</p>
+          <p className="text-white/70 text-base leading-relaxed mb-7">{subtitle}</p>
           <ul className="space-y-3.5">
             {bullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-white/60">
+              <li key={i} className="flex items-start gap-3 text-sm text-white/75">
                 <svg className="h-5 w-5 text-indigo-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M20 6 9 17l-5-5" /></svg>
                 {b}
               </li>
@@ -650,7 +651,7 @@ function FeatureRow({
 
         {/* Mockup */}
         <div className="flex-1 w-full max-w-sm md:max-w-md">
-          <div className="rounded-2xl border border-white/[0.09] bg-white/[0.025] p-6 backdrop-blur-sm" style={{ minHeight: "320px" }}>
+          <div className="rounded-2xl border border-white/[0.12] p-6 backdrop-blur-sm" style={{ minHeight: "320px", background: "rgba(8,12,35,0.75)" }}>
             {mockup}
           </div>
         </div>
@@ -668,7 +669,7 @@ function CoreFeaturesAlt() {
           <h2 className="text-3xl md:text-4xl font-semibold text-white mb-4 tracking-tight text-center">
             Quatre modules. <span className={G}>Un seul objectif.</span>
           </h2>
-          <p className="text-white/45 text-base max-w-lg mx-auto text-center">
+          <p className="text-white/65 text-base max-w-lg mx-auto text-center">
             Chaque publication unique. Chaque fichier indétectable. Automatiquement.
           </p>
         </Reveal>
@@ -746,7 +747,7 @@ function StatsBanner() {
     <section className="px-6 pb-36">
       <div className="max-w-5xl mx-auto pt-20">
         <Reveal>
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] p-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="rounded-2xl border border-white/[0.10] p-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center" style={{ background: "rgba(8,12,35,0.70)" }}>
             {STATS.map((s) => (
               <div key={s.label}>
                 <div className={`text-3xl font-semibold mb-1 ${G}`}>{s.val}</div>
@@ -776,32 +777,43 @@ const FAQS = [
 function FAQ() {
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <section id="faq" className="px-6 pb-36">
+    <section id="faq" className="relative overflow-hidden">
+      {/* Special dark blue background */}
+      <div className="absolute inset-0 -z-10" style={{ background: "linear-gradient(180deg, #040c28 0%, #06112f 50%, #040c28 100%)" }} />
+      {/* Blurred texture blobs */}
+      <div className="absolute top-1/3 left-1/4 w-[500px] h-[400px] rounded-full pointer-events-none -z-10"
+        style={{ background: "rgba(99,102,241,0.10)", filter: "blur(90px)" }} />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[350px] rounded-full pointer-events-none -z-10"
+        style={{ background: "rgba(56,189,248,0.07)", filter: "blur(90px)" }} />
+      <div className="absolute top-0 right-0 w-[300px] h-[250px] rounded-full pointer-events-none -z-10"
+        style={{ background: "rgba(139,92,246,0.08)", filter: "blur(70px)" }} />
+      <div className="px-6 pb-36">
       <div className="max-w-5xl mx-auto pt-20">
         <Reveal>
           <div className="grid md:grid-cols-[2fr_3fr] gap-16">
             <div className="md:sticky md:top-28 self-start">
               <p className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-3">FAQ</p>
               <h2 className="text-3xl md:text-4xl font-semibold text-white tracking-tight leading-[1.1]">Questions fréquentes</h2>
-              <p className="text-white/40 text-sm mt-4 leading-relaxed">Tu as d&apos;autres questions ? Contacte-nous par email ou via le chat intégré.</p>
+              <p className="text-white/60 text-sm mt-4 leading-relaxed">Tu as d&apos;autres questions ? Contacte-nous par email ou via le chat intégré.</p>
             </div>
             <div className="divide-y divide-white/[0.08]">
               {FAQS.map((faq, i) => (
                 <div key={i}>
                   <button onClick={() => setOpen(open === i ? null : i)}
-                    className="w-full flex items-center justify-between gap-4 py-5 text-left text-sm font-medium text-white/80 hover:text-white transition">
+                    className="w-full flex items-center justify-between gap-4 py-5 text-left text-sm font-medium text-white/90 hover:text-white transition">
                     <span>{faq.q}</span>
                     <span className="shrink-0 h-6 w-6 rounded-full border border-white/15 flex items-center justify-center text-white/50 transition-transform"
                       style={{ transform: open === i ? "rotate(45deg)" : "rotate(0deg)" }}>
                       <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14" /></svg>
                     </span>
                   </button>
-                  {open === i && <div className="pb-5 text-sm text-white/50 leading-relaxed">{faq.a}</div>}
+                  {open === i && <div className="pb-5 text-sm text-white/70 leading-relaxed">{faq.a}</div>}
                 </div>
               ))}
             </div>
           </div>
         </Reveal>
+      </div>
       </div>
     </section>
   );
@@ -823,7 +835,7 @@ function CTABanner() {
             <h2 className="text-3xl md:text-4xl font-semibold text-white mb-4 tracking-tight relative">
               Prêt à scaler ton contenu ?
             </h2>
-            <p className="text-white/50 mb-8 max-w-md mx-auto relative">
+            <p className="text-white/70 mb-8 max-w-md mx-auto relative">
               Accède à tous les modules DuupFlow et commence à dupliquer en illimité dès maintenant.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 relative">
@@ -867,6 +879,10 @@ export default function LandingPage() {
   return (
     <div>
       <Hero />
+      {/* Separator between hero and content below */}
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="h-px bg-white/[0.12]" />
+      </div>
       <ProblemSolution />
       <FeatureTabs />
       <CoreFeaturesAlt />
