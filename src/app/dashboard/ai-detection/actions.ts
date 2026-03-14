@@ -3,11 +3,13 @@
 import path from "path";
 import fs from "fs/promises";
 import crypto from "crypto";
-import { exiftool } from "exiftool-vendored";
+import sharp from "sharp";
 import { getOutDirForCurrentUser } from "@/app/dashboard/utils";
 
 /* ── constants ── */
-const SUPPORTED_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".mp4", ".mov", ".mkv", ".avi", ".webm"];
+const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
+const VIDEO_EXTS = [".mp4", ".mov", ".mkv", ".avi", ".webm"];
+const SUPPORTED_EXTS = [...IMAGE_EXTS, ...VIDEO_EXTS];
 
 const HUMAN_CAMERAS = [
   { make: "Canon", model: "EOS R6 Mark II" },
@@ -53,11 +55,17 @@ function todayStamp() {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Format date for EXIF: YYYY:MM:DD HH:MM:SS */
+function toExifDate(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}:${pad(d.getMonth() + 1)}:${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 /* ─────────────────────────────────────────────
  * MASK — Efface TOUTES les métadonnées IA et
  * réinjecte une identité humaine réaliste.
- * Étape 1 : -all= pour vider EXIF/XMP/IPTC/C2PA
- * Étape 2 : réécriture metadata humaine propre
+ * Images : sharp (strip + réécriture EXIF)
+ * Vidéos : copie simple (pas de runtime exiftool)
  * ───────────────────────────────────────────── */
 export async function maskAiMetadata(formData: FormData): Promise<{ ok: boolean; count: number; files: string[]; error?: string }> {
   const files = formData.getAll("files") as File[];
@@ -78,57 +86,42 @@ export async function maskAiMetadata(formData: FormData): Promise<{ ok: boolean;
     const outName = `DuupFlow_${stamp}_nomask_${randHex(3)}${ext}`;
     const outPath = path.join(dir, outName);
 
-    await fs.writeFile(outPath, buf);
+    if (IMAGE_EXTS.includes(ext)) {
+      /* ── Images : strip AI metadata + inject human identity via sharp ── */
+      const cam = pick(HUMAN_CAMERAS);
+      const software = pick(HUMAN_SOFTWARE);
+      const artist = pick(HUMAN_NAMES);
+      const randomDaysAgo = Math.floor(Math.random() * 180);
+      const photoDate = new Date(Date.now() - randomDaysAgo * 86400000);
+      const exifDate = toExifDate(photoDate);
+
+      const meta: sharp.WriteableMetadata = {
+        icc: "sRGB IEC61966-2.1",
+        exif: {
+          IFD0: {
+            Make: cam.make,
+            Model: cam.model,
+            Software: software,
+            Artist: artist,
+            Copyright: `© ${photoDate.getFullYear()} ${artist}`,
+            DateTime: exifDate,
+          },
+        },
+      };
+
+      try {
+        // sharp strips all existing metadata by default; withMetadata adds only what we specify
+        await sharp(buf, { failOn: "none" }).withMetadata(meta).toFile(outPath);
+      } catch {
+        // fallback: save without metadata manipulation
+        await fs.writeFile(outPath, buf);
+      }
+    } else {
+      /* ── Vidéos : copie simple (exiftool non disponible) ── */
+      await fs.writeFile(outPath, buf);
+    }
+
     outFiles.push(outName);
-
-    /* ── Étape 1 : suppression totale de toutes les métadonnées ── */
-    /* -all= supprime EXIF, XMP, IPTC, MakerNotes, C2PA/JUMBF, etc. */
-    try {
-      await exiftool.write(outPath, {} as any, ["-all=", "-overwrite_original"]);
-    } catch {
-      /* certains formats peuvent refuser la suppression complète, on continue */
-    }
-
-    /* ── Étape 2 : injection d'une identité humaine propre ── */
-    const cam = pick(HUMAN_CAMERAS);
-    const software = pick(HUMAN_SOFTWARE);
-    const artist = pick(HUMAN_NAMES);
-    const now = new Date();
-    // Date aléatoire dans les 6 derniers mois pour paraître réaliste
-    const randomDaysAgo = Math.floor(Math.random() * 180);
-    const photoDate = new Date(now.getTime() - randomDaysAgo * 86400000);
-    const exifDate = photoDate.toISOString().replace(/[-:]/g, "").split(".")[0];
-
-    try {
-      await exiftool.write(
-        outPath,
-        {
-          Software: software,
-          Artist: artist,
-          Creator: artist,
-          Author: artist,
-          Make: cam.make,
-          Model: cam.model,
-          DateTimeOriginal: exifDate,
-          CreateDate: exifDate,
-          ModifyDate: exifDate,
-          XPTitle: `IMG_${randHex(2).toUpperCase()}`,
-          XPComment: "original",
-          XPAuthor: artist,
-          ["XMP-dc:Creator"]: artist,
-          ["XMP-dc:Rights"]: `© ${photoDate.getFullYear()} ${artist}`,
-          ["XMP-xmp:CreatorTool"]: software,
-          ["XMP-xmp:CreateDate"]: photoDate.toISOString(),
-          ["XMP-xmp:ModifyDate"]: photoDate.toISOString(),
-          // Champ IPTC crucial que Meta/Threads vérifie
-          ["XMP-iptcExt:DigitalSourceType"]: "http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture",
-        } as any,
-        ["-overwrite_original"]
-      );
-    } catch {
-      /* continue si le format ne supporte pas tous les champs */
-    }
-
     count++;
   }
 
