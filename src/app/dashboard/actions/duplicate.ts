@@ -4,7 +4,6 @@ import path from "path";
 import fs from "fs/promises";
 import crypto from "crypto";
 import sharp from "sharp";
-import { exiftool } from "exiftool-vendored";
 import { execa } from "execa";
 import os from "os";
 

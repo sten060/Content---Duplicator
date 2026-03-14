@@ -4,7 +4,6 @@ import path from "path";
 import fs from "fs/promises";
 import crypto from "crypto";
 import sharp from "sharp";
-import { exiftool } from "exiftool-vendored";
 import { execa } from "execa";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -484,48 +483,34 @@ async function processImage(
 pipeline = pipeline.composite([overlay]).removeAlpha();
 }
 
-  // 6) Recompression (FONDAMENTAUX)
+  // 6) Recompression (FONDAMENTAUX) + métadonnées EXIF inline
   const lower = outPath.toLowerCase();
+
+  const withMeta = (s: sharp.Sharp) => {
+    if (!opts.fundamentals) return s;
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const exifDate = `${now.getFullYear()}:${pad(now.getMonth()+1)}:${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    return s.withMetadata({
+      exif: {
+        IFD0: { Software: "ContentDuplicator", DateTime: exifDate },
+      },
+    });
+  };
+
   if (lower.endsWith(".png")) {
     const level = opts.fundamentals ? (5 + Math.floor(Math.random() * 5)) : 6;
-    await pipeline.png({ compressionLevel: level }).toFile(outPath);
+    await withMeta(pipeline).png({ compressionLevel: level }).toFile(outPath);
   } else if (lower.endsWith(".webp")) {
     const q = opts.fundamentals ? (80 + Math.floor(Math.random() * 15)) : 90;
-    await pipeline.webp({ quality: q }).toFile(outPath);
+    await withMeta(pipeline).webp({ quality: q }).toFile(outPath);
   } else {
     const q = opts.fundamentals ? (84 + Math.floor(Math.random() * 12)) : 90;
-    await pipeline.jpeg({
+    await withMeta(pipeline).jpeg({
       quality: q,
       mozjpeg: true,
       chromaSubsampling: "4:2:0",
     }).toFile(outPath);
-  }
-
-  // 7) Métadonnées EXIF (FONDAMENTAUX)
-  if (opts.fundamentals) {
-    const now = new Date();
-    const exifDate =
-      `${now.getFullYear()}:` +
-      `${String(now.getMonth()+1).padStart(2,"0")}:` +
-      `${String(now.getDate()).padStart(2,"0")} ` +
-      `${String(now.getHours()).padStart(2,"0")}:` +
-      `${String(now.getMinutes()).padStart(2,"0")}:` +
-      `${String(now.getSeconds()).padStart(2,"0")}`;
-
-    try {
-      await exiftool.write(
-        outPath,
-        {
-          AllDates: exifDate,
-          Software: "ContentDuplicator",
-          XPTitle:   `Duplicate_${i}`,
-          XPComment: `scale=${scale.toFixed(4)}; b=${brightness.toFixed(3)}; s=${saturation.toFixed(3)}; g=${gamma.toFixed(3)}`
-        },
-        ["-overwrite_original"]
-      );
-    } catch {
-      // ok si le format ne supporte pas l’écriture
-    }
   }
 }
 
@@ -995,24 +980,22 @@ function pctSimilarity(a: number, b: number, tolerance: number): number {
 /** Normalise et garde uniquement les clés utiles pour comparer des images */
 async function imageMetaSignature(tmpPath: string): Promise<MetaDict> {
   try {
-    const m = await exiftool.read(tmpPath as any);
+    const m = await sharp(tmpPath).metadata();
 
     const out: MetaDict = {
-      FileType: m.FileType,
-      MIMEType: m.MIMEType,
-      Make: m.Make,
-      Model: m.Model,
-      Orientation: m.Orientation,
-      Software: m.Software,
-      ColorSpace: m.ColorSpace || m.ICCProfileName,
-      XResolution: Number(m.XResolution) || null,
-      YResolution: Number(m.YResolution) || null,
-      BitsPerSample: Number((m as any).BitsPerSample) || null,
-      // largeurs/hauteurs “visibles”
-      ImageWidth: Number(m.ImageWidth) || null,
-      ImageHeight: Number(m.ImageHeight) || null,
-      // dates écrites par tes “filtres fondamentaux”
-      CreateDate: (m as any).CreateDate || (m as any).DateTimeOriginal || null,
+      FileType: m.format,
+      MIMEType: m.format ? `image/${m.format}` : null,
+      Make: null,
+      Model: null,
+      Orientation: m.orientation ?? null,
+      Software: null,
+      ColorSpace: m.space ?? null,
+      XResolution: m.density ?? null,
+      YResolution: m.density ?? null,
+      BitsPerSample: m.depth ?? null,
+      ImageWidth: m.width ?? null,
+      ImageHeight: m.height ?? null,
+      CreateDate: null,
     };
     return out;
   } catch {

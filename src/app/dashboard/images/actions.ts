@@ -5,7 +5,6 @@ import path from "path";
 import fs from "fs/promises";
 import crypto from "crypto";
 import sharp from "sharp";
-import { exiftool } from "exiftool-vendored";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
