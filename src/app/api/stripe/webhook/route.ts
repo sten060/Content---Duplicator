@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import Stripe from "stripe";
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
+    event = getStripe().webhooks.constructEvent(rawBody, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.subscription) {
-        const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+        const sub = await getStripe().subscriptions.retrieve(session.subscription as string);
         const uid = sub.metadata?.supabase_user_id ?? session.client_reference_id;
         if (uid) await markUserPaid(uid);
       } else if (session.client_reference_id) {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice;
       const subId = getSubscriptionId(invoice);
       if (subId) {
-        const sub = await stripe.subscriptions.retrieve(subId);
+        const sub = await getStripe().subscriptions.retrieve(subId);
         const uid = sub.metadata?.supabase_user_id;
         if (uid) await markUserPaid(uid);
       }
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice;
       const subId = getSubscriptionId(invoice);
       if (subId) {
-        const sub = await stripe.subscriptions.retrieve(subId);
+        const sub = await getStripe().subscriptions.retrieve(subId);
         const uid = sub.metadata?.supabase_user_id;
         if (uid) await markUserUnpaid(uid);
       }
