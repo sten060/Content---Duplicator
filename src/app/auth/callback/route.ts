@@ -3,7 +3,8 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams, origin: rawOrigin } = new URL(request.url);
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? rawOrigin;
   const code = searchParams.get("code");
   const inviteToken = searchParams.get("invite_token");
   const next = searchParams.get("next") ?? "/dashboard";
