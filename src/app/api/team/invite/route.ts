@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   // Count existing active invitations for this host
   const { data: existing } = await adminClient
     .from("team_invitations")
-    .select("id, status")
+    .select("id")
     .eq("host_user_id", user.id)
     .in("status", ["pending", "accepted"]);
 
@@ -60,37 +60,25 @@ export async function POST(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${req.headers.get("host")}`;
   const redirectTo = `${appUrl}/auth/callback?invite_token=${token}`;
 
-  // Try to invite as a new user (Supabase sends the email automatically)
-  const { error: inviteErr } = await adminClient.auth.admin.inviteUserByEmail(
-    guestEmail.toLowerCase(),
-    { redirectTo }
+  // Send magic link via Supabase — works for new AND existing users
+  const anonClient = createAnonClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  if (inviteErr) {
-    const isExisting =
-      inviteErr.message?.toLowerCase().includes("already") ||
-      (inviteErr as { code?: string }).code === "email_exists";
+  const { error: otpErr } = await anonClient.auth.signInWithOtp({
+    email: guestEmail.toLowerCase(),
+    options: {
+      emailRedirectTo: redirectTo,
+      shouldCreateUser: true,
+    },
+  });
 
-    if (!isExisting) {
-      console.error("inviteUserByEmail error:", JSON.stringify(inviteErr));
-      return NextResponse.json({ error: "Impossible d'envoyer l'invitation." }, { status: 500 });
-    }
-
-    // User already exists — send a magic link via the same Supabase email system
-    const anonClient = createAnonClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { error: otpErr } = await anonClient.auth.signInWithOtp({
-      email: guestEmail.toLowerCase(),
-      options: { emailRedirectTo: redirectTo },
-    });
-
-    if (otpErr) {
-      console.error("signInWithOtp error:", JSON.stringify(otpErr));
-      return NextResponse.json({ error: "Impossible d'envoyer l'invitation." }, { status: 500 });
-    }
+  if (otpErr) {
+    // Clean up invitation record if email sending failed
+    await adminClient.from("team_invitations").delete().eq("token", token);
+    console.error("signInWithOtp error:", JSON.stringify(otpErr));
+    return NextResponse.json({ error: "Impossible d'envoyer l'invitation." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

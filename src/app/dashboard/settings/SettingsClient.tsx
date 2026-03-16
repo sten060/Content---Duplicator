@@ -272,7 +272,7 @@ export default function SettingsClient({
                             : { background: "rgba(245,158,11,0.10)", color: "#F59E0B", border: "1px solid rgba(245,158,11,0.20)" }
                           }
                         >
-                          {inv.status === "accepted" ? "Actif" : "En attente"}
+                          {inv.status === "accepted" ? "Invité" : "En attente"}
                         </span>
                         <button
                           onClick={() => removeInvitation(inv.id)}
