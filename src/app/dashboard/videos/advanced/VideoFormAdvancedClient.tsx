@@ -276,8 +276,8 @@ export default function VideoFormAdvancedClient() {
       const rawForm = new FormData(e.currentTarget);
       const uploadedFiles = rawForm.getAll("files") as File[];
 
-      // Always use Supabase: SSE opens instantly, no silent wait for server to buffer the file.
-      const DIRECT_LIMIT = 0;
+      // Files ≤ 50 MB sent directly; larger ones via Supabase Storage.
+      const DIRECT_LIMIT = 50 * 1024 * 1024;
       const canDirect = uploadedFiles.length > 0 && uploadedFiles.every(f => f.size <= DIRECT_LIMIT);
 
       let apiForm: FormData;
