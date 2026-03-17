@@ -140,7 +140,11 @@ export async function POST(req: Request) {
     headers: {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
+      "Connection": "keep-alive",
+      // Tells Railway's Nginx proxy NOT to buffer the response.
+      // Without this header, Nginx accumulates the entire stream before
+      // forwarding it, which causes a 502 timeout on long SSE connections.
+      "X-Accel-Buffering": "no",
     },
   });
 }
