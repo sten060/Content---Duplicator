@@ -6,13 +6,14 @@ export const revalidate = 0;
 
 export default async function VideosHub({
   searchParams,
-}: { searchParams?: { ok?: string; err?: string } }) {
+}: { searchParams?: { ok?: string; err?: string; warn?: string } }) {
   const ok = Boolean(searchParams?.ok);
   const err = searchParams?.err ? decodeURIComponent(searchParams.err) : undefined;
+  const warn = searchParams?.warn ? decodeURIComponent(searchParams.warn) : undefined;
 
   return (
     <main className="p-6 space-y-8">
-      <Toasts ok={ok} err={err} />
+      <Toasts ok={ok} err={err} warn={warn} />
 
       <header className="space-y-2">
         <h1 className="text-4xl font-extrabold tracking-tight">DuupFlow — Duplication Vidéos</h1>

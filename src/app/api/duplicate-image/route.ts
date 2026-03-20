@@ -206,7 +206,7 @@ export async function POST(req: Request) {
 
     // ── Increment usage after successful generation ──────────────────────────
     if (usageCheck.userId && usageCheck.plan === "solo") {
-      incrementUsage(usageCheck.userId, "images", count).catch(console.error);
+      await incrementUsage(usageCheck.userId, "images", count).catch(console.error);
     }
 
     if (results.length === 1) {

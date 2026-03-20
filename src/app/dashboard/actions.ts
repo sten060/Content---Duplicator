@@ -11,6 +11,7 @@ import { isRedirectError } from "next/dist/client/components/redirect";
 import os from "os";
 import { getOutDirForCurrentUser, getOutDirForCurrentUserRSC } from "./utils";
 import type { OverlayOptions } from "sharp";
+import { checkUsage, incrementUsage } from "@/lib/usage";
 
 // --- exposer userId à la page vidéos (RSC) ---
 export async function currentUserOutInfo() {
@@ -626,11 +627,31 @@ export async function duplicateVideos(formData: FormData) {
   // ---- lecture données du formulaire ----
   const filesAll = formData.getAll("files") as File[];
   if (!filesAll || filesAll.length === 0) throw new Error("Aucun fichier vidéo reçu.");
-  const files = filesAll.slice(0, 25);
+  const files = filesAll.slice(0, 25).filter((f) => f.type?.startsWith("video/"));
 
   const count = Math.max(1, Number(formData.get("count") ?? 1));
   const selectedFilters = formData.getAll("filters") as string[];
   const stealthMode = formData.get("stealthMode") === "true";
+
+  // ---- Usage check (Solo plan limits) ----
+  const totalRequested = files.length * count;
+  const usageCheck = await checkUsage("videos", totalRequested);
+  let effectiveTotal = totalRequested;
+  let isPartial = false;
+
+  if (!usageCheck.allowed && usageCheck.plan === "solo") {
+    const remaining = usageCheck.limit - usageCheck.current;
+    if (remaining <= 0) {
+      revalidatePath("/dashboard/videos");
+      redirect(
+        `/dashboard/videos?err=${encodeURIComponent(
+          `Limite mensuelle atteinte (${usageCheck.current}/${usageCheck.limit} vidéos). Attends le renouvellement ou passe au plan Pro.`
+        )}`
+      );
+    }
+    effectiveTotal = remaining;
+    isPartial = true;
+  }
 
   // ---- dossier de sortie utilisateur ----
   const { dir: outDir } = await getOutDirForCurrentUser();
@@ -648,16 +669,14 @@ export async function duplicateVideos(formData: FormData) {
     } catch {}
   }
 
-  const total = files.length * count;
+  const total = effectiveTotal;
   let done = 0;
 
   // on crée le fichier de progression tout de suite (0%)
   await writeProgress(0, "Préparation...");
 
   // ---- duplication ----
-  for (const f of files) {
-    if (!f.type?.startsWith("video/")) continue;
-
+  outer: for (const f of files) {
     const buffer = Buffer.from(await f.arrayBuffer());
     const dot = f.name.lastIndexOf(".");
     const ext = dot >= 0 ? f.name.slice(dot) : ".mp4";
@@ -665,6 +684,8 @@ export async function duplicateVideos(formData: FormData) {
     const cleanBase = baseName.replace(/[^a-zA-Z0-9_-]/g, "");
 
     for (let i = 1; i <= count; i++) {
+      if (done >= effectiveTotal) break outer;
+
       const name = `${cleanBase}_${i}_${crypto.randomBytes(2).toString("hex")}${ext}`;
       const outPath = path.join(outDir, name);
 
@@ -690,12 +711,24 @@ export async function duplicateVideos(formData: FormData) {
     }
   }
 
+  // ---- Increment usage (Solo plan) ----
+  if (done > 0 && usageCheck.userId && usageCheck.plan === "solo") {
+    await incrementUsage(usageCheck.userId, "videos", done).catch(console.error);
+  }
+
   // fin : 100% + nettoyage du fichier de progression
   await writeProgress(100, "Terminé ✔");
   setTimeout(() => fs.unlink(progressPath).catch(() => {}), 1500);
 
-  // revalide & reste sur /dashboard/videos (avec jobId pour la barre)
+  // revalide & reste sur /dashboard/videos
   revalidatePath("/dashboard/videos");
+  if (isPartial) {
+    redirect(
+      `/dashboard/videos?ok=1&job=${jobId}&warn=${encodeURIComponent(
+        `Limite atteinte — ${done}/${totalRequested} copies effectuées. Les ${totalRequested - done} restantes ont été annulées.`
+      )}`
+    );
+  }
   redirect(`/dashboard/videos?ok=1&job=${jobId}`);
 }
 /* ----------- Duplication vidéos (multi-fichiers) ----------- */
