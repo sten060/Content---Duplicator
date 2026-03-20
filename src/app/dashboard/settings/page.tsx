@@ -12,20 +12,21 @@ export default async function SettingsPage() {
 
   const admin = createAdminClient();
 
-  // Load profile (including plan)
+  // Load full profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, agency_name, is_guest, plan, stripe_customer_id")
+    .select("first_name, agency_name, is_guest, plan, stripe_customer_id, subscription_period_start")
     .eq("id", user.id)
     .single();
 
   const isGuest = profile?.is_guest ?? false;
   const plan = (profile?.plan as "solo" | "pro" | null) ?? null;
   const hasStripePortal = !!profile?.stripe_customer_id;
+  const subscriptionPeriodStart = profile?.subscription_period_start ?? null;
 
-  // Load usage for Solo plan users
+  // Load usage for all paying users (Solo: real limits, Pro: show as ∞)
   let usage: { images: number; videos: number; ai_signatures: number } | null = null;
-  if (plan === "solo" && !isGuest) {
+  if (!isGuest && plan) {
     const { data: usageRow } = await admin
       .from("usage_tracking")
       .select("images_count, videos_count, ai_signatures_count")
@@ -80,6 +81,7 @@ export default async function SettingsPage() {
       plan={plan}
       usage={usage}
       hasStripePortal={hasStripePortal}
+      subscriptionPeriodStart={subscriptionPeriodStart}
       invitations={invitations}
       userEmail={user.email}
     />
