@@ -6,11 +6,14 @@ import AbonnementClient from "./AbonnementClient";
 
 export const dynamic = "force-dynamic";
 
-function resolvePlanFromPriceId(priceId: string): "solo" | "pro" | null {
+function resolvePlanFromPrice(priceId: string, unitAmount: number | null): "solo" | "pro" | null {
+  // 1. Match by env var (most precise)
   if (priceId && process.env.STRIPE_PRICE_ID_SOLO && priceId === process.env.STRIPE_PRICE_ID_SOLO) return "solo";
   if (priceId && process.env.STRIPE_PRICE_ID_PRO && priceId === process.env.STRIPE_PRICE_ID_PRO) return "pro";
-  // Legacy fallback env var
   if (priceId && process.env.STRIPE_PRICE_ID && priceId === process.env.STRIPE_PRICE_ID) return "pro";
+  // 2. Fallback by price amount (39€ = solo, 99€ = pro)
+  if (unitAmount === 3900) return "solo";
+  if (unitAmount === 9900) return "pro";
   return null;
 }
 
@@ -35,36 +38,63 @@ export default async function AbonnementPage() {
   let stripeCustomerId = profile?.stripe_customer_id ?? null;
   const subscriptionPeriodStart = profile?.subscription_period_start ?? null;
 
-  // Sync plan from Stripe if user has a subscription (fixes wrong plan in DB)
-  if (profile?.stripe_subscription_id) {
+  // Sync plan & customer_id from Stripe (fixes wrong plan in DB)
+  if (profile?.stripe_subscription_id || stripeCustomerId || profile?.has_paid) {
     try {
-      const sub = await getStripe().subscriptions.retrieve(
-        profile.stripe_subscription_id,
-        { expand: ["items.data.price"] }
-      );
-      const priceId = sub.items.data[0]?.price?.id ?? "";
-      const stripePlan = resolvePlanFromPriceId(priceId);
-      const stripeCustomer = typeof sub.customer === "string" ? sub.customer : (sub.customer as any)?.id ?? null;
+      let sub: import("stripe").default.Subscription | null = null;
 
-      // Update DB if plan or customer_id is wrong
-      const needsUpdate =
-        (stripePlan && stripePlan !== plan) ||
-        (stripeCustomer && stripeCustomer !== stripeCustomerId);
+      if (profile?.stripe_subscription_id) {
+        sub = await getStripe().subscriptions.retrieve(
+          profile.stripe_subscription_id,
+          { expand: ["items.data.price"] }
+        );
+      } else {
+        // No subscription ID in DB – try to find by customer or by email
+        let customerId = stripeCustomerId;
+        if (!customerId && user.email) {
+          const customers = await getStripe().customers.list({ email: user.email, limit: 1 });
+          const found = customers.data[0];
+          if (found) {
+            customerId = found.id;
+            stripeCustomerId = found.id;
+            await admin.from("profiles").update({ stripe_customer_id: found.id }).eq("id", user.id);
+          }
+        }
+        if (customerId) {
+          const list = await getStripe().subscriptions.list({
+            customer: customerId,
+            status: "active",
+            limit: 1,
+            expand: ["data.items.data.price"],
+          });
+          sub = list.data[0] ?? null;
+          if (sub) {
+            await admin.from("profiles").update({ stripe_subscription_id: sub.id }).eq("id", user.id);
+          }
+        }
+      }
 
-      if (needsUpdate) {
+      if (sub) {
+        const price = sub.items.data[0]?.price;
+        const priceId = price?.id ?? "";
+        const unitAmount = price?.unit_amount ?? null;
+        const stripePlan = resolvePlanFromPrice(priceId, unitAmount);
+        const stripeCustomer = typeof sub.customer === "string" ? sub.customer : (sub.customer as any)?.id ?? null;
+
         const updates: Record<string, unknown> = {};
-        if (stripePlan && stripePlan !== plan) updates.plan = stripePlan;
-        if (stripeCustomer && stripeCustomer !== stripeCustomerId) updates.stripe_customer_id = stripeCustomer;
-        await admin.from("profiles").update(updates).eq("id", user.id);
-        if (stripePlan) plan = stripePlan;
-        if (stripeCustomer) stripeCustomerId = stripeCustomer;
+        if (stripePlan && stripePlan !== plan) { updates.plan = stripePlan; plan = stripePlan; }
+        if (stripeCustomer && stripeCustomer !== stripeCustomerId) { updates.stripe_customer_id = stripeCustomer; stripeCustomerId = stripeCustomer; }
+        if (Object.keys(updates).length > 0) {
+          await admin.from("profiles").update(updates).eq("id", user.id);
+        }
       }
     } catch {
       // Stripe unreachable – use DB values
     }
   }
 
-  const hasStripePortal = !!stripeCustomerId;
+  // Show portal buttons if customer exists OR if user has an active paid plan
+  const hasStripePortal = !!stripeCustomerId || !!profile?.has_paid;
   const subscriptionPeriodStart2 = subscriptionPeriodStart;
 
   let usage: { images: number; videos: number; ai_signatures: number } | null = null;
