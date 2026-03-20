@@ -171,7 +171,7 @@ function FileDropzone({
 export default function AiDetectionPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [limitError, setLimitError] = useState<string>("");
-  const [result, setResult] = useState<{ ok: boolean; count?: number; error?: string } | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; count?: number; error?: string; limitReached?: boolean } | null>(null);
   const [sessionFiles, setSessionFiles] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -320,13 +320,17 @@ export default function AiDetectionPage() {
         {result && (
           <div
             className={`rounded-xl px-4 py-3 text-sm ${
-              result.ok
+              result.ok && !result.limitReached
                 ? "bg-indigo-500/10 border border-indigo-500/25 text-indigo-200"
+                : result.ok && result.limitReached
+                ? "bg-amber-900/30 border border-amber-600/30 text-amber-300"
                 : "bg-red-500/10 border border-red-500/25 text-red-300"
             }`}
           >
-            {result.ok
+            {result.ok && !result.limitReached
               ? `✓ ${result.count} fichier${(result.count ?? 0) > 1 ? "s" : ""} traité${(result.count ?? 0) > 1 ? "s" : ""} — métadonnées effacées et réécrites.`
+              : result.ok && result.limitReached
+              ? `⚠ ${result.error}`
               : `✗ ${result.error}`}
           </div>
         )}
