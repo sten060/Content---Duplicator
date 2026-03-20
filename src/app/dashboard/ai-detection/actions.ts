@@ -147,16 +147,26 @@ export async function maskAiMetadata(formData: FormData): Promise<{ ok: boolean;
   // ── Usage check (Solo plan limits) ────────────────────────────────────────
   const imageFiles = files.filter((f) => IMAGE_EXTS.includes(extOf(f.name)));
   const usageCheck = await checkUsage("ai_signatures", imageFiles.length);
-  if (!usageCheck.allowed) {
-    return {
-      ok: false,
-      count: 0,
-      files: [],
-      error: usageCheck.message ?? "Limite de modifications signature IA atteinte.",
-      limitReached: true,
-      current: usageCheck.current,
-      limit: usageCheck.limit,
-    };
+
+  let effectiveImageFiles = imageFiles;
+  let isPartial = false;
+
+  if (!usageCheck.allowed && usageCheck.plan === "solo") {
+    const remaining = usageCheck.limit - usageCheck.current;
+    if (remaining <= 0) {
+      return {
+        ok: false,
+        count: 0,
+        files: [],
+        error: usageCheck.message ?? "Limite de modifications signature IA atteinte.",
+        limitReached: true,
+        current: usageCheck.current,
+        limit: usageCheck.limit,
+      };
+    }
+    // Partial: process only remaining allowed files
+    effectiveImageFiles = imageFiles.slice(0, remaining);
+    isPartial = true;
   }
 
   let dir: string;
@@ -172,8 +182,10 @@ export async function maskAiMetadata(formData: FormData): Promise<{ ok: boolean;
   let count = 0;
   const outFiles: string[] = [];
 
-  // Filter unsupported files early
-  const validFiles = files.filter((f) => SUPPORTED_EXTS.includes(extOf(f.name)));
+  // Filter unsupported files early — images capped by remaining quota, videos pass through
+  const validImageFiles = effectiveImageFiles;
+  const validVideoFiles = files.filter((f) => VIDEO_EXTS.includes(extOf(f.name)));
+  const validFiles = [...validImageFiles, ...validVideoFiles];
 
   type Task = { f: File };
   const tasks: Task[] = validFiles.map((f) => ({ f }));
@@ -253,8 +265,22 @@ export async function maskAiMetadata(formData: FormData): Promise<{ ok: boolean;
   console.log(`[ai-detection] done — ${count}/${files.length} file(s) processed`);
 
   // ── Increment usage after successful processing ────────────────────────────
-  if (count > 0 && usageCheck.userId && usageCheck.plan === "solo") {
-    incrementUsage(usageCheck.userId, "ai_signatures", count).catch(console.error);
+  const imageCount = outFiles.filter((f) => IMAGE_EXTS.some((e) => f.toLowerCase().endsWith(e))).length;
+  if (imageCount > 0 && usageCheck.userId && usageCheck.plan === "solo") {
+    await incrementUsage(usageCheck.userId, "ai_signatures", imageCount).catch(console.error);
+  }
+
+  if (isPartial) {
+    const skipped = imageFiles.length - effectiveImageFiles.length;
+    return {
+      ok: true,
+      count,
+      files: outFiles,
+      limitReached: true,
+      current: usageCheck.limit,
+      limit: usageCheck.limit,
+      error: `${count} fichier${count > 1 ? "s" : ""} traité${count > 1 ? "s" : ""} — limite atteinte. ${skipped} image${skipped > 1 ? "s" : ""} annulée${skipped > 1 ? "s" : ""} (quota mensuel épuisé).`,
+    };
   }
 
   return { ok: true, count, files: outFiles };

@@ -160,6 +160,12 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
   const [errors, setErrors] = useState<string[]>([]);
   const [readyFiles, setReadyFiles] = useState<ReadyFile[]>([]);
   const [done, setDone] = useState(false);
+  const [limitWarning, setLimitWarning] = useState<{
+    done: number;
+    requested: number;
+    current: number;
+    limit: number;
+  } | null>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -210,15 +216,23 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
     setErrors([]);
     setDone(false);
     setReadyFiles([]);
+    setLimitWarning(null);
     setProgressLabel(`Démarrage — 0 / ${tasks.length} copies…`);
 
     const errs: string[] = [];
+    let limitHit = false;
+    let limitHitCurrent = 0;
+    let limitHitLimit = 0;
+    let processedOk = 0;
 
     try {
       await withConcurrency(
         tasks,
         1, // 1 requête à la fois — évite la contention CPU sur Railway (single-core)
         async (file) => {
+          // Stop queue as soon as limit is hit
+          if (limitHit) return;
+
           const compressed = await compressForUpload(file);
           const fd = new FormData();
           fd.append("files", compressed);
@@ -245,6 +259,13 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
 
             if (!res.ok) {
               const j = await res.json().catch(() => ({}));
+              // Limit reached — stop queue and record info for banner
+              if (res.status === 429 && j?.limitReached) {
+                limitHit = true;
+                limitHitCurrent = j.current ?? 0;
+                limitHitLimit = j.limit ?? 0;
+                return;
+              }
               const code = j?.code ?? (res.status >= 500 ? "IMG-002" : "IMG-001");
               errs.push(`${file.name}: [${code}] ${j?.error ?? "erreur inconnue"}`);
               return;
@@ -253,6 +274,7 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
             const blob = await res.blob();
             const filename = extractFilename(res.headers, file.name);
             const blobUrl = URL.createObjectURL(blob);
+            processedOk++;
 
             flushSync(() => {
               setReadyFiles((prev) => [...prev, { blobUrl, filename }]);
@@ -271,6 +293,14 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
       );
     } finally {
       setErrors(errs);
+      if (limitHit) {
+        setLimitWarning({
+          done: processedOk,
+          requested: tasks.length,
+          current: limitHitCurrent,
+          limit: limitHitLimit,
+        });
+      }
       setProcessing(false);
       setProgress(100);
       setDone(true);
@@ -390,6 +420,17 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
               />
             </div>
             <p className="text-xs text-white/60">{progressLabel}</p>
+          </div>
+        )}
+
+        {/* Limit warning */}
+        {done && limitWarning && (
+          <div className="text-sm rounded-xl px-4 py-3 bg-amber-900/30 border border-amber-600/30 text-amber-300 space-y-1">
+            <p className="font-semibold">Limite atteinte — {limitWarning.done}/{limitWarning.requested} copies effectuées</p>
+            <p className="text-xs text-amber-400/80">
+              Quota mensuel images : {limitWarning.current}/{limitWarning.limit}. Les {limitWarning.requested - limitWarning.done} copies restantes ont été annulées.
+              Attends la date de renouvellement ou passe au plan Pro.
+            </p>
           </div>
         )}
 

@@ -66,6 +66,16 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: "/dashboard/abonnement",
+    label: "Abonnement",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="1" y="4" width="22" height="16" rx="2" />
+        <path d="M1 10h22" />
+      </svg>
+    ),
+  },
 ];
 
 function NavItem({ href, label, icon, badge }: { href: string; label: string; icon: React.ReactNode; badge?: string }) {

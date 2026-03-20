@@ -79,8 +79,12 @@ function getSubscriptionId(invoice: Stripe.Invoice): string | null {
   return parent?.subscription_details?.subscription ?? null;
 }
 
-function resolvePlanFromPriceId(priceId: string): "solo" | "pro" {
-  if (priceId === process.env.STRIPE_PRICE_ID_SOLO) return "solo";
+function resolvePlanFromPriceId(priceId: string, metadataPlan?: string): "solo" | "pro" {
+  if (priceId && priceId === process.env.STRIPE_PRICE_ID_SOLO) return "solo";
+  if (priceId && process.env.STRIPE_PRICE_ID_PRO && priceId === process.env.STRIPE_PRICE_ID_PRO) return "pro";
+  // Fallback: use subscription metadata plan field (set at checkout time)
+  if (metadataPlan === "solo") return "solo";
+  if (metadataPlan === "pro") return "pro";
   return "pro";
 }
 
@@ -116,7 +120,7 @@ export async function POST(request: NextRequest) {
           { expand: ["items.data.price"] }
         );
         const priceId = sub.items.data[0]?.price?.id ?? "";
-        const plan = resolvePlanFromPriceId(priceId);
+        const plan = resolvePlanFromPriceId(priceId, sub.metadata?.plan);
         const uid =
           sub.metadata?.supabase_user_id ?? session.client_reference_id;
         const customerId =
@@ -201,7 +205,7 @@ export async function POST(request: NextRequest) {
       const sub = event.data.object as Stripe.Subscription;
       const uid = sub.metadata?.supabase_user_id;
       if (uid && sub.items.data[0]?.price?.id) {
-        const plan = resolvePlanFromPriceId(sub.items.data[0].price.id);
+        const plan = resolvePlanFromPriceId(sub.items.data[0].price.id, sub.metadata?.plan);
         const admin = createAdminClient();
         await admin.from("profiles").update({ plan }).eq("id", uid);
       }
