@@ -60,9 +60,11 @@ export async function POST() {
   }
 
   // Update the existing subscription price — no new subscription created
+  // "always_invoice" forces Stripe to immediately charge the prorated difference
+  // instead of deferring it to the next billing cycle
   await getStripe().subscriptions.update(profile.stripe_subscription_id, {
     items: [{ id: itemId, price: proPriceId }],
-    proration_behavior: "create_prorations",
+    proration_behavior: "always_invoice",
     metadata: { plan: "pro" },
   });
 
