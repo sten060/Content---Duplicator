@@ -5,20 +5,18 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-type Status = "checking" | "waiting" | "ready" | "unauthenticated";
+type Status = "checking" | "waiting" | "ready" | "unauthenticated" | "error";
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<Status>("checking");
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     let attempts = 0;
     const MAX_ATTEMPTS = 24; // 24 × 1.5s = 36s max
     const sessionId = searchParams.get("session_id");
-    // Track whether Stripe already confirmed the payment via verify-session.
-    // Used as a fallback: if the DB hasn't caught up after MAX_ATTEMPTS we still
-    // redirect because Stripe is the source of truth.
     let stripeConfirmed = false;
 
     async function checkAndRedirect() {
@@ -32,9 +30,6 @@ function CheckoutSuccessContent() {
       setStatus("waiting");
 
       // Vérification directe via Stripe si on a un session_id.
-      // On NE redirige PAS immédiatement ici : on laisse le polling confirmer
-      // que has_paid=true est visible côté client, évitant la race condition
-      // où le middleware lirait encore has_paid=false quelques ms après l'update.
       if (sessionId) {
         try {
           const res = await fetch("/api/stripe/verify-session", {
@@ -43,14 +38,19 @@ function CheckoutSuccessContent() {
             body: JSON.stringify({ sessionId }),
           });
           const data = await res.json();
+
           if (res.ok && data.paid) {
             stripeConfirmed = true;
             setStatus("ready");
-            // Ne pas rediriger tout de suite — on tombe dans le polling
-            // pour s'assurer que la DB est cohérente avant la navigation.
+            // Ne pas rediriger tout de suite — le polling confirme que la DB est à jour.
+          } else {
+            // Garder l'info de debug visible pour diagnostiquer
+            const reason = data.error ?? data.payment_status ?? `HTTP ${res.status}`;
+            setDebugInfo(`verify-session: ${reason}`);
+            console.error("[success] verify-session failed:", data);
           }
-        } catch {
-          // Continuer avec le polling si la vérification directe échoue
+        } catch (err) {
+          setDebugInfo(`verify-session fetch error: ${err}`);
         }
       }
 
@@ -66,7 +66,6 @@ function CheckoutSuccessContent() {
 
         if (hasAccess) {
           setStatus("ready");
-          // window.location.href force une vraie navigation HTTP sans cache Next.js
           window.location.href = "/dashboard";
           return;
         }
@@ -74,13 +73,11 @@ function CheckoutSuccessContent() {
         if (attempts < MAX_ATTEMPTS) {
           setTimeout(poll, 1500);
         } else {
-          // Timeout : ne rediriger vers /dashboard que si Stripe a confirmé
-          // le paiement — sinon le middleware renverrait vers /checkout.
           if (stripeConfirmed) {
             window.location.href = "/dashboard";
+          } else {
+            setStatus("error");
           }
-          // Si stripeConfirmed=false et timeout atteint, l'UI reste en état
-          // "waiting" avec le bouton manuel ci-dessous.
         }
       }
 
@@ -110,7 +107,7 @@ function CheckoutSuccessContent() {
             Paiement confirmé 🎉
           </h1>
           <p className="text-white/50 text-sm mb-8 leading-relaxed">
-            Connecte-toi pour accéder à ton abonnement DuupFlow Pro.
+            Connecte-toi pour accéder à ton abonnement DuupFlow.
           </p>
           <Link
             href="/login"
@@ -119,6 +116,41 @@ function CheckoutSuccessContent() {
           >
             Se connecter →
           </Link>
+        </>
+      ) : status === "error" ? (
+        <>
+          <div
+            className="mx-auto mb-8 h-20 w-20 rounded-full flex items-center justify-center"
+            style={{
+              background: "rgba(239,68,68,0.12)",
+              border: "1px solid rgba(239,68,68,0.35)",
+            }}
+          >
+            <svg viewBox="0 0 24 24" className="h-9 w-9 text-red-400" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-white tracking-tight mb-3">
+            Activation en attente
+          </h1>
+          <p className="text-white/50 text-sm mb-2 leading-relaxed">
+            Ton paiement Stripe est confirmé mais l&apos;activation n&apos;a pas pu se faire automatiquement.
+          </p>
+          {debugInfo && (
+            <p className="text-red-400/70 text-xs mb-6 font-mono bg-red-950/30 rounded px-3 py-2">
+              {debugInfo}
+            </p>
+          )}
+          <p className="text-white/30 text-xs mb-6">
+            Copie l&apos;info ci-dessus et contacte le support, ou réessaie dans quelques minutes.
+          </p>
+          <button
+            onClick={() => { window.location.reload(); }}
+            className="inline-block w-full rounded-xl py-3.5 text-sm font-bold text-white text-center transition hover:opacity-90"
+            style={{ background: "linear-gradient(135deg,#6366F1,#38BDF8)" }}
+          >
+            Réessayer →
+          </button>
         </>
       ) : (
         <>
@@ -139,7 +171,7 @@ function CheckoutSuccessContent() {
             Paiement confirmé 🎉
           </h1>
           <p className="text-white/50 text-sm mb-8 leading-relaxed">
-            Ton abonnement DuupFlow Pro est actif. Tous les modules sont maintenant accessibles.
+            Ton abonnement DuupFlow est actif. Tous les modules sont maintenant accessibles.
           </p>
 
           <button
