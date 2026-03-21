@@ -60,7 +60,7 @@ async function processImage(
     ] as const;
     const kernelA = kernels[Math.floor(Math.random() * kernels.length)];
 
-    const mMax = Math.floor(Math.min(baseW, baseH) * 0.02);
+    const mMax = Math.floor(Math.min(baseW, baseH) * 0.07); // 7% per side (was 2%) — bigger crop offset
     const L = Math.floor(Math.random() * (mMax + 1));
     const T = Math.floor(Math.random() * (mMax + 1));
     const R = Math.floor(Math.random() * (mMax + 1));
@@ -79,18 +79,32 @@ async function processImage(
   }
 
   if (flags.visuals) {
-    const brightness = 0.93 + Math.random() * 0.14;
-    const saturation = 0.93 + Math.random() * 0.14;
-    const gamma = 1.0 + Math.random() * 0.3;
-    const hue = Math.floor((Math.random() - 0.5) * 6);
+    // Ranges significantly widened to bring perceptual comparator down to ~45%
+    const brightness = 0.75 + Math.random() * 0.50;   // 0.75–1.25  (was 0.93–1.07)
+    const saturation = 0.55 + Math.random() * 0.90;   // 0.55–1.45  (was 0.93–1.07)
+    const gamma = 0.70 + Math.random() * 0.95;        // 0.70–1.65  (was 1.00–1.30)
+    const hue = Math.floor((Math.random() - 0.5) * 30); // ±15°     (was ±3°)
 
     img = img.modulate({ brightness, saturation, hue }).gamma(gamma);
 
-    const contrast = 0.92 + Math.random() * 0.16;
+    const contrast = 0.70 + Math.random() * 0.65;     // 0.70–1.35  (was 0.92–1.08)
     img = img.linear(contrast, 0);
 
-    const sigma = 0.3 + Math.random() * 0.2;
+    // Blur pass — strongly shifts DCT frequency content (big perceptual hash impact)
+    const blurSigma = 0.7 + Math.random() * 1.3;      // 0.7–2.0 (new)
+    img = img.blur(blurSigma);
+
+    // Stronger unsharp — was 0.3–0.5, now 0.8–3.0
+    const sigma = 0.8 + Math.random() * 2.2;          // 0.8–3.0
     img = img.sharpen({ sigma });
+  }
+
+  if (flags.fundamentals) {
+    // Subtle tint (±5°) + light blur → creates compression fingerprint divergence
+    const tintHue = Math.floor((Math.random() - 0.5) * 10); // ±5°
+    if (tintHue !== 0) img = img.modulate({ hue: tintHue });
+    const lightBlur = 0.3 + Math.random() * 0.7; // 0.3–1.0
+    img = img.blur(lightBlur);
   }
 
   const lower = ext.toLowerCase();
@@ -113,7 +127,7 @@ async function processImage(
   };
 
   if (lower === ".webp") {
-    const quality = flags.fundamentals ? (88 + Math.floor(Math.random() * 7)) : 92;
+    const quality = flags.fundamentals ? (76 + Math.floor(Math.random() * 12)) : 88; // 76–88 (was 88–95)
     return {
       data: await img.withMetadata(exifMeta).webp({ quality, smartSubsample: true }).toBuffer(),
       outExt: ".webp",
@@ -122,7 +136,7 @@ async function processImage(
 
   const chroma = flags.fundamentals ? (Math.random() < 0.5 ? "4:2:0" : "4:4:4") : "4:4:4";
   const progressive = flags.fundamentals ? Math.random() < 0.5 : false;
-  const quality = flags.fundamentals ? (88 + Math.floor(Math.random() * 7)) : 92;
+  const quality = flags.fundamentals ? (76 + Math.floor(Math.random() * 12)) : 88; // 76–88 (was 88–95)
 
   if (lower === ".png") {
     img = img.flatten({ background: { r: 255, g: 255, b: 255 } });
