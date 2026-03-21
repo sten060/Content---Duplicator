@@ -10,7 +10,15 @@
 ALTER TABLE public.profiles
   DROP CONSTRAINT IF EXISTS profiles_plan_check;
 
--- Recréer avec les deux plans valides
+-- Remettre à NULL les éventuelles valeurs de plan invalides
+-- (ex: 'free', 'starter', ou autre valeur d'une ancienne version)
+-- afin de ne pas bloquer l'ajout de la nouvelle contrainte.
+UPDATE public.profiles
+  SET plan = NULL
+  WHERE plan IS NOT NULL AND plan NOT IN ('solo', 'pro');
+
+-- Recréer avec les deux plans valides + NULL autorisé
+-- (NULL = utilisateur sans abonnement actif, ce qui est la valeur par défaut)
 ALTER TABLE public.profiles
   ADD CONSTRAINT profiles_plan_check
-    CHECK (plan IN ('solo', 'pro'));
+    CHECK (plan IS NULL OR plan IN ('solo', 'pro'));
