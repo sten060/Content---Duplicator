@@ -51,7 +51,31 @@ export async function POST(request: NextRequest) {
 
   if (session.payment_status !== "paid") {
     console.warn(`[verify-session] payment_status is ${session.payment_status}, not paid`);
-    return NextResponse.json({ paid: false, payment_status: session.payment_status });
+
+    // Fallback : pour les abonnements, vérifier directement le statut de la subscription.
+    // Dans certaines configurations Stripe (API récente, methode de paiement spécifique),
+    // payment_status peut ne pas être "paid" immédiatement même si la subscription est active.
+    const subId =
+      typeof session.subscription === "string"
+        ? session.subscription
+        : (session.subscription as { id?: string } | null)?.id ?? null;
+
+    if (subId) {
+      try {
+        const sub = await getStripe().subscriptions.retrieve(subId);
+        console.log(`[verify-session] subscription ${subId} status=${sub.status}`);
+        if (sub.status !== "active" && sub.status !== "trialing") {
+          return NextResponse.json({ paid: false, payment_status: session.payment_status, subscription_status: sub.status });
+        }
+        // La subscription est active → on continue malgré payment_status != "paid"
+        console.log(`[verify-session] subscription is active, proceeding despite payment_status=${session.payment_status}`);
+      } catch (err) {
+        console.error("[verify-session] subscription retrieve error:", err);
+        return NextResponse.json({ paid: false, payment_status: session.payment_status });
+      }
+    } else {
+      return NextResponse.json({ paid: false, payment_status: session.payment_status });
+    }
   }
 
   // Paiement confirmé — extraire les IDs Stripe depuis la session expandée
