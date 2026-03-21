@@ -322,9 +322,9 @@ async function runFFmpegSafe(
     if (afParts.length) args.push("-af", afParts.join(","));
     args.push(
       "-c:v", "libx264",
-      "-preset", "fast",          // fast: good quality/speed tradeoff (was ultrafast which sacrificed quality)
+      "-preset", "ultrafast",     // ultrafast: prioritise encoding speed (3–5× faster than fast)
       "-threads", String(threads), // caller allocates threads based on os.cpus()
-      "-crf", "20",               // CRF 20: near-original visual quality (was CRF 35 which was too lossy)
+      "-crf", "23",               // CRF 23: good visual quality with faster encode
       "-pix_fmt", "yuv420p",
       "-c:a", "aac",
       "-b:a", "192k",
