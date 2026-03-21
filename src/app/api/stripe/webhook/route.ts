@@ -199,13 +199,23 @@ export async function POST(request: NextRequest) {
         const admin = createAdminClient();
         const { data: profile } = await admin
           .from("profiles")
-          .select("stripe_subscription_id")
+          .select("stripe_subscription_id, has_paid")
           .eq("id", uid)
           .single();
-        // Only churn if this is still the user's current subscription.
-        // If user upgraded, their DB already points to the new sub – don't churn.
-        if (!profile?.stripe_subscription_id || profile.stripe_subscription_id === sub.id) {
+        // Churner uniquement si c'est encore l'abonnement actif en DB.
+        // Cas à éviter :
+        // 1) L'utilisateur a upgradé → la DB pointe déjà sur le nouvel abonnement.
+        // 2) stripe_subscription_id est null (verify-session n'a pas encore eu le
+        //    temps de le stocker, ou le webhook checkout.session.completed n'est pas
+        //    encore passé) → on ne churn PAS pour éviter de révoquer un accès
+        //    qui vient d'être accordé.
+        const isCurrentSub = profile?.stripe_subscription_id === sub.id;
+        if (isCurrentSub) {
           await markUserChurned(uid);
+        } else {
+          console.log(
+            `[webhook] subscription.deleted ignoré — sub ${sub.id} n'est pas l'abonnement actif en DB (${profile?.stripe_subscription_id ?? "null"})`
+          );
         }
       }
       break;

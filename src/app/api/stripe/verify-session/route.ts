@@ -32,7 +32,10 @@ export async function POST(request: NextRequest) {
 
   let session;
   try {
-    session = await getStripe().checkout.sessions.retrieve(sessionId);
+    // Expand subscription + customer pour récupérer les IDs Stripe complets
+    session = await getStripe().checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription", "customer"],
+    });
   } catch (err) {
     console.error("[verify-session] Stripe retrieve error:", err);
     return NextResponse.json({ error: "Session Stripe introuvable" }, { status: 404 });
@@ -51,8 +54,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ paid: false, payment_status: session.payment_status });
   }
 
-  // Paiement confirmé — mettre à jour Supabase
+  // Paiement confirmé — extraire les IDs Stripe depuis la session expandée
   const plan = session.metadata?.plan === "solo" ? "solo" : "pro";
+  const subscriptionId =
+    typeof session.subscription === "string"
+      ? session.subscription
+      : (session.subscription as { id?: string } | null)?.id ?? null;
+  const customerId =
+    typeof session.customer === "string"
+      ? session.customer
+      : (session.customer as { id?: string } | null)?.id ?? null;
+
+  console.log(`[verify-session] plan=${plan} subscriptionId=${subscriptionId} customerId=${customerId}`);
+
   const admin = createAdminClient();
 
   // .select() renvoie les lignes modifiées → si le tableau est vide,
@@ -60,6 +74,11 @@ export async function POST(request: NextRequest) {
   const { data: updatedRows, error: updateError } = await admin.from("profiles").update({
     has_paid: true,
     plan,
+    // Stocker les IDs Stripe immédiatement — indispensable pour que
+    // customer.subscription.deleted ne churn pas un utilisateur dont
+    // stripe_subscription_id est encore null.
+    ...(customerId ? { stripe_customer_id: customerId } : {}),
+    ...(subscriptionId ? { stripe_subscription_id: subscriptionId, subscription_period_start: new Date().toISOString() } : {}),
     email_sequence: "active",
     email_sequence_updated_at: new Date().toISOString(),
   }).eq("id", user.id).select("id");
@@ -76,6 +95,8 @@ export async function POST(request: NextRequest) {
       id: user.id,
       has_paid: true,
       plan,
+      ...(customerId ? { stripe_customer_id: customerId } : {}),
+      ...(subscriptionId ? { stripe_subscription_id: subscriptionId, subscription_period_start: new Date().toISOString() } : {}),
       email_sequence: "active",
       email_sequence_updated_at: new Date().toISOString(),
     });
