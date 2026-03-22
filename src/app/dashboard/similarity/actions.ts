@@ -372,9 +372,10 @@ async function flippedBuffer(buf: Buffer): Promise<Buffer> {
   return sharp(buf).flop().toBuffer();
 }
 
-// Metadata similarity — compares EXIF richness, file size, format, ICC, density, chroma.
+// Metadata similarity — compares EXIF richness, file size, format, ICC, density, chroma, filename.
 // sizeA/sizeB = taille réelle du fichier (pas celle du header 128KB) — crucial pour les vidéos.
-async function metadataSimilarity(bufA: Buffer, bufB: Buffer, sizeA?: number, sizeB?: number): Promise<number> {
+// nameA/nameB = noms de fichiers pour pénaliser les noms différents (intégré dans ce score).
+async function metadataSimilarity(bufA: Buffer, bufB: Buffer, sizeA?: number, sizeB?: number, nameA?: string, nameB?: string): Promise<number> {
   const [metaA, metaB] = await Promise.all([
     sharp(bufA, { failOn: "none" }).metadata().catch(() => ({} as sharp.Metadata)),
     sharp(bufB, { failOn: "none" }).metadata().catch(() => ({} as sharp.Metadata)),
@@ -428,6 +429,12 @@ async function metadataSimilarity(bufA: Buffer, bufB: Buffer, sizeA?: number, si
     const wR = Math.min(metaA.width, metaB.width) / Math.max(metaA.width, metaB.width);
     const hR = Math.min(metaA.height, metaB.height) / Math.max(metaA.height, metaB.height);
     score -= Math.round((1 - (wR + hR) / 2) * 10);
+  }
+
+  // Filename similarity — up to 15pt (noms différents = forte indication de duplication)
+  if (nameA && nameB) {
+    const fnSim = filenameSimilarity(nameA, nameB);
+    score -= Math.round((1 - fnSim / 100) * 15);
   }
 
   return Math.max(0, Math.min(100, score));
@@ -583,16 +590,14 @@ export async function compareFiles(
         )
       ),
       rawA && rawB
-        ? metadataSimilarity(Buffer.from(rawA, "base64"), Buffer.from(rawB, "base64"), sizeA, sizeB)
+        ? metadataSimilarity(Buffer.from(rawA, "base64"), Buffer.from(rawB, "base64"), sizeA, sizeB, nameA, nameB)
         : Promise.resolve(100), // no raw data → assume identical metadata (neutral)
     ]);
 
-    // Similarité du nom de fichier (0–100). 100 = même nom → 0pt de pénalité.
-    const fnSim = (nameA && nameB) ? filenameSimilarity(nameA, nameB) : 100;
-
-    // Frame-level score (82% max) + metadata (13% max) + filename (5% max) = 100%
+    // Frame-level score (85% max) + metadata (15% max) = 100%
+    // Le nom de fichier est déjà intégré dans metadataSimilarity (jusqu'à -15pt).
     const avgFrameScore = pairs.reduce((s, p) => s + p.score, 0) / pairs.length;
-    const finalScore = avgFrameScore + metadata * 0.13 + fnSim * 0.05;
+    const finalScore = avgFrameScore + metadata * 0.15;
 
     const avg = (key: keyof Omit<PairScore["breakdown"], "mirrored" | "metadata" | "filename">) =>
       Math.round(pairs.reduce((s, p) => s + (p.breakdown[key] as number), 0) / pairs.length);
@@ -613,7 +618,7 @@ export async function compareFiles(
       texture:  avg("texture"),
       ahash:    avg("ahash"),
       metadata: Math.round(metadata),
-      filename: fnSim,
+      filename: nameA && nameB ? filenameSimilarity(nameA, nameB) : 100,
       mirrored: pairs.some(p => p.breakdown.mirrored),
     };
 
