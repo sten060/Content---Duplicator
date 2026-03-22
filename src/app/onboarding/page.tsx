@@ -50,10 +50,11 @@ function OnboardingForm() {
       }
     } else {
       // Regular user: create profile via server (also triggers Brevo free sequence)
+      const affiliateCode = localStorage.getItem("duupflow_ref") ?? undefined;
       const res = await fetch("/api/onboarding/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName: firstName.trim(), agencyName: agencyName.trim() }),
+        body: JSON.stringify({ firstName: firstName.trim(), agencyName: agencyName.trim(), affiliateCode }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
