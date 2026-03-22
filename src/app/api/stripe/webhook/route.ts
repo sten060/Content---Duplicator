@@ -144,6 +144,23 @@ export async function POST(request: NextRequest) {
           }
 
           await markUserPaid(uid, plan, customerId, sub.id);
+
+          // Save affiliate_code to profile if not already set (filet de sécurité)
+          const affiliateCode = session.metadata?.affiliate_code;
+          if (affiliateCode) {
+            const admin = createAdminClient();
+            const { data: profile } = await admin
+              .from("profiles")
+              .select("affiliate_code")
+              .eq("id", uid)
+              .single();
+            if (!profile?.affiliate_code) {
+              await admin
+                .from("profiles")
+                .update({ affiliate_code: affiliateCode.toUpperCase() })
+                .eq("id", uid);
+            }
+          }
         }
       } else if (session.client_reference_id) {
         await markUserPaid(session.client_reference_id, "pro");

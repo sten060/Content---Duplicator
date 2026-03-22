@@ -8,20 +8,33 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
 
-  const { firstName, agencyName } = await req.json();
+  const { firstName, agencyName, affiliateCode } = await req.json();
   if (!firstName?.trim() || !agencyName?.trim()) {
     return NextResponse.json({ error: "Champs requis." }, { status: 400 });
   }
 
   const admin = createAdminClient();
-  const { error } = await admin.from("profiles").upsert({
+
+  const profileData: Record<string, unknown> = {
     id: user.id,
     first_name: firstName.trim(),
     agency_name: agencyName.trim(),
     is_guest: false,
     email_sequence: "free",
     email_sequence_updated_at: new Date().toISOString(),
-  });
+  };
+
+  if (affiliateCode && typeof affiliateCode === "string") {
+    const code = affiliateCode.trim().toUpperCase();
+    const { data: affiliate } = await admin
+      .from("affiliates")
+      .select("code")
+      .eq("code", code)
+      .single();
+    if (affiliate) profileData.affiliate_code = code;
+  }
+
+  const { error } = await admin.from("profiles").upsert(profileData);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
