@@ -141,6 +141,12 @@ function CheckoutContent() {
     const ref = searchParams.get("ref");
     if (ref) {
       localStorage.setItem("duupflow_ref", ref);
+      // Track the click (fire-and-forget, errors silently ignored)
+      fetch("/api/affiliate/click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: ref }),
+      }).catch(() => {});
     }
 
     const supabase = createClient();
