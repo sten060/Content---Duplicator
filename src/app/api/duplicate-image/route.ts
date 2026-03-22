@@ -79,62 +79,24 @@ async function processImage(
   }
 
   if (flags.visuals) {
-    // ── 1. Per-channel linear avec offset → Moments couleurs (95%) + Chroma (86%) + RGB (87%)
-    // linear([multR,multG,multB], [offsetR,offsetG,offsetB]) change µ, σ ET skewness par canal
-    const rA = 1.010 + (Math.random() - 0.5) * 0.060;  // 0.980–1.040
-    const gA = 0.975 + (Math.random() - 0.5) * 0.060;  // 0.945–1.005
-    const bA = 1.000 + (Math.random() - 0.5) * 0.080;  // 0.960–1.040
-    const rB = Math.round((Math.random() - 0.5) * 14);  // ±7 niveaux
-    const gB = Math.round((Math.random() - 0.5) * 10);  // ±5 niveaux
-    const bB = Math.round((Math.random() - 0.5) * 18);  // ±9 niveaux
+    // ── 1. Per-channel linear très subtil
+    const rA = 1.000 + (Math.random() - 0.5) * 0.020;  // ±1%
+    const gA = 1.000 + (Math.random() - 0.5) * 0.020;  // ±1%
+    const bA = 1.000 + (Math.random() - 0.5) * 0.020;  // ±1%
+    const rB = Math.round((Math.random() - 0.5) * 4);   // ±2 niveaux
+    const gB = Math.round((Math.random() - 0.5) * 4);
+    const bB = Math.round((Math.random() - 0.5) * 4);
     img = img.linear([rA, gA, bA], [rB, gB, bB]);
 
-    // ── 2. HSL global → Luminance histo (86%), Chroma, RGB
-    const brightness = 0.960 + Math.random() * 0.080;  // 0.960–1.040  (±4%)
-    const saturation = 0.950 + Math.random() * 0.100;  // 0.950–1.050  (±5%)
-    const gamma      = 0.968 + Math.random() * 0.064;  // 0.968–1.032  (±3.2%)
-    const hue        = Math.floor((Math.random() - 0.5) * 24); // ±12°
+    // ── 2. HSL global très subtil
+    const brightness = 0.990 + Math.random() * 0.020;  // ±1%
+    const saturation = 0.990 + Math.random() * 0.020;  // ±1%
+    const gamma      = 0.990 + Math.random() * 0.020;  // ±1%
+    const hue        = Math.floor((Math.random() - 0.5) * 6); // ±3°
     img = img.modulate({ brightness, saturation, hue }).gamma(gamma);
 
-    const contrast = 0.960 + Math.random() * 0.080;    // ±4%
-    img = img.linear(contrast, 0);
-
-    // ── 3. Vignette radiale → Grille spatiale (77%) + Profils projection (77%) + Gradients (92%)
-    // Dégradé centre→coins visible à 64×64 (scale comparateur) mais naturel à pleine résolution
-    const vigSize = 128;
-    const vigBuf = Buffer.alloc(vigSize * vigSize);
-    const vcx = vigSize / 2, vcy = vigSize / 2;
-    const vmaxR = Math.sqrt(vcx * vcx + vcy * vcy);
-    const vigStrength = 0.14 + Math.random() * 0.10;  // 14–24% assombrissement aux coins
-    for (let vy = 0; vy < vigSize; vy++) {
-      for (let vx = 0; vx < vigSize; vx++) {
-        const dist = Math.sqrt((vx - vcx) ** 2 + (vy - vcy) ** 2) / vmaxR;
-        vigBuf[vy * vigSize + vx] = Math.round(255 * (1 - vigStrength * dist * dist));
-      }
-    }
-    const vigPng = await sharp(vigBuf, { raw: { width: vigSize, height: vigSize, channels: 1 } })
-      .resize(baseW, baseH, { fit: "fill", kernel: sharp.kernel.cubic })
-      .png()
-      .toBuffer();
-    img = img.composite([{ input: vigPng, blend: "multiply" } as sharp.OverlayOptions]).removeAlpha();
-
-    // ── 4. Grain coarse 64×64 → Gradients magnitude (92%)
-    // Résolution 64×64 = exacte résolution d'analyse du comparateur
-    // nearest-neighbor upscale → chaque "pixel grain" couvre une cellule entière
-    const grainBuf = Buffer.alloc(64 * 64);
-    for (let k = 0; k < grainBuf.length; k++) {
-      grainBuf[k] = 128 + Math.floor((Math.random() - 0.5) * 120);  // ±60 amplitude
-    }
-    const grainPng = await sharp(grainBuf, { raw: { width: 64, height: 64, channels: 1 } })
-      .resize(baseW, baseH, { fit: "fill", kernel: sharp.kernel.nearest })
-      .png()
-      .toBuffer();
-    const grainOverlay: sharp.OverlayOptions & { opacity?: number } = { input: grainPng, blend: "overlay", opacity: 0.13 };
-    img = img.composite([grainOverlay]).removeAlpha();
-
-    // ── 5. Zoom 3–5% → pHash (84%) + dHash (84%)
-    // Sur l'image 32×32 du DCT pHash: 3% = ~1 pixel décalé → bits qui flippent
-    const zoomFactor = 1.030 + Math.random() * 0.020;  // 3.0–5.0%
+    // ── 3. Zoom 1–2% → pHash + dHash légèrement différents, imperceptible à l'œil
+    const zoomFactor = 1.010 + Math.random() * 0.010;  // 1.0–2.0%
     const zW = clampDim(Math.round(baseW * zoomFactor));
     const zH = clampDim(Math.round(baseH * zoomFactor));
     const cropLeft = Math.floor((zW - baseW) / 2);
@@ -143,8 +105,8 @@ async function processImage(
       .resize(zW, zH, { fit: "fill", kernel: sharp.kernel.cubic })
       .extract({ left: cropLeft, top: cropTop, width: baseW, height: baseH });
 
-    // ── 6. Sharpen fort → Gradients magnitude + dHash/contours
-    const sigma = 1.8 + Math.random() * 1.2;  // 1.8–3.0
+    // ── 4. Sharpen très léger
+    const sigma = 0.5 + Math.random() * 0.5;  // 0.5–1.0
     img = img.sharpen({ sigma });
   }
 
