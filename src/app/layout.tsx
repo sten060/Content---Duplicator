@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.duupflow.com"),
   title: "DuupFlow — Duplique ton contenu en illimité",
   description:
-    "DuupFlow vous permet de dupliquer et transformer vos contenus en quelques secondes grâce à l'IA.",
+    "DuupFlow vous permet de dupliquer vos contenus en quelques secondes, chaque fichier deviens unique aux yeux des plateformes. Conçu pour les agences souhaitant augmenter le volume de contenus sur les réseaux sociaux.",
   openGraph: {
     title: "DuupFlow — Duplique ton contenu en illimité",
     description:
-      "DuupFlow vous permet de dupliquer et transformer vos contenus en quelques secondes grâce à l'IA.",
+      "DuupFlow vous permet de dupliquer vos contenus en quelques secondes, chaque fichier deviens unique aux yeux des plateformes. Conçu pour les agences souhaitant augmenter le volume de contenus sur les réseaux sociaux.",
     url: "https://www.duupflow.com",
     siteName: "DuupFlow",
     images: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DuupFlow — Duplique ton contenu en illimité",
     description:
-      "DuupFlow vous permet de dupliquer et transformer vos contenus en quelques secondes grâce à l'IA.",
+      "DuupFlow vous permet de dupliquer vos contenus en quelques secondes, chaque fichier deviens unique aux yeux des plateformes. Conçu pour les agences souhaitant augmenter le volume de contenus sur les réseaux sociaux.",
     images: ["/og-image.png"],
   },
 };
