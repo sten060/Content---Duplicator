@@ -111,24 +111,30 @@ async function processImage(
     const contrast = 1.0 + cDir * (0.06 + Math.random() * 0.08);    // ±6–14%, garanti ≥6%
     img = img.linear(contrast, 0);
 
-    // ── 3. Vignette radiale subtile (3-6%) → Grille spatiale + Profils projection
-    // Généré à 128×128 avec cubic upscale = dégradé lisse, pas de blocs visibles
-    const vigSize = 128;
-    const vigBuf = Buffer.alloc(vigSize * vigSize);
-    const vcx = vigSize / 2, vcy = vigSize / 2;
-    const vmaxR = Math.sqrt(vcx * vcx + vcy * vcy);
-    const vigStrength = 0.030 + Math.random() * 0.030;  // 3–6% assombrissement coins
-    for (let vy = 0; vy < vigSize; vy++) {
-      for (let vx = 0; vx < vigSize; vx++) {
-        const dist = Math.sqrt((vx - vcx) ** 2 + (vy - vcy) ** 2) / vmaxR;
-        vigBuf[vy * vigSize + vx] = Math.round(255 * (1 - vigStrength * dist * dist));
+    // ── 3. Gradient de luminosité directionnel → SSIM (terme luminance locale par bloc 8×8)
+    // Principe : un changement uniforme (brightness global) préserve σxy (covariance SSIM).
+    // Un gradient spatial crée des µ différents dans chaque bloc 8×8 → SSIM chute réellement.
+    // Visuellement : ressemble à un angle d'éclairage différent (naturel, pas un artefact).
+    const gSize = 8; // 8×8 points de contrôle → gradient smooth sans blocs visibles
+    const gradBuf = Buffer.alloc(gSize * gSize);
+    // Direction aléatoire (angle quelconque) + amplitude 8-16%
+    const gradAngle = Math.random() * Math.PI * 2;
+    const gradDx = Math.cos(gradAngle);
+    const gradDy = Math.sin(gradAngle);
+    const gradAmp = 0.08 + Math.random() * 0.08;  // 8–16% de variation lumineuse
+    for (let gy = 0; gy < gSize; gy++) {
+      for (let gx = 0; gx < gSize; gx++) {
+        const nx = (gx / (gSize - 1)) * 2 - 1; // -1 à +1
+        const ny = (gy / (gSize - 1)) * 2 - 1;
+        const t = gradDx * nx + gradDy * ny;     // projection sur l'axe du gradient
+        gradBuf[gy * gSize + gx] = Math.max(0, Math.min(255, Math.round(128 * (1 + t * gradAmp))));
       }
     }
-    const vigPng = await sharp(vigBuf, { raw: { width: vigSize, height: vigSize, channels: 1 } })
+    const gradPng = await sharp(gradBuf, { raw: { width: gSize, height: gSize, channels: 1 } })
       .resize(baseW, baseH, { fit: "fill", kernel: sharp.kernel.cubic })
       .png()
       .toBuffer();
-    img = img.composite([{ input: vigPng, blend: "multiply" } as sharp.OverlayOptions]).removeAlpha();
+    img = img.composite([{ input: gradPng, blend: "multiply" } as sharp.OverlayOptions]).removeAlpha();
 
     // ── 4. Zoom 3–4% → pHash + dHash + Grille spatiale + Profils projection
     const zoomFactor = 1.030 + Math.random() * 0.010;  // 3.0–4.0%
