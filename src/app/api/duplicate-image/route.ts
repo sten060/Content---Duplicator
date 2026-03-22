@@ -100,7 +100,7 @@ async function processImage(
     // BUG précédent: plage symétrique → moyenne=1.0 → ~50% des cas quasi-invisible
     // FIX: direction aléatoire + minimum garanti → toujours visible à l'œil
     const bDir = Math.random() < 0.5 ? -1 : 1;
-    const brightness = 1.0 + bDir * (0.10 + Math.random() * 0.10);  // ±10–20%, garanti ≥10%
+    const brightness = 1.0 + bDir * (0.08 + Math.random() * 0.10);  // ±8–18%, garanti ≥8%
     const sDir = Math.random() < 0.5 ? -1 : 1;
     const saturation = 1.0 + sDir * (0.08 + Math.random() * 0.10);  // ±8–18%, garanti ≥8%
     const gDir = Math.random() < 0.5 ? -1 : 1;
