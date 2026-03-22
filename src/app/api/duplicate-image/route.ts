@@ -170,48 +170,49 @@ async function processImage(
   const dpi = dpiPool[Math.floor(Math.random() * dpiPool.length)];
 
   // Niveau d'enrichissement EXIF — tiré aléatoirement à chaque duplication.
-  // 0 = minimal (~300B), 1 = moyen (~700B), 2 = riche (~1400B)
-  // → exifRatio entre deux dups peut varier de 0.20 à 1.0 → jusqu'à 24pt de pénalité
-  const exifLevel = flags.fundamentals ? Math.floor(Math.random() * 3) : 0;
+  // 0 = aucun EXIF (0 octets), 1 = minimal (~300B), 2 = massif (~1500B via ImageDescription longue)
+  // Sharp/libexif ignore les tags XP* → seul ImageDescription est garanti d'être écrit.
+  // → exifRatio entre deux dups: 0 (niveau 0 vs 2) → pénalité maximale de 40pt
+  const exifLevel = flags.fundamentals ? Math.floor(Math.random() * 3) : 1;
 
-  const ifd0: Record<string, string> = {
-    Software: `DuupFlow/${randHex(2)}`,
-    Artist: artist,
-    Copyright: `DuupFlow ${now.getFullYear()}`,
-  };
+  let exifMeta: sharp.WriteableMetadata;
 
-  if (exifLevel >= 1) {
-    const makes  = ["Apple", "Samsung", "Google", "Xiaomi", "Sony", "OnePlus"];
-    const models = ["iPhone 15", "Galaxy S24", "Pixel 8", "Redmi 13", "Xperia 5", "Nord 4"];
-    const idx = Math.floor(Math.random() * makes.length);
-    const hh = String(Math.floor(Math.random() * 24)).padStart(2, "0");
-    const mm = String(Math.floor(Math.random() * 60)).padStart(2, "0");
-    const ss = String(Math.floor(Math.random() * 60)).padStart(2, "0");
-    const mo = String(1 + Math.floor(Math.random() * 12)).padStart(2, "0");
-    const dd = String(1 + Math.floor(Math.random() * 28)).padStart(2, "0");
-    Object.assign(ifd0, {
-      Make:             makes[idx],
-      Model:            models[idx],
-      DateTime:         `${now.getFullYear()}:${mo}:${dd} ${hh}:${mm}:${ss}`,
-      ImageDescription: `Photo ${randHex(3)}`,
-    });
+  if (exifLevel === 0) {
+    // Aucun EXIF — exif buffer = 0 octets
+    exifMeta = { density: dpi };
+  } else {
+    const ifd0: Record<string, string> = {
+      Software: `DuupFlow/${randHex(2)}`,
+      Artist: artist,
+      Copyright: `DuupFlow ${now.getFullYear()}`,
+    };
+
+    if (exifLevel >= 1) {
+      const makes  = ["Apple", "Samsung", "Google", "Xiaomi", "Sony", "OnePlus"];
+      const models = ["iPhone 15", "Galaxy S24", "Pixel 8", "Redmi 13", "Xperia 5", "Nord 4"];
+      const idx = Math.floor(Math.random() * makes.length);
+      const hh = String(Math.floor(Math.random() * 24)).padStart(2, "0");
+      const mm = String(Math.floor(Math.random() * 60)).padStart(2, "0");
+      const ss = String(Math.floor(Math.random() * 60)).padStart(2, "0");
+      const mo = String(1 + Math.floor(Math.random() * 12)).padStart(2, "0");
+      const dd = String(1 + Math.floor(Math.random() * 28)).padStart(2, "0");
+      Object.assign(ifd0, {
+        Make:             makes[idx],
+        Model:            models[idx],
+        DateTime:         `${now.getFullYear()}:${mo}:${dd} ${hh}:${mm}:${ss}`,
+        ImageDescription: `Photo ${randHex(3)}`,
+      });
+    }
+
+    if (exifLevel >= 2) {
+      // ImageDescription longue (~1200 chars) — seul champ EXIF garanti d'être écrit par sharp/libexif.
+      // Crée un écart massif de taille EXIF entre niveau 0 (0B) et niveau 2 (~1500B).
+      const chunks = Array.from({ length: 48 }, () => randHex(8));
+      ifd0.ImageDescription = `${artist} :: ${now.toISOString()} :: ref=${randHex(8)} :: sig=${chunks.join("-")}`;
+    }
+
+    exifMeta = { density: dpi, exif: { IFD0: ifd0 } };
   }
-
-  if (exifLevel >= 2) {
-    Object.assign(ifd0, {
-      XPTitle:          `Image ${randHex(2)}`,
-      XPComment:        `Captured by ${artist} — ref ${randHex(4)}`,
-      XPAuthor:         artist,
-      XPKeywords:       ["photo", "media", "content", "digital"][Math.floor(Math.random() * 4)],
-      DocumentName:     `DOC-${randHex(3).toUpperCase()}`,
-      HostComputer:     ["MacBook Pro", "Windows PC", "Linux Desktop", "iPad Pro"][Math.floor(Math.random() * 4)],
-    });
-  }
-
-  const exifMeta: sharp.WriteableMetadata = {
-    density: dpi,
-    exif: { IFD0: ifd0 },
-  };
 
   // Chroma subsampling : 4:2:0 ou 4:1:1 aléatoirement quand fundamentals actif
   // → change la distribution Cb/Cr et la taille fichier
@@ -221,8 +222,8 @@ async function processImage(
     : "4:4:4";
   const progressive = flags.fundamentals ? Math.random() < 0.5 : false;
 
-  // Qualité 36–78 (plage élargie) → écart de taille fichier maximal entre duplications
-  const quality = flags.fundamentals ? (36 + Math.floor(Math.random() * 42)) : 88;
+  // Qualité 20–85 (plage très large) → écart de taille fichier maximal entre duplications
+  const quality = flags.fundamentals ? (20 + Math.floor(Math.random() * 65)) : 88;
 
   if (lower === ".webp") {
     return {

@@ -383,21 +383,25 @@ async function metadataSimilarity(bufA: Buffer, bufB: Buffer): Promise<number> {
 
   let score = 100;
 
-  // Format mismatch (jpeg vs png vs webp) — 20pt
-  if (metaA.format && metaB.format && metaA.format !== metaB.format) score -= 20;
+  // Format mismatch (jpeg vs png vs webp) — 15pt
+  if (metaA.format && metaB.format && metaA.format !== metaB.format) score -= 15;
 
-  // File size ratio — up to 20pt (different quality/compression = different size)
+  // File size ratio — up to 30pt (qualité 20-85 → ratio peut atteindre 0.15)
   if (bufA.length > 0 && bufB.length > 0) {
     const ratio = Math.min(bufA.length, bufB.length) / Math.max(bufA.length, bufB.length);
-    score -= Math.round((1 - ratio) * 20);
+    score -= Math.round((1 - ratio) * 30);
   }
 
-  // EXIF richness — up to 30pt (original has rich camera EXIF, duplicate has minimal)
+  // EXIF richness — up to 40pt
+  // Niveau 0 = 0 octets, niveau 2 = ~1500B → ratio 0 → pénalité maximale
   const exifA = metaA.exif?.length ?? 0;
   const exifB = metaB.exif?.length ?? 0;
   if (exifA > 0 || exifB > 0) {
     const exifRatio = Math.min(exifA, exifB) / Math.max(exifA, exifB, 1);
-    score -= Math.round((1 - exifRatio) * 30);
+    score -= Math.round((1 - exifRatio) * 40);
+  } else {
+    // Les deux sans EXIF = même signature technique → pénalité légère
+    score -= 5;
   }
 
   // ICC color profile presence — 10pt (phone photos have ICC, DuupFlow output doesn't)
