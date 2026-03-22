@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import DeleteAffiliateButton from "./DeleteAffiliateButton";
 
 export const dynamic = "force-dynamic";
 
@@ -48,12 +49,13 @@ type ProfileRow = {
 
 function computeStats(affiliate: AffiliateRow, referrals: ProfileRow[]) {
   const mine = referrals.filter((p) => p.affiliate_code === affiliate.code);
+  const inscrits_free = mine.filter((p) => !p.has_paid).length;
   const convertis = mine.filter((p) => p.has_paid).length;
   const soloCount = mine.filter((p) => p.plan === "solo").length;
   const proCount = mine.filter((p) => p.plan === "pro").length;
   const mrr = soloCount * 39 + proCount * 99;
   const commission = Math.round((mrr * affiliate.commission_pct) / 100);
-  return { inscrits: mine.length, convertis, soloCount, proCount, mrr, commission };
+  return { inscrits: mine.length, inscrits_free, convertis, soloCount, proCount, mrr, commission };
 }
 
 export default async function AdminAffiliates() {
@@ -70,7 +72,7 @@ export default async function AdminAffiliates() {
 
   const admin = createAdminClient();
 
-  const [{ data: affiliates }, { data: referrals }, { data: allPayments }] =
+  const [{ data: affiliates }, { data: referrals }, { data: allPayments }, { data: allClicks }] =
     await Promise.all([
       admin.from("affiliates").select("*").order("created_at", { ascending: false }),
       admin
@@ -80,12 +82,16 @@ export default async function AdminAffiliates() {
       admin
         .from("affiliate_payments")
         .select("affiliate_code, commission_cents, paid_at"),
+      admin
+        .from("affiliate_clicks")
+        .select("affiliate_code"),
     ]);
 
   const rows = (affiliates ?? []) as AffiliateRow[];
   const allReferrals = (referrals ?? []) as ProfileRow[];
 
   const paymentRows = allPayments ?? [];
+  const clickRows = allClicks ?? [];
 
   const stats = rows.map((a) => {
     const earned = Math.round(
@@ -93,7 +99,8 @@ export default async function AdminAffiliates() {
         .filter((p) => p.affiliate_code === a.code)
         .reduce((s, p) => s + p.commission_cents, 0) / 100
     );
-    return { ...a, ...computeStats(a, allReferrals), earned };
+    const clicks = clickRows.filter((c) => c.affiliate_code === a.code).length;
+    return { ...a, ...computeStats(a, allReferrals), earned, clicks };
   });
 
   const totalInscrits = stats.reduce((s, a) => s + a.inscrits, 0);
@@ -101,6 +108,7 @@ export default async function AdminAffiliates() {
   const totalMrr = stats.reduce((s, a) => s + a.mrr, 0);
   const totalCommission = stats.reduce((s, a) => s + a.commission, 0);
   const totalEarned = stats.reduce((s, a) => s + a.earned, 0);
+  const totalClicks = stats.reduce((s, a) => s + a.clicks, 0);
 
   return (
     <main
@@ -128,21 +136,21 @@ export default async function AdminAffiliates() {
             color="rgba(255,255,255,0.85)"
           />
           <StatCard
+            label="Clics sur les liens"
+            value={totalClicks}
+            color="#F59E0B"
+          />
+          <StatCard
             label="Total inscrits"
             value={totalInscrits}
-            sub={`${totalConvertis} convertis`}
+            sub={`${totalConvertis} payants · ${totalInscrits - totalConvertis} free`}
             color="#10B981"
           />
           <StatCard
             label="MRR généré par affiliation"
             value={`${totalMrr}€`}
+            sub={`Commission : ${totalCommission}€`}
             color="#38BDF8"
-          />
-          <StatCard
-            label="Commission ce mois (MRR)"
-            value={`${totalCommission}€`}
-            sub="Sur abonnés actifs actuels"
-            color="#F59E0B"
           />
         </div>
 
@@ -195,6 +203,8 @@ export default async function AdminAffiliates() {
               {stats.map((a, i) => {
                 const convRate =
                   a.inscrits > 0 ? Math.round((a.convertis / a.inscrits) * 100) : 0;
+                const clickToInscrit =
+                  a.clicks > 0 ? Math.round((a.inscrits / a.clicks) * 100) : 0;
                 const hasAccount = !!a.user_id;
                 return (
                   <div
@@ -216,7 +226,7 @@ export default async function AdminAffiliates() {
                             color: "#818CF8",
                           }}
                         >
-                          {a.code.slice(0, 2)}
+                          {a.code.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-white">{a.name}</p>
@@ -255,30 +265,36 @@ export default async function AdminAffiliates() {
                         >
                           {hasAccount ? "Compte lié" : "Pas de compte"}
                         </span>
+                        <DeleteAffiliateButton code={a.code} name={a.name} />
                       </div>
                     </div>
 
                     {/* Metrics */}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                       {[
-                        { label: "Inscrits", value: a.inscrits, color: "rgba(255,255,255,0.70)" },
                         {
-                          label: "Convertis",
+                          label: "Clics sur le lien",
+                          value: a.clicks,
+                          sub: a.clicks > 0 ? `${clickToInscrit}% → inscrit` : undefined,
+                          color: "#F59E0B",
+                        },
+                        {
+                          label: "Inscrits free",
+                          value: a.inscrits_free,
+                          color: "rgba(255,255,255,0.60)",
+                        },
+                        {
+                          label: "Inscrits payants",
                           value: `${a.convertis} (${convRate}%)`,
                           color: "#10B981",
                         },
                         {
-                          label: "Solo actifs",
-                          value: a.soloCount,
-                          color: "#A78BFA",
-                        },
-                        { label: "Pro actifs", value: a.proCount, color: "#38BDF8" },
-                        {
                           label: "MRR généré",
                           value: `${a.mrr}€`,
-                          color: "rgba(255,255,255,0.60)",
+                          sub: `${a.soloCount} Solo · ${a.proCount} Pro`,
+                          color: "#38BDF8",
                         },
-                      ].map(({ label, value, color }) => (
+                      ].map(({ label, value, sub, color }) => (
                         <div
                           key={label}
                           className="rounded-xl px-3 py-2.5"
@@ -288,12 +304,13 @@ export default async function AdminAffiliates() {
                           <p className="text-sm font-semibold" style={{ color }}>
                             {value}
                           </p>
+                          {sub && <p className="text-[10px] text-white/25 mt-0.5">{sub}</p>}
                         </div>
                       ))}
                     </div>
 
                     {/* Commission due + earned */}
-                    <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div
                         className="flex items-center justify-between rounded-xl px-4 py-2.5"
                         style={{

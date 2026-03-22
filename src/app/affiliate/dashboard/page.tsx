@@ -74,7 +74,7 @@ export default async function AffiliateDashboard() {
   );
 
   const appUrl =
-    (process.env.NEXT_PUBLIC_APP_URL ?? "https://duupflow.com").replace(/\/$/, "");
+    (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.duupflow.com").replace(/\/$/, "");
   const affiliateLink = `${appUrl}/checkout?ref=${affiliate.code}`;
 
   const conversions = referrals?.filter((p) => p.has_paid) ?? [];
