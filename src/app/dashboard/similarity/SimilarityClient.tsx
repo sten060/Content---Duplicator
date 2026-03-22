@@ -104,6 +104,18 @@ async function getFrames(file: File): Promise<string[]> {
   return isVideoFile(file) ? extractVideoFrames(file, VIDEO_FRAME_COUNT) : extractImageFrame(file);
 }
 
+// Read first 128KB of a file as base64 (enough for EXIF/ICC headers)
+async function fileHeader(file: File): Promise<string> {
+  const slice = await file.slice(0, 131072).arrayBuffer();
+  const bytes = new Uint8Array(slice);
+  let binary = "";
+  const chunk = 8192;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
 type Breakdown = {
   ssim: number;
   mse: number;
@@ -119,6 +131,7 @@ type Breakdown = {
   proj: number;
   texture: number;
   ahash: number;
+  metadata: number;
   mirrored: boolean;
 };
 
@@ -172,7 +185,7 @@ export default function SimilarityClient({
   const [fileB, setFileB] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<Result | undefined>(
-    initialScore !== undefined ? { score: initialScore, breakdown: { ssim: 0, mse: 0, spatial: 0, chroma: 0, color: 0, luma: 0, colorMom: 0, phash: 0, dhash: 0, edgeOr: 0, gradient: 0, proj: 0, texture: 0, ahash: 0, mirrored: false } } : undefined
+    initialScore !== undefined ? { score: initialScore, breakdown: { ssim: 0, mse: 0, spatial: 0, chroma: 0, color: 0, luma: 0, colorMom: 0, phash: 0, dhash: 0, edgeOr: 0, gradient: 0, proj: 0, texture: 0, ahash: 0, metadata: 0, mirrored: false } } : undefined
   );
   const [error, setError] = useState<string | null>(initialErr ?? null);
 
@@ -185,8 +198,11 @@ export default function SimilarityClient({
     setResult(undefined);
 
     try {
-      const [framesA, framesB] = await Promise.all([getFrames(fileA), getFrames(fileB)]);
-      const data = await compareFiles(framesA, framesB);
+      const [framesA, framesB, rawA, rawB] = await Promise.all([
+        getFrames(fileA), getFrames(fileB),
+        fileHeader(fileA), fileHeader(fileB),
+      ]);
+      const data = await compareFiles(framesA, framesB, rawA, rawB);
 
       if ("error" in data) setError(data.error);
       else setResult(data);
@@ -264,8 +280,9 @@ export default function SimilarityClient({
               <MetricBar label="Moments couleurs" value={result.breakdown.colorMom} weight="×8%" hint="Moyenne/écart-type/asymétrie par canal RGB — statistiques d'ordre supérieur : teinte, saturation, EQ" />
               <MetricBar label="Structure (pHash)" value={result.breakdown.phash} weight="×8%" hint="Empreinte DCT perceptuelle — standard de toutes les plateformes : crop, zoom, rotation, flip" />
               <MetricBar label="Contours (dHash)" value={result.breakdown.dhash} weight="×8%" hint="Empreinte gradient de bords — utilisée par les grandes plateformes : netteté, zoom, décalage pixels" />
-              <MetricBar label="Gradients (magnitude)" value={result.breakdown.gradient} weight="×7%" hint="Distribution des magnitudes de gradient — grain, bruit, unsharp, tout changement de netteté" />
+              <MetricBar label="Gradients (magnitude)" value={result.breakdown.gradient} weight="×6%" hint="Distribution des magnitudes de gradient — grain, bruit, unsharp, tout changement de netteté" />
               <MetricBar label="Profils projection" value={result.breakdown.proj} weight="×6%" hint="Sommes lignes + colonnes — très sensible au décalage spatial, zoom offset, vignette" />
+              <MetricBar label="Métadonnées" value={result.breakdown.metadata} weight="×10%" hint="Format, taille fichier, richesse EXIF, profil ICC, densité DPI, chroma, progressif — signature technique du fichier" />
             </div>
           )}
 
@@ -280,7 +297,7 @@ export default function SimilarityClient({
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                 <div className="h-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.6)] animate-pulse w-full" />
               </div>
-              <p className="text-xs text-white/40 text-center">Analyse en cours — 11 algorithmes…</p>
+              <p className="text-xs text-white/40 text-center">Analyse en cours — 11 algorithmes + métadonnées…</p>
             </div>
           )}
 

@@ -372,6 +372,60 @@ async function flippedBuffer(buf: Buffer): Promise<Buffer> {
   return sharp(buf).flop().toBuffer();
 }
 
+// Metadata similarity — compares EXIF richness, file size, format, ICC, density, chroma.
+// A DuupFlow duplicate has minimal EXIF (~500B) vs a real photo (~10–20KB),
+// no ICC profile, and often different chroma subsampling → score typically 40–60%.
+async function metadataSimilarity(bufA: Buffer, bufB: Buffer): Promise<number> {
+  const [metaA, metaB] = await Promise.all([
+    sharp(bufA, { failOn: "none" }).metadata().catch(() => ({} as sharp.Metadata)),
+    sharp(bufB, { failOn: "none" }).metadata().catch(() => ({} as sharp.Metadata)),
+  ]);
+
+  let score = 100;
+
+  // Format mismatch (jpeg vs png vs webp) — 20pt
+  if (metaA.format && metaB.format && metaA.format !== metaB.format) score -= 20;
+
+  // File size ratio — up to 20pt (different quality/compression = different size)
+  if (bufA.length > 0 && bufB.length > 0) {
+    const ratio = Math.min(bufA.length, bufB.length) / Math.max(bufA.length, bufB.length);
+    score -= Math.round((1 - ratio) * 20);
+  }
+
+  // EXIF richness — up to 30pt (original has rich camera EXIF, duplicate has minimal)
+  const exifA = metaA.exif?.length ?? 0;
+  const exifB = metaB.exif?.length ?? 0;
+  if (exifA > 0 || exifB > 0) {
+    const exifRatio = Math.min(exifA, exifB) / Math.max(exifA, exifB, 1);
+    score -= Math.round((1 - exifRatio) * 30);
+  }
+
+  // ICC color profile presence — 10pt (phone photos have ICC, DuupFlow output doesn't)
+  if (!!metaA.icc !== !!metaB.icc) score -= 10;
+
+  // Density/DPI — up to 10pt
+  const densA = metaA.density ?? 72;
+  const densB = metaB.density ?? 72;
+  const densRatio = Math.min(densA, densB) / Math.max(densA, densB);
+  score -= Math.round((1 - densRatio) * 10);
+
+  // Progressive encoding — 5pt
+  if (metaA.isProgressive !== metaB.isProgressive) score -= 5;
+
+  // Chroma subsampling — 5pt (4:2:0 original vs 4:4:4 duplicate)
+  if (metaA.chromaSubsampling && metaB.chromaSubsampling &&
+      metaA.chromaSubsampling !== metaB.chromaSubsampling) score -= 5;
+
+  // Dimensions — up to 10pt (if crop/resize produces different output dimensions)
+  if (metaA.width && metaB.width && metaA.height && metaB.height) {
+    const wR = Math.min(metaA.width, metaB.width) / Math.max(metaA.width, metaB.width);
+    const hR = Math.min(metaA.height, metaB.height) / Math.max(metaA.height, metaB.height);
+    score -= Math.round((1 - (wR + hR) / 2) * 10);
+  }
+
+  return Math.max(0, Math.min(100, score));
+}
+
 export type PairScore = {
   score: number;
   breakdown: {
@@ -389,6 +443,7 @@ export type PairScore = {
     proj: number;      // projection profiles row+col (spatial shift)
     texture: number;   // local variance (grain/noise/contrast)
     ahash: number;     // global luminosity
+    metadata: number;  // file metadata: EXIF richness, ICC, size, format, DPI, chroma
     mirrored: boolean;
   };
 };
@@ -456,50 +511,62 @@ async function scorePair(bufA: Buffer, bufB: Buffer): Promise<PairScore> {
   const normalStructScore = ph * 0.6 + dh * 0.3 + ah * 0.1;
   const mirrored = mirrorStructScore > normalStructScore + 10 && mirrorStructScore > 60;
 
-  // Weights (sum = 1.0) — 11 algorithms.
+  // Weights (sum = 0.90 — 10% reserved for metadata computed at file level)
   // Highest weights → most commonly used by social media detection systems
   // and most sensitive to the specific transforms DuupFlow applies.
   //
-  // SSIM         14% — structural+luminance+contrast (industry standard, YouTube/Netflix)
-  // MSE          11% — raw pixel differences (96×96, catches every pixel change)
-  // spatialGrid  10% — spatial content map (zoom, crop offset, vignette, lens)
-  // chroma       10% — Cb/Cr distribution (hue, saturation, chroma noise — very sensitive)
-  // color         9% — RGB histogram (brightness, saturation changes)
-  // luma          9% — luminance histogram 64-bin (brightness/contrast/gamma)
-  // colorMoments  8% — mean/std/skew per channel (higher-order color stats)
-  // pHash         8% — perceptual hash DCT (structural fingerprint, all platforms use it)
-  // dHash         8% — gradient hash (edge structure, used by major platforms)
-  // gradient      7% — gradient magnitude (sharpness, grain, noise intensity)
+  // SSIM         13% — structural+luminance+contrast (industry standard, YouTube/Netflix)
+  // MSE          10% — raw pixel differences (96×96, catches every pixel change)
+  // spatialGrid   9% — spatial content map (zoom, crop offset, vignette, lens)
+  // chroma        9% — Cb/Cr distribution (hue, saturation, chroma noise — very sensitive)
+  // color         8% — RGB histogram (brightness, saturation changes)
+  // luma          8% — luminance histogram 64-bin (brightness/contrast/gamma)
+  // colorMoments  7% — mean/std/skew per channel (higher-order color stats)
+  // pHash         7% — perceptual hash DCT (structural fingerprint, all platforms use it)
+  // dHash         7% — gradient hash (edge structure, used by major platforms)
+  // gradient      6% — gradient magnitude (sharpness, grain, noise intensity)
   // projection    6% — row+col luminance profiles (spatial shift, any positional change)
+  // metadata     10% — file metadata (EXIF, ICC, format, size, DPI) — added at file level
   const score =
-    ssim * 0.14 + mse * 0.11 + spatial * 0.10 + chroma * 0.10 +
-    ch * 0.09 + luma * 0.09 + colorMom * 0.08 +
-    ph * 0.08 + dh * 0.08 +
-    gradient * 0.07 + proj * 0.06;
+    ssim * 0.13 + mse * 0.10 + spatial * 0.09 + chroma * 0.09 +
+    ch * 0.08 + luma * 0.08 + colorMom * 0.07 +
+    ph * 0.07 + dh * 0.07 +
+    gradient * 0.06 + proj * 0.06;
 
   return {
     score,
-    breakdown: { ssim, mse, spatial, chroma, color: ch, luma, colorMom, phash: ph, dhash: dh, edgeOr, gradient, proj, texture: tx, ahash: ah, mirrored },
+    breakdown: { ssim, mse, spatial, chroma, color: ch, luma, colorMom, phash: ph, dhash: dh, edgeOr, gradient, proj, texture: tx, ahash: ah, metadata: 100, mirrored },
   };
 }
 
 export async function compareFiles(
   framesA: string[],
   framesB: string[],
+  rawA?: string,  // base64 of first ~128KB of file A (for metadata analysis)
+  rawB?: string,  // base64 of first ~128KB of file B
 ): Promise<{ score: number; breakdown: PairScore["breakdown"] } | { error: string }> {
   try {
     if (!framesA.length || !framesB.length) return { error: "Aucun frame reçu" };
 
     const count = Math.min(framesA.length, framesB.length);
-    const pairs = await Promise.all(
-      Array.from({ length: count }, (_, i) =>
-        scorePair(Buffer.from(framesA[i], "base64"), Buffer.from(framesB[i], "base64"))
-      )
-    );
 
-    const avgScore = pairs.reduce((s, p) => s + p.score, 0) / pairs.length;
+    // Frame-level analysis (visual similarity) + metadata (file-level)
+    const [pairs, metadata] = await Promise.all([
+      Promise.all(
+        Array.from({ length: count }, (_, i) =>
+          scorePair(Buffer.from(framesA[i], "base64"), Buffer.from(framesB[i], "base64"))
+        )
+      ),
+      rawA && rawB
+        ? metadataSimilarity(Buffer.from(rawA, "base64"), Buffer.from(rawB, "base64"))
+        : Promise.resolve(100), // no raw data → assume identical metadata (neutral)
+    ]);
 
-    const avg = (key: keyof Omit<PairScore["breakdown"], "mirrored">) =>
+    // Frame-level score (90% of final) + metadata score (10% of final)
+    const avgFrameScore = pairs.reduce((s, p) => s + p.score, 0) / pairs.length;
+    const finalScore = avgFrameScore + metadata * 0.10;
+
+    const avg = (key: keyof Omit<PairScore["breakdown"], "mirrored" | "metadata">) =>
       Math.round(pairs.reduce((s, p) => s + (p.breakdown[key] as number), 0) / pairs.length);
 
     const breakdown: PairScore["breakdown"] = {
@@ -517,10 +584,11 @@ export async function compareFiles(
       proj:     avg("proj"),
       texture:  avg("texture"),
       ahash:    avg("ahash"),
+      metadata: Math.round(metadata),
       mirrored: pairs.some(p => p.breakdown.mirrored),
     };
 
-    return { score: +avgScore.toFixed(2), breakdown };
+    return { score: +finalScore.toFixed(2), breakdown };
   } catch (e: any) {
     return { error: e?.message || "Erreur comparaison" };
   }
