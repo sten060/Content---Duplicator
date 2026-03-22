@@ -452,9 +452,9 @@ async function processImage(
   const newH  = Math.max(16, Math.round(baseH * scale));
 
   // 3) Variations visuelles (VISUELS)
-  const brightness = opts.visuals ? (0.97 + Math.random() * 0.06) : 1.0;
-  const saturation = opts.visuals ? (0.97 + Math.random() * 0.06) : 1.0;
-  const gamma      = opts.visuals ? (1.00 + Math.random() * 0.03) : 1.0;
+  const brightness = opts.visuals ? (0.993 + Math.random() * 0.014) : 1.0;
+  const saturation = opts.visuals ? (0.993 + Math.random() * 0.014) : 1.0;
+  const gamma      = opts.visuals ? (1.000 + Math.random() * 0.012) : 1.0;
 
   // 4) Pipeline image — impose EXACTEMENT newW x newH (évite tout mismatch)
   let pipeline = sharp(buffer, { failOn: "none" })
@@ -467,7 +467,7 @@ async function processImage(
   if (opts.visuals) {
     const seedW = 32, seedH = 32;
     const seed = Buffer.allocUnsafe(seedW * seedH);
-    for (let k = 0; k < seed.length; k++) seed[k] = Math.floor(Math.random() * 4);
+    for (let k = 0; k < seed.length; k++) seed[k] = Math.floor(Math.random() * 2);
 
     const noisePng = await sharp(seed, { raw: { width: seedW, height: seedH, channels: 1 } })
       .resize(newW, newH, { fit: "fill" })
@@ -478,7 +478,7 @@ async function processImage(
  const overlay: OverlayOptions & { opacity?: number } = {
   input: noisePng,
   blend: "overlay",
-  opacity: 0.05,
+  opacity: 0.025,
 };
 
 pipeline = pipeline.composite([overlay]).removeAlpha();
