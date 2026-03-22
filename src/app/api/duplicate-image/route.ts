@@ -59,12 +59,16 @@ async function processImage(
       sharp.kernel.lanczos3,
     ] as const;
     const kernelA = kernels[Math.floor(Math.random() * kernels.length)];
+    const kernelB = kernels[Math.floor(Math.random() * kernels.length)];
 
-    const mMax = Math.floor(Math.min(baseW, baseH) * 0.07); // 7% per side (was 2%) — bigger crop offset
-    const L = Math.floor(Math.random() * (mMax + 1));
-    const T = Math.floor(Math.random() * (mMax + 1));
-    const R = Math.floor(Math.random() * (mMax + 1));
-    const B = Math.floor(Math.random() * (mMax + 1));
+    // 14% max per side (was 7%) — assez grand pour fliper bits pHash/dHash/spatial
+    // minimum garanti de 3% par côté pour être sûr que ça impacte les métriques
+    const mMin = Math.max(1, Math.floor(Math.min(baseW, baseH) * 0.03));
+    const mMax = Math.floor(Math.min(baseW, baseH) * 0.14);
+    const L = mMin + Math.floor(Math.random() * (mMax - mMin + 1));
+    const T = mMin + Math.floor(Math.random() * (mMax - mMin + 1));
+    const R = mMin + Math.floor(Math.random() * (mMax - mMin + 1));
+    const B = mMin + Math.floor(Math.random() * (mMax - mMin + 1));
     const rawCropW = clampDim(baseW - (L + R));
     const rawCropH = clampDim(baseH - (T + B));
     const safeLeft   = Math.max(0, Math.min(L, baseW - 16));
@@ -75,7 +79,7 @@ async function processImage(
     img = img
       .resize(baseW, baseH, { fit: "fill", kernel: kernelA })
       .extract({ left: safeLeft, top: safeTop, width: safeWidth, height: safeHeight })
-      .resize(baseW, baseH, { fit: "fill", kernel: sharp.kernel.cubic });
+      .resize(baseW, baseH, { fit: "fill", kernel: kernelB });
   }
 
   if (flags.visuals) {
@@ -149,10 +153,12 @@ async function processImage(
   }
 
   if (flags.fundamentals) {
-    const tintHue = Math.floor((Math.random() - 0.5) * 6); // ±3°
-    if (tintHue !== 0) img = img.modulate({ hue: tintHue });
-    const lightBlur = 0.3 + Math.random() * 0.4; // 0.3–0.7
-    img = img.blur(lightBlur);
+    // Teinte asymétrique ±6° → Chroma Cb/Cr
+    const tintHue = Math.floor(3 + Math.random() * 3) * (Math.random() < 0.5 ? 1 : -1); // ±3–6°
+    img = img.modulate({ hue: tintHue });
+    // Blur plus fort → Gradients magnitude + SSIM + dHash contours
+    const blur = 0.8 + Math.random() * 1.0; // 0.8–1.8 (était 0.3–0.7)
+    img = img.blur(blur);
   }
 
   const lower = ext.toLowerCase();
@@ -175,16 +181,18 @@ async function processImage(
   };
 
   if (lower === ".webp") {
-    const quality = flags.fundamentals ? (76 + Math.floor(Math.random() * 12)) : 88; // 76–88 (was 88–95)
+    const quality = flags.fundamentals ? (65 + Math.floor(Math.random() * 15)) : 88; // 65–80
     return {
       data: await img.withMetadata(exifMeta).webp({ quality, smartSubsample: true }).toBuffer(),
       outExt: ".webp",
     };
   }
 
-  const chroma = flags.fundamentals ? (Math.random() < 0.5 ? "4:2:0" : "4:4:4") : "4:4:4";
+  // 4:2:0 always quand fundamentals → affecte Chroma Cb/Cr significativement
+  const chroma = flags.fundamentals ? "4:2:0" : "4:4:4";
   const progressive = flags.fundamentals ? Math.random() < 0.5 : false;
-  const quality = flags.fundamentals ? (76 + Math.floor(Math.random() * 12)) : 88; // 76–88 (was 88–95)
+  // Qualité 65–80 quand fundamentals → artifacts JPEG → Gradients + MSE
+  const quality = flags.fundamentals ? (65 + Math.floor(Math.random() * 15)) : 88; // 65–80
 
   if (lower === ".png") {
     img = img.flatten({ background: { r: 255, g: 255, b: 255 } });
