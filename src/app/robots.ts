@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/dashboard/", "/admin/", "/api/", "/onboarding/"],
       },
     ],
-    sitemap: "https://duupflow.com/sitemap.xml",
+    sitemap: "https://www.duupflow.com/sitemap.xml",
   };
 }

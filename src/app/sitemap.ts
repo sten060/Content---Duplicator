@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 
-const BASE_URL = "https://duupflow.com";
+const BASE_URL = "https://www.duupflow.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
