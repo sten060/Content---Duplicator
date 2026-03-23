@@ -16,6 +16,7 @@ export default function AddSimpleLinkForm() {
   const [email, setEmail] = useState("");
   const [commission, setCommission] = useState("20");
   const [discount, setDiscount] = useState("20");
+  const [noDiscount, setNoDiscount] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +39,7 @@ export default function AddSimpleLinkForm() {
         name: name.trim(),
         email: email.trim() || undefined,
         commission_pct: Number(commission),
-        discount_pct: Number(discount),
+        discount_pct: noDiscount ? 0 : Number(discount),
       }),
     });
 
@@ -56,6 +57,7 @@ export default function AddSimpleLinkForm() {
     setEmail("");
     setCommission("20");
     setDiscount("20");
+    setNoDiscount(false);
     router.refresh();
 
     setTimeout(() => {
@@ -157,26 +159,51 @@ export default function AddSimpleLinkForm() {
           />
         </div>
 
-        {/* Réduction offerte aux affiliés */}
+        {/* Réduction offerte aux filleuls */}
         <div>
-          <label className="text-xs text-white/40 mb-1 block">
-            Réduction pour les filleuls — <span className="text-emerald-400">{discount}%</span>
-          </label>
-          <div className="flex items-center gap-3">
-            <input
-              type="range"
-              min="5"
-              max="50"
-              step="5"
-              value={discount}
-              onChange={(e) => setDiscount(e.target.value)}
-              className="flex-1 accent-emerald-500"
-            />
-            <span className="text-sm font-bold text-white w-10 text-right">{discount}%</span>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs text-white/40">
+              {noDiscount
+                ? "Réduction pour les filleuls — "
+                : <>Réduction pour les filleuls — <span className="text-emerald-400">{discount}%</span></>}
+            </label>
+            <button
+              type="button"
+              onClick={() => setNoDiscount((v) => !v)}
+              className="flex items-center gap-1.5 text-[10px] transition px-2 py-0.5 rounded-md"
+              style={{
+                background: noDiscount ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.05)",
+                border: noDiscount ? "1px solid rgba(239,68,68,0.30)" : "1px solid rgba(255,255,255,0.10)",
+                color: noDiscount ? "#F87171" : "rgba(255,255,255,0.35)",
+              }}
+            >
+              <span>{noDiscount ? "✕" : "—"}</span>
+              {noDiscount ? "Aucune réduction" : "Sans réduction"}
+            </button>
           </div>
-          <div className="flex justify-between text-[10px] text-white/20 mt-0.5">
-            <span>5%</span><span>50%</span>
-          </div>
+          {noDiscount ? (
+            <p className="text-[11px] text-red-400/70 italic mt-1">
+              Aucune réduction offerte aux filleuls via ce lien
+            </p>
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="5"
+                  max="50"
+                  step="5"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  className="flex-1 accent-emerald-500"
+                />
+                <span className="text-sm font-bold text-white w-10 text-right">{discount}%</span>
+              </div>
+              <div className="flex justify-between text-[10px] text-white/20 mt-0.5">
+                <span>5%</span><span>50%</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Commission partenaire */}
@@ -211,13 +238,21 @@ export default function AddSimpleLinkForm() {
           <p className="text-white/50">
             Lien partenaire : <span className="text-emerald-300 font-mono">duupflow.com/checkout?ref={code}</span>
           </p>
-          <p className="text-white/50">
-            Réduction filleuls : <span className="text-white/70">-{discount}% sur le 1er mois (auto)</span>
-          </p>
+          {noDiscount ? (
+            <p className="text-white/50">
+              Réduction filleuls : <span className="text-red-400/70">Aucune</span>
+            </p>
+          ) : (
+            <p className="text-white/50">
+              Réduction filleuls : <span className="text-white/70">-{discount}% sur le 1er mois (auto)</span>
+            </p>
+          )}
           <p className="text-white/50">
             Commission partenaire : <span className="text-white/70">{commission}% sur chaque renouvellement</span>
           </p>
-          <p className="text-emerald-400/60 text-[10px] mt-1">Aucun code à saisir — la réduction s'applique automatiquement via le lien</p>
+          {!noDiscount && (
+            <p className="text-emerald-400/60 text-[10px] mt-1">Aucun code à saisir — la réduction s'applique automatiquement via le lien</p>
+          )}
         </div>
       )}
 
