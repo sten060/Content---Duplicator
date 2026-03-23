@@ -51,21 +51,13 @@ export default async function AffiliateDashboard() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-  const [{ data: payments }, { data: payouts }] = await Promise.all([
-    admin
-      .from("affiliate_payments")
-      .select("amount_cents, commission_cents, plan, billing_reason, paid_at")
-      .eq("affiliate_code", affiliate.code)
-      .order("paid_at", { ascending: false }),
-    admin
-      .from("affiliate_payouts")
-      .select("id, amount_cents, note, paid_at")
-      .eq("affiliate_code", affiliate.code)
-      .order("paid_at", { ascending: false }),
-  ]);
+  const { data: payments } = await admin
+    .from("affiliate_payments")
+    .select("amount_cents, commission_cents, plan, billing_reason, paid_at")
+    .eq("affiliate_code", affiliate.code)
+    .order("paid_at", { ascending: false });
 
   const allPayments = payments ?? [];
-  const allPayouts = payouts ?? [];
 
   // Affiliés payants = lignes distinctes dans affiliate_payments
   const uniquePayingClients = allPayments.filter(
@@ -80,11 +72,7 @@ export default async function AffiliateDashboard() {
   // Commission totale gagnée
   const totalEarnedCents = allPayments.reduce((s, p) => s + p.commission_cents, 0);
 
-  // Total versé
-  const totalPayedOutCents = allPayouts.reduce((s, p) => s + p.amount_cents, 0);
 
-  // Solde en attente
-  const balanceDueCents = totalEarnedCents - totalPayedOutCents;
 
   const appUrl =
     (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.duupflow.com").replace(/\/$/, "");
@@ -165,12 +153,6 @@ export default async function AffiliateDashboard() {
             sub={`${allPayments.length} transaction${allPayments.length > 1 ? "s" : ""}`}
             color="#38BDF8"
           />
-          <StatCard
-            label="Solde en attente"
-            value={`${(balanceDueCents / 100).toFixed(2)}€`}
-            sub="à recevoir prochainement"
-            color={balanceDueCents > 0 ? "#F59E0B" : "#10B981"}
-          />
         </div>
 
         {/* Payments history (Stripe) */}
@@ -242,75 +224,7 @@ export default async function AffiliateDashboard() {
           </div>
         )}
 
-        {/* Payouts received */}
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{ border: "1px solid rgba(16,185,129,0.15)" }}
-        >
-          <div
-            className="px-6 py-4"
-            style={{ background: "rgba(16,185,129,0.05)", borderBottom: "1px solid rgba(16,185,129,0.10)" }}
-          >
-            <p className="text-xs font-semibold text-white/40 uppercase tracking-wider">
-              Versements reçus
-            </p>
-          </div>
-          <div style={{ background: "rgba(10,14,40,0.55)" }}>
-            {allPayouts.length === 0 ? (
-              <p className="text-sm text-white/25 text-center py-8">
-                Aucun versement encore effectué — le premier arrive en fin de mois.
-              </p>
-            ) : (
-              <>
-                {allPayouts.map((p, i) => {
-                  const date = new Date(p.paid_at).toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  });
-                  return (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between px-6 py-3"
-                      style={{
-                        borderBottom: i < allPayouts.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="h-6 w-6 rounded-full flex items-center justify-center shrink-0"
-                          style={{ background: "rgba(16,185,129,0.12)" }}
-                        >
-                          <svg className="h-3 w-3 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-xs text-white/60">{date}</p>
-                          {p.note && <p className="text-[10px] text-white/30 mt-0.5">{p.note}</p>}
-                        </div>
-                      </div>
-                      <p className="text-sm font-bold tabular-nums" style={{ color: "#10B981" }}>
-                        +{(p.amount_cents / 100).toFixed(2)}€
-                      </p>
-                    </div>
-                  );
-                })}
-                <div
-                  className="flex items-center justify-between px-6 py-3"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(16,185,129,0.03)" }}
-                >
-                  <p className="text-xs font-semibold text-white/40">Total reçu</p>
-                  <p className="text-sm font-bold tabular-nums" style={{ color: "#10B981" }}>
-                    {(totalPayedOutCents / 100).toFixed(2)}€
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        <p className="text-xs text-white/20 text-center">
+<p className="text-xs text-white/20 text-center">
           La commission est versée manuellement en fin de mois par virement.
           Pour toute question : <span className="text-white/35">hello@duupflow.com</span>
         </p>
