@@ -33,9 +33,23 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Redirige vers /login si non authentifié sur les routes protégées
-  if (!user && (pathname.startsWith("/dashboard") || pathname.startsWith("/affiliate") || pathname.startsWith("/admin"))) {
+  if (!user && (pathname.startsWith("/dashboard") || pathname.startsWith("/admin"))) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Redirige vers /affiliate-login si non authentifié sur le dashboard affilié
+  if (!user && pathname.startsWith("/affiliate/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/affiliate-login";
+    return NextResponse.redirect(url);
+  }
+
+  // Redirige si déjà connecté et tente d'accéder à /affiliate-login
+  if (user && pathname === "/affiliate-login") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/affiliate/dashboard";
     return NextResponse.redirect(url);
   }
 
@@ -76,5 +90,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/affiliate/:path*", "/admin/:path*", "/login", "/checkout/:path*"],
+  matcher: ["/dashboard/:path*", "/affiliate/:path*", "/admin/:path*", "/login", "/affiliate-login", "/checkout/:path*"],
 };

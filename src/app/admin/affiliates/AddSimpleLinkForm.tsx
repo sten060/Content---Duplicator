@@ -51,7 +51,11 @@ export default function AddSimpleLinkForm() {
       return;
     }
 
-    setSuccess(`✓ Partenaire ${data.code} créé — lien d'affiliation actif`);
+    setSuccess(
+      data.invite_sent
+        ? `✓ Partenaire ${data.code} créé — invitation envoyée par email`
+        : `✓ Partenaire ${data.code} créé — lien d'affiliation actif`
+    );
     setCode("");
     setName("");
     setEmail("");

@@ -36,17 +36,34 @@ export default async function AffiliateDashboard() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect("/affiliate-login");
 
   const admin = createAdminClient();
 
-  const { data: affiliate } = await admin
+  // Lookup par user_id, ou par email en fallback (partenaire créé avant la liaison)
+  let { data: affiliate } = await admin
     .from("affiliates")
     .select("*")
     .eq("user_id", user.id)
     .single();
 
-  if (!affiliate) redirect("/dashboard");
+  if (!affiliate && user.email) {
+    const { data: byEmail } = await admin
+      .from("affiliates")
+      .select("*")
+      .eq("email", user.email.toLowerCase())
+      .single();
+
+    if (byEmail) {
+      affiliate = byEmail;
+      // Stocker le user_id pour les prochaines connexions
+      if (!byEmail.user_id) {
+        await admin.from("affiliates").update({ user_id: user.id }).eq("id", byEmail.id);
+      }
+    }
+  }
+
+  if (!affiliate) redirect("/affiliate-login");
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();

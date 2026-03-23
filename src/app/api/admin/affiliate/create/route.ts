@@ -67,11 +67,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // ── 3. Insérer l'affilié en DB ─────────────────────────────────────────────
+  // ── 3. Inviter le partenaire par email (crée son compte affiliation) ────────
+  let affiliateUserId: string | null = null;
+  const cleanEmail = email?.trim() ?? null;
+
+  if (cleanEmail) {
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.duupflow.com").replace(/\/$/, "");
+    const { data: inviteData } = await admin.auth.admin.inviteUserByEmail(cleanEmail, {
+      redirectTo: `${appUrl}/auth/callback?next=/affiliate/dashboard`,
+    });
+    affiliateUserId = inviteData?.user?.id ?? null;
+  }
+
+  // ── 4. Insérer l'affilié en DB ─────────────────────────────────────────────
   const { error: dbError } = await admin.from("affiliates").insert({
     code: upperCode,
     name: name.trim(),
-    email: email?.trim() ?? null,
+    email: cleanEmail,
+    user_id: affiliateUserId,
     commission_pct: commissionPct,
     stripe_promotion_code_id: stripePromoCodeId,
     discount_pct: null, // null = code promo visible (pas lien seul)
@@ -86,5 +99,6 @@ export async function POST(req: NextRequest) {
     code: upperCode,
     stripe_promotion_code_id: stripePromoCodeId,
     stripe_coupon_id: coupon.id,
+    invite_sent: !!cleanEmail,
   });
 }
