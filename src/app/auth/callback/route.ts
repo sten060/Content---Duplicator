@@ -41,6 +41,26 @@ export async function GET(request: Request) {
           // No profile yet → check for pending invitation (by URL token or by email)
           const adminClient = createAdminClient();
 
+          // Vérifie d'abord si l'utilisateur est un affilié → pas d'onboarding
+          if (user.email) {
+            const { data: affiliate } = await adminClient
+              .from("affiliates")
+              .select("id, user_id")
+              .eq("email", user.email.toLowerCase())
+              .single();
+
+            if (affiliate) {
+              // Stocker le user_id si pas encore fait
+              if (!affiliate.user_id) {
+                await adminClient
+                  .from("affiliates")
+                  .update({ user_id: user.id })
+                  .eq("id", affiliate.id);
+              }
+              return NextResponse.redirect(`${origin}/affiliate/dashboard`);
+            }
+          }
+
           // Resolve invite token: from URL first, otherwise look up by email
           let resolvedToken = inviteToken ?? null;
           if (!resolvedToken && user.email) {

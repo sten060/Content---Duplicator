@@ -50,7 +50,11 @@ export default function AddAffiliateForm() {
       return;
     }
 
-    setSuccess(`✓ Partenaire ${data.code} créé — code promo Stripe généré`);
+    setSuccess(
+      data.invite_sent
+        ? `✓ Partenaire ${data.code} créé — invitation envoyée par email`
+        : `✓ Partenaire ${data.code} créé — code promo Stripe généré`
+    );
     setCode("");
     setName("");
     setEmail("");
