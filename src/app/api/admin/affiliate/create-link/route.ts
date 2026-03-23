@@ -63,11 +63,10 @@ export async function POST(req: NextRequest) {
       stripePromoCodeId = promoCode.id;
     } catch (err: any) {
       if (err?.code === "resource_already_exists") {
-        const list = await stripe.promotionCodes.list({ code: `REF${upperCode}`, limit: 1 });
-        if (!list.data[0]) {
-          return NextResponse.json({ error: `Code Stripe 'REF${upperCode}' déjà utilisé mais introuvable` }, { status: 409 });
-        }
-        stripePromoCodeId = list.data[0].id;
+        return NextResponse.json(
+          { error: `Le code interne 'REF${upperCode}' existe déjà dans Stripe. Utilisez un code de suivi différent.` },
+          { status: 409 }
+        );
       } else {
         return NextResponse.json({ error: err?.message ?? "Erreur Stripe" }, { status: 500 });
       }
