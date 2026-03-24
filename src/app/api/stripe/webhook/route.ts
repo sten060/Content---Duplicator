@@ -93,14 +93,17 @@ function resolvePlanFromPriceId(priceId: string, metadataPlan?: string): "solo" 
 }
 
 export async function POST(request: NextRequest) {
+  console.log("[webhook] POST received");
   const rawBody = await request.text();
   const signature = request.headers.get("stripe-signature");
 
-  if (!signature || !process.env.STRIPE_WEBHOOK_SECRET) {
-    return NextResponse.json(
-      { error: "Missing signature or webhook secret" },
-      { status: 400 }
-    );
+  if (!signature) {
+    console.error("[webhook] Missing stripe-signature header");
+    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error("[webhook] STRIPE_WEBHOOK_SECRET not set");
+    return NextResponse.json({ error: "Missing webhook secret" }, { status: 500 });
   }
 
   let event: Stripe.Event;
@@ -110,9 +113,12 @@ export async function POST(request: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET
     );
-  } catch {
+  } catch (err) {
+    console.error("[webhook] Invalid signature:", err);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
+
+  console.log("[webhook] event:", event.type, event.id);
 
   switch (event.type) {
     // Paiement initial → accès débloqué + plan déterminé par le price ID
