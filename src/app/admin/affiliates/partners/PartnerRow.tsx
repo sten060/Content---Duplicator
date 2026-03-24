@@ -15,7 +15,6 @@ type Props = {
     email: string | null;
     commission_pct: number;
     discount_pct: number | null;
-    stripe_promotion_code_id: string | null;
     user_id: string | null;
     payment_info: PaymentInfo;
   };
@@ -137,25 +136,11 @@ export default function PartnerRow({
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(99,102,241,0.10)", border: "1px solid rgba(99,102,241,0.20)", color: "#818CF8" }}>
               {affiliate.commission_pct}% commission
             </span>
-            {affiliate.discount_pct != null ? (
+            {affiliate.discount_pct != null && (
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.20)", color: "#34D399" }}>
                 Lien -{affiliate.discount_pct}% auto
               </span>
-            ) : (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full font-mono" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.20)", color: "#F59E0B" }}>
-                Code promo · {affiliate.code}
-              </span>
             )}
-            <span
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-              style={
-                affiliate.stripe_promotion_code_id
-                  ? { background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.20)", color: "#10B981" }
-                  : { background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", color: "rgba(248,113,113,0.60)" }
-              }
-            >
-              {affiliate.stripe_promotion_code_id ? "Stripe ✓" : "Stripe manquant"}
-            </span>
             <span
               className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
               style={
@@ -205,7 +190,6 @@ export default function PartnerRow({
               name={affiliate.name}
               commission_pct={affiliate.commission_pct}
               discount_pct={affiliate.discount_pct}
-              stripe_promotion_code_id={affiliate.stripe_promotion_code_id}
             />
             <Link
               href={`/admin/affiliates/accounting/${affiliate.code.toLowerCase()}`}

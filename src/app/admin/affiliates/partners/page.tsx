@@ -81,7 +81,6 @@ export default async function AffiliatesPartners() {
         email: a.email ?? null,
         commission_pct: a.commission_pct,
         discount_pct: a.discount_pct ?? null,
-        stripe_promotion_code_id: a.stripe_promotion_code_id ?? null,
         user_id: a.user_id ?? null,
         payment_info: a.payment_info ?? null,
       },
