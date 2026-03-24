@@ -57,11 +57,25 @@ export async function POST(req: NextRequest) {
     stripePromoCodeId = promoCode.id;
   } catch (err: any) {
     if (err?.code === "resource_already_exists") {
-      // Ne pas réutiliser un ancien code qui pourrait avoir un coupon différent (-10€ fixe, etc.)
-      return NextResponse.json(
-        { error: `Le code promotionnel '${upperCode}' existe déjà dans Stripe. Utilisez un code différent (ex : ${upperCode}2).` },
-        { status: 409 }
-      );
+      // Le promo code existe encore dans Stripe (partenaire supprimé de la DB mais pas de Stripe).
+      // On désactive l'ancien puis on en crée un nouveau avec le nouveau coupon.
+      try {
+        const existing = await stripe.promotionCodes.list({ code: upperCode, limit: 5 });
+        for (const pc of existing.data) {
+          if (pc.active) {
+            await stripe.promotionCodes.update(pc.id, { active: false });
+          }
+        }
+        const promoCode = await (stripe.promotionCodes.create as any)({
+          coupon: coupon.id,
+          code: upperCode,
+          restrictions: { first_time_transaction: true },
+          metadata: { affiliate_code: upperCode },
+        });
+        stripePromoCodeId = promoCode.id;
+      } catch (retryErr: any) {
+        return NextResponse.json({ error: retryErr?.message ?? "Erreur Stripe" }, { status: 500 });
+      }
     } else {
       return NextResponse.json({ error: err?.message ?? "Erreur Stripe" }, { status: 500 });
     }
