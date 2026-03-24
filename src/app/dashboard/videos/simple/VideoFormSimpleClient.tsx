@@ -274,29 +274,41 @@ export default function VideoFormSimpleClient() {
             } catch (err: any) {
               clearTimeout(signTimeout);
               if (err?.name === "AbortError") throw new Error("[CLT-007] Serveur injoignable — réessayez dans quelques secondes.");
-              throw err;
+              // Network error reaching sign-upload → skip Supabase, use direct upload
+              useDirect = true;
             }
             clearTimeout(signTimeout);
 
-            if (signRes.ok) {
-              const { token, path: storagePath } = await signRes.json();
-              const uploadRes = await supabase.storage
-                .from("video-uploads")
-                .uploadToSignedUrl(storagePath, token, file);
+            if (!useDirect && signRes!.ok) {
+              const { token, path: storagePath } = await signRes!.json();
+              let supabaseErrMsg = "";
+              try {
+                const uploadRes = await supabase.storage
+                  .from("video-uploads")
+                  .uploadToSignedUrl(storagePath, token, file);
 
-              if (!uploadRes.error) {
-                storagePaths.push(storagePath);
-                setProgress(Math.round(((i + 1) / uploadedFiles.length) * 30));
-                continue; // success — next file
+                if (!uploadRes.error) {
+                  storagePaths.push(storagePath);
+                  setProgress(Math.round(((i + 1) / uploadedFiles.length) * 30));
+                  continue; // success — next file
+                }
+                supabaseErrMsg = uploadRes.error.message ?? "";
+              } catch {
+                // uploadToSignedUrl threw (Supabase network error) → fall through to direct upload
+                useDirect = true;
               }
 
-              const msg = uploadRes.error.message ?? "";
-              if (!msg.toLowerCase().includes("maximum allowed size") && !msg.toLowerCase().includes("exceeded")) {
-                throw new Error(`Upload storage (${file.name}): ${msg}`);
+              if (!useDirect) {
+                if (!supabaseErrMsg.toLowerCase().includes("maximum allowed size") && !supabaseErrMsg.toLowerCase().includes("exceeded")) {
+                  throw new Error(`Upload storage (${file.name}): ${supabaseErrMsg}`);
+                }
+                // Supabase size limit hit → fall through to direct upload for this and remaining files
+                useDirect = true;
+                setProgressMsg(`Fichier trop volumineux pour Supabase — envoi direct (${file.name})…`);
               }
-              // Supabase size limit hit → fall through to direct upload for this and remaining files
+            } else if (!useDirect) {
+              // sign-upload returned non-ok → use direct upload
               useDirect = true;
-              setProgressMsg(`Fichier trop volumineux pour Supabase — envoi direct (${file.name})…`);
             }
           }
 
