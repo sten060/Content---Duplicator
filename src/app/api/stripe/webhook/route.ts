@@ -71,6 +71,10 @@ async function markUserChurned(userId: string) {
 }
 
 function getSubscriptionId(invoice: Stripe.Invoice): string | null {
+  // API 2024-06-20: subscription ID is directly on invoice.subscription
+  const directSub = (invoice as unknown as { subscription?: string | null }).subscription;
+  if (directSub) return directSub;
+  // Newer API (2025+): invoice.parent.subscription_details.subscription
   const parent = (
     invoice as unknown as {
       parent?: { subscription_details?: { subscription?: string } };
