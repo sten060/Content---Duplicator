@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import AddAffiliateForm from "./AddAffiliateForm";
 import AddSimpleLinkForm from "./AddSimpleLinkForm";
 import AdminAffiliatesNav from "./AdminAffiliatesNav";
 
@@ -69,7 +68,6 @@ export default async function AdminAffiliates() {
         {/* Add affiliate buttons */}
         <div className="flex flex-wrap gap-2 justify-end">
           <AddSimpleLinkForm />
-          <AddAffiliateForm />
         </div>
 
         {/* Global stats */}

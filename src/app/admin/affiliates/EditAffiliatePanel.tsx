@@ -9,7 +9,6 @@ type Props = {
   name: string;
   commission_pct: number;
   discount_pct: number | null;
-  stripe_promotion_code_id: string | null;
 };
 
 export default function EditAffiliatePanel({
@@ -17,7 +16,6 @@ export default function EditAffiliatePanel({
   name,
   commission_pct,
   discount_pct,
-  stripe_promotion_code_id,
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -29,13 +27,6 @@ export default function EditAffiliatePanel({
   const [savingParams, setSavingParams] = useState(false);
   const [paramsError, setParamsError] = useState("");
   const [paramsSuccess, setParamsSuccess] = useState("");
-
-  // Ajout code promo
-  const [promoCode, setPromoCode] = useState(code);
-  const [promoDiscount, setPromoDiscount] = useState("20");
-  const [savingPromo, setSavingPromo] = useState(false);
-  const [promoError, setPromoError] = useState("");
-  const [promoSuccess, setPromoSuccess] = useState("");
 
   async function getToken() {
     const supabase = createClient();
@@ -74,42 +65,6 @@ export default function EditAffiliatePanel({
     setParamsSuccess("Paramètres mis à jour ✓");
     router.refresh();
     setTimeout(() => setParamsSuccess(""), 3000);
-  }
-
-  async function addPromoCode(e: React.FormEvent) {
-    e.preventDefault();
-    setSavingPromo(true);
-    setPromoError("");
-    setPromoSuccess("");
-
-    const token = await getToken();
-    const res = await fetch("/api/admin/affiliate/add-promo-code", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        affiliate_code: code,
-        promo_code: promoCode.trim().toUpperCase(),
-        discount_pct: Number(promoDiscount),
-      }),
-    });
-
-    const data = await res.json();
-    setSavingPromo(false);
-
-    if (!res.ok) {
-      setPromoError(data.error ?? "Erreur inconnue");
-      return;
-    }
-
-    setPromoSuccess(`Code promo ${data.promo_code} créé sur Stripe ✓`);
-    router.refresh();
-    setTimeout(() => {
-      setPromoSuccess("");
-      setOpen(false);
-    }, 3000);
   }
 
   return (
@@ -228,96 +183,6 @@ export default function EditAffiliatePanel({
               {savingParams ? "Enregistrement…" : "Enregistrer les paramètres"}
             </button>
           </form>
-
-          {/* ── Ajouter un code promo ── */}
-          {/* Show when: no stripe code at all, OR affiliate is link-only (discount_pct != null, code is internal) */}
-          {(!stripe_promotion_code_id || discount_pct !== null) && (
-            <form
-              onSubmit={addPromoCode}
-              className="space-y-3 pt-4"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              <p className="text-[11px] font-semibold text-white/30 uppercase tracking-wider">
-                Ajouter un code promo pour sa communauté
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-white/40 mb-1 block">Code promo visible *</label>
-                  <input
-                    required
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value.toUpperCase().replace(/\s/g, ""))}
-                    className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:ring-1 focus:ring-indigo-500/50 transition"
-                    style={{
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                    }}
-                  />
-                  <p className="text-[10px] text-white/25 mt-1">Code que les filleuls saisiront</p>
-                </div>
-
-                <div>
-                  <label className="text-xs text-white/40 mb-1 block">
-                    Réduction du code — <span className="text-yellow-400">{promoDiscount}%</span>
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="range" min="5" max="50" step="5"
-                      value={promoDiscount}
-                      onChange={(e) => setPromoDiscount(e.target.value)}
-                      className="flex-1 accent-yellow-500"
-                    />
-                    <span className="text-sm font-bold text-white w-10 text-right">{promoDiscount}%</span>
-                  </div>
-                  <div className="flex justify-between text-[10px] text-white/20 mt-0.5">
-                    <span>5%</span><span>50%</span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="rounded-xl px-4 py-3 text-xs space-y-1"
-                style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)" }}
-              >
-                <p className="text-white/50">
-                  Code : <span className="text-yellow-300 font-mono font-bold">{promoCode || "…"}</span>
-                  {" "}→ <span className="text-white/70">-{promoDiscount}% sur le 1er mois</span>
-                </p>
-                <p className="text-white/35 text-[10px]">Un coupon + code promo Stripe seront créés automatiquement</p>
-              </div>
-
-              {promoError && (
-                <p className="text-xs text-red-400 bg-red-500/[0.08] border border-red-500/20 rounded-lg px-3 py-2">
-                  {promoError}
-                </p>
-              )}
-              {promoSuccess && (
-                <p className="text-xs text-emerald-400 bg-emerald-500/[0.08] border border-emerald-500/20 rounded-lg px-3 py-2">
-                  {promoSuccess}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={savingPromo}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white transition disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg,#B45309,#D97706)" }}
-              >
-                {savingPromo ? "Création Stripe…" : "Créer le code promo"}
-              </button>
-            </form>
-          )}
-
-          {stripe_promotion_code_id && discount_pct === null && (
-            <div
-              className="pt-4 text-xs text-white/30"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              <p>Code promo Stripe actif — <code className="text-indigo-400/60">{stripe_promotion_code_id}</code></p>
-              <p className="mt-0.5 text-white/20">Pour modifier le code promo, supprimez ce partenaire et recréez-le.</p>
-            </div>
-          )}
 
           <button
             type="button"

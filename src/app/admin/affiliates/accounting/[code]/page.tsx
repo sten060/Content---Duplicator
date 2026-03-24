@@ -74,7 +74,7 @@ export default async function AffiliateAccountingPage({
   const affiliate = affiliateRaw as {
     id: string; code: string; name: string; email: string | null;
     commission_pct: number; discount_pct: number | null;
-    stripe_promotion_code_id: string | null; user_id: string | null;
+    user_id: string | null;
     payment_info: { iban?: string; bic?: string; account_name?: string; paypal?: string } | null;
   };
 
