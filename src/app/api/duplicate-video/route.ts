@@ -58,7 +58,9 @@ export async function POST(req: Request) {
   }
 
   const fileNames    = formData.getAll("fileNames")    as string[];
+  const directUploadIds = formData.getAll("directUploadIds") as string[];
   const hasStoragePaths = storagePaths.length > 0;
+  const hasDirectUploads = directUploadIds.length > 0;
 
   const encoder = new TextEncoder();
   const tmpFilesToClean: string[] = [];
@@ -85,7 +87,25 @@ export async function POST(req: Request) {
         type PreDownloaded = { name: string; tmpPath: string };
         let preDownloadedFiles: PreDownloaded[] | undefined;
 
-        if (hasStoragePaths) {
+        if (hasDirectUploads) {
+          // Files were already uploaded directly to /tmp via /api/upload-direct
+          errorCode = "VID-003";
+          const VALID_PREFIX = path.join(os.tmpdir(), "duup_direct_");
+          preDownloadedFiles = directUploadIds.map((uploadId, i) => {
+            // Validate ID to prevent path traversal: must start with expected prefix after join
+            if (!/^duup_direct_[\w.-]+$/.test(uploadId)) {
+              throw new Error(`ID d'upload invalide : ${uploadId}`);
+            }
+            const tmpPath = path.join(os.tmpdir(), uploadId);
+            if (!tmpPath.startsWith(VALID_PREFIX)) {
+              throw new Error(`Chemin d'upload invalide`);
+            }
+            tmpFilesToClean.push(tmpPath);
+            const name = fileNames[i] ?? uploadId;
+            return { name, tmpPath };
+          });
+          send({ percent: 5, msg: "Fichiers reçus, traitement en cours…" });
+        } else if (hasStoragePaths) {
           errorCode = "VID-003";
           const supabase = createAdminClient();
           preDownloadedFiles = new Array(storagePaths.length);
@@ -132,7 +152,7 @@ export async function POST(req: Request) {
 
         errorCode = "VID-005";
         const hasVolume = !!process.env.OUT_BASE;
-        if (!hasVolume && hasStoragePaths && outputPaths.length > 0) {
+        if (!hasVolume && (hasStoragePaths || hasDirectUploads) && outputPaths.length > 0) {
           const supabase = createAdminClient();
           await supabase.storage.createBucket(OUTPUT_BUCKET, { public: false, fileSizeLimit: 524288000 }).catch(() => {});
           await supabase.storage.updateBucket(OUTPUT_BUCKET, { public: false, fileSizeLimit: 524288000 }).catch(() => {});

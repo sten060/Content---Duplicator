@@ -252,58 +252,79 @@ export default function VideoFormSimpleClient() {
         setProgress(0);
 
         const storagePaths: string[] = [];
+        const directUploadIds: string[] = [];
+        let useDirect = false; // flip to true if Supabase rejects a file for being too large
+
         for (let i = 0; i < uploadedFiles.length; i++) {
           const file = uploadedFiles[i];
           setProgressMsg(`Envoi vidéo ${i + 1}/${uploadedFiles.length} — ${file.name}…`);
 
-          // 30 s timeout for sign-upload — fails fast if server is down
-          const signCtrl = new AbortController();
-          const signTimeout = setTimeout(() => signCtrl.abort("timeout"), 30_000);
-          let signRes: Response;
-          try {
-            signRes = await fetch("/api/storage/sign-upload", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ fileName: file.name, userId }),
-              signal: signCtrl.signal,
-            });
-          } catch (err: any) {
-            clearTimeout(signTimeout);
-            if (err?.name === "AbortError") throw new Error("[CLT-007] Serveur injoignable — réessayez dans quelques secondes.");
-            throw err;
-          }
-          clearTimeout(signTimeout);
-          if (!signRes.ok) {
-            const j = await signRes.json().catch(() => ({}));
-            throw new Error(j?.error || `Erreur sign-upload HTTP ${signRes.status}`);
-          }
-          const { token, path: storagePath } = await signRes.json();
-
-          const uploadRes = await supabase.storage
-            .from("video-uploads")
-            .uploadToSignedUrl(storagePath, token, file);
-          if (uploadRes.error) {
-            const msg = uploadRes.error.message ?? "";
-            if (msg.toLowerCase().includes("maximum allowed size") || msg.toLowerCase().includes("exceeded")) {
-              throw new Error(`Fichier trop volumineux pour le stockage (max 5 Go) : ${file.name}`);
+          if (!useDirect) {
+            // Try Supabase storage path first
+            const signCtrl = new AbortController();
+            const signTimeout = setTimeout(() => signCtrl.abort("timeout"), 30_000);
+            let signRes: Response;
+            try {
+              signRes = await fetch("/api/storage/sign-upload", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fileName: file.name, userId }),
+                signal: signCtrl.signal,
+              });
+            } catch (err: any) {
+              clearTimeout(signTimeout);
+              if (err?.name === "AbortError") throw new Error("[CLT-007] Serveur injoignable — réessayez dans quelques secondes.");
+              throw err;
             }
-            throw new Error(`Upload storage (${file.name}): ${msg}`);
+            clearTimeout(signTimeout);
+
+            if (signRes.ok) {
+              const { token, path: storagePath } = await signRes.json();
+              const uploadRes = await supabase.storage
+                .from("video-uploads")
+                .uploadToSignedUrl(storagePath, token, file);
+
+              if (!uploadRes.error) {
+                storagePaths.push(storagePath);
+                setProgress(Math.round(((i + 1) / uploadedFiles.length) * 30));
+                continue; // success — next file
+              }
+
+              const msg = uploadRes.error.message ?? "";
+              if (!msg.toLowerCase().includes("maximum allowed size") && !msg.toLowerCase().includes("exceeded")) {
+                throw new Error(`Upload storage (${file.name}): ${msg}`);
+              }
+              // Supabase size limit hit → fall through to direct upload for this and remaining files
+              useDirect = true;
+              setProgressMsg(`Fichier trop volumineux pour Supabase — envoi direct (${file.name})…`);
+            }
           }
 
-          storagePaths.push(storagePath);
+          // Direct upload: stream the file body to the Railway server
+          const uploadRes = await fetch(
+            `/api/upload-direct?fileName=${encodeURIComponent(file.name)}`,
+            { method: "POST", body: file, signal: ctrl.signal },
+          );
+          if (!uploadRes.ok) {
+            const j = await uploadRes.json().catch(() => ({}));
+            throw new Error(j?.error || `[CLT-006] Erreur upload direct HTTP ${uploadRes.status}`);
+          }
+          const { uploadId } = await uploadRes.json();
+          directUploadIds.push(uploadId);
           setProgress(Math.round(((i + 1) / uploadedFiles.length) * 30));
         }
 
         setProgress(30);
         setProgressMsg("Envoi au serveur…");
 
-        // Build form data without the file blobs — just metadata + storage paths
+        // Build form data without the file blobs — just metadata + paths
         apiForm = new FormData();
         for (const key of ["channel", "mode", "singles", "count", "packs"]) {
           const v = rawForm.get(key);
           if (v !== null) apiForm.append(key, v);
         }
         for (const sp of storagePaths) apiForm.append("storagePaths", sp);
+        for (const id of directUploadIds) apiForm.append("directUploadIds", id);
         for (const f of uploadedFiles) apiForm.append("fileNames", f.name);
       } else {
         // No files or empty — send as-is (fallback / local dev)
