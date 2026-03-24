@@ -1,7 +1,7 @@
 import os from "os";
 import path from "path";
 import fs from "fs/promises";
-import { createWriteStream, createReadStream } from "fs";
+import { createWriteStream } from "fs";
 import { pipeline } from "stream/promises";
 import { Readable } from "stream";
 import { NextResponse } from "next/server";
@@ -128,6 +128,9 @@ export async function POST(req: Request) {
             if (!dlResp.ok) {
               throw new Error(`Récupération storage échouée : HTTP ${dlResp.status}`);
             }
+            if (!dlResp.body) {
+              throw new Error(`Récupération storage échouée : corps de réponse vide`);
+            }
 
             const ext     = path.extname(fileName) || ".mp4";
             const tmpPath = path.join(os.tmpdir(), `duup_in_${Date.now()}_${i}${ext}`);
@@ -161,10 +164,10 @@ export async function POST(req: Request) {
           await Promise.all(outputPaths.map(async (outPath) => {
             const outName    = path.basename(outPath);
             const storageKey = `${userId}/${outName}`;
-            const readStream = Readable.toWeb(createReadStream(outPath)) as ReadableStream<Uint8Array>;
+            const fileBuffer = await fs.readFile(outPath);
             const { error: uploadError } = await supabase.storage
               .from(OUTPUT_BUCKET)
-              .upload(storageKey, readStream, { contentType: "video/mp4", upsert: true, duplex: "half" } as any);
+              .upload(storageKey, fileBuffer, { contentType: "video/mp4", upsert: true });
             if (uploadError) {
               console.error("[duplicate-video] upload error:", uploadError.message, "file:", outName);
               throw new Error(`Sauvegarde échouée (${outName}) : ${uploadError.message}`);

@@ -315,23 +315,35 @@ export default function VideoFormAdvancedClient() {
           const file = uploadedFiles[i];
           setProgressMsg(`Envoi vidéo ${i + 1}/${uploadedFiles.length} — ${file.name}…`);
 
-          const signRes = await fetch("/api/storage/sign-upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fileName: file.name, userId }),
-            signal: ctrl.signal,
-          });
+          let signRes: Response;
+          try {
+            signRes = await fetch("/api/storage/sign-upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ fileName: file.name, userId }),
+              signal: ctrl.signal,
+            });
+          } catch (err: any) {
+            if (err?.name === "AbortError") throw err;
+            throw new Error(`[CLT-007] Stockage inaccessible — réessayez dans quelques secondes.`);
+          }
           if (!signRes.ok) {
             const j = await signRes.json().catch(() => ({}));
             throw new Error(j?.error || `Erreur sign-upload HTTP ${signRes.status}`);
           }
           const { token, path: storagePath } = await signRes.json();
 
-          const uploadRes = await supabase.storage
-            .from("video-uploads")
-            .uploadToSignedUrl(storagePath, token, file);
-          if (uploadRes.error) {
-            const msg = uploadRes.error.message ?? "";
+          let uploadErr: string | null = null;
+          try {
+            const uploadRes = await supabase.storage
+              .from("video-uploads")
+              .uploadToSignedUrl(storagePath, token, file);
+            if (uploadRes.error) uploadErr = uploadRes.error.message ?? "";
+          } catch {
+            throw new Error(`[CLT-007] Stockage inaccessible — réessayez dans quelques secondes.`);
+          }
+          if (uploadErr) {
+            const msg = uploadErr;
             if (msg.toLowerCase().includes("maximum allowed size") || msg.toLowerCase().includes("exceeded")) {
               throw new Error(`Fichier trop volumineux pour le stockage (max 5 Go) : ${file.name}`);
             }
