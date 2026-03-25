@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Dropzone from "../../Dropzone";
 import InfoTooltip from "@/app/dashboard/components/InfoTooltip";
-import { setJob, removeJob } from "../jobStore";
+import { setJob, addCompletedFile, removeJob } from "../jobStore";
 
 function ProgressBar({ percent, label }: { percent: number; label?: string }) {
   return (
@@ -224,7 +224,7 @@ export default function VideoFormSimpleClient() {
 
     // Register job in global store so progress persists across page navigation
     const jobId = Math.random().toString(36).slice(2, 8);
-    setJob({ id: jobId, channel: "simple", progress: 0, msg: "Préparation…", status: "running" });
+    setJob({ id: jobId, type: "video", channel: "simple", progress: 0, msg: "Préparation…", status: "running", ctrl });
 
     try {
       const rawForm = new FormData(e.currentTarget);
@@ -237,7 +237,7 @@ export default function VideoFormSimpleClient() {
         const names = oversized.map(f => f.name).join(", ");
         const errMsg = `[CLT-006] Fichier(s) trop volumineux (max 5 Go) : ${names}`;
         setErrorMsg(errMsg);
-        setJob({ id: jobId, channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        setJob({ id: jobId, type: "video", channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
         setProcessing(false);
         return;
       }
@@ -307,7 +307,7 @@ export default function VideoFormSimpleClient() {
         try { const j = JSON.parse(text); msg = j?.error || msg; code = j?.code || code; } catch { if (text) msg += `: ${text.slice(0, 120)}`; }
         const errMsg = `[${code}] ${msg}`;
         setErrorMsg(errMsg);
-        setJob({ id: jobId, channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        setJob({ id: jobId, type: "video", channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
         setProcessing(false);
         return;
       }
@@ -346,13 +346,16 @@ export default function VideoFormSimpleClient() {
               if (evt.msg) setProgressMsg(evt.msg);
               // Keep global store in sync
               if (pct !== undefined || evt.msg) {
-                setJob({ id: jobId, channel: "simple", progress: pct ?? 0, msg: evt.msg ?? "", status: "running" });
+                setJob({ id: jobId, type: "video", channel: "simple", progress: pct ?? 0, msg: evt.msg ?? "", status: "running" });
+              }
+              if (evt.fileReady) {
+                addCompletedFile(jobId, evt.fileReady);
               }
               if (evt.error) {
                 const code = evt.code || "VID-004";
                 const errMsg = `[${code}] ${evt.msg || "Erreur FFmpeg"}`;
                 setErrorMsg(errMsg);
-                setJob({ id: jobId, channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+                setJob({ id: jobId, type: "video", channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
                 setProcessing(false);
                 return;
               }
@@ -360,9 +363,9 @@ export default function VideoFormSimpleClient() {
                 receivedDone = true;
                 if (evt.warning) {
                   setErrorMsg(evt.warning);
-                  setJob({ id: jobId, channel: "simple", progress: 100, msg: evt.warning, status: "done" });
+                  setJob({ id: jobId, type: "video", channel: "simple", progress: 100, msg: evt.warning, status: "done" });
                 } else {
-                  setJob({ id: jobId, channel: "simple", progress: 100, msg: "Terminé", status: "done" });
+                  setJob({ id: jobId, type: "video", channel: "simple", progress: 100, msg: "Terminé", status: "done" });
                 }
                 // Auto-dismiss after 6 s so the badge doesn't linger forever
                 setTimeout(() => removeJob(jobId), 6000);
@@ -380,17 +383,18 @@ export default function VideoFormSimpleClient() {
       if (!receivedDone) {
         const errMsg = "[CLT-004] Le serveur n'a pas répondu à temps. Réessayez avec une vidéo plus courte.";
         setErrorMsg(errMsg);
-        setJob({ id: jobId, channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        setJob({ id: jobId, type: "video", channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
       }
     } catch (err: any) {
       if (err?.name === "AbortError") {
-        // User cancelled or inactivity timeout fired.
         if (ctrl.signal.reason === "timeout") {
           const errMsg = "[CLT-003] Délai dépassé — la vidéo est trop longue ou le serveur est surchargé.";
           setErrorMsg(errMsg);
-          setJob({ id: jobId, channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+          setJob({ id: jobId, type: "video", channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        } else if (ctrl.signal.reason === "stopped") {
+          // Stop button clicked — job is already marked stopped by stopJob(), keep it
         } else {
-          // User cancelled intentionally — remove from store silently
+          // User navigated away or cancelled — remove from store silently
           removeJob(jobId);
         }
       } else {
@@ -400,7 +404,7 @@ export default function VideoFormSimpleClient() {
           ? `[CLT-006] ${rawMsg}`
           : `[CLT-005] Erreur réseau — ${rawMsg || "connexion interrompue. Réessayez."}`;
         setErrorMsg(errMsg);
-        setJob({ id: jobId, channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        setJob({ id: jobId, type: "video", channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
       }
     } finally {
       setProcessing(false);

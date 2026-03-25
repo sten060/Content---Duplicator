@@ -1,12 +1,23 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { subscribe, snapshot, removeJob, VideoJob } from "./jobStore";
+import { subscribe, snapshot, removeJob, stopJob, Job } from "./jobStore";
 
-function JobBadge({ job }: { job: VideoJob }) {
-  const label = job.channel === "simple" ? "Simple" : "Avancé";
-  const isError = job.status === "error";
-  const isDone = job.status === "done";
+function JobBadge({ job }: { job: Job }) {
+  const isError   = job.status === "error";
+  const isDone    = job.status === "done";
+  const isStopped = job.status === "stopped";
+  const isRunning = job.status === "running";
+  const hasFiles  = job.completedFiles.length > 0;
+
+  const typeLabel =
+    job.type === "image"
+      ? "Images"
+      : job.channel === "simple"
+      ? "Vidéo Simple"
+      : "Vidéo Avancé";
+
+  const statusIcon = isDone ? " ✓" : isError ? " ✗" : isStopped ? " ■" : "";
 
   return (
     <div
@@ -17,27 +28,41 @@ function JobBadge({ job }: { job: VideoJob }) {
           ? "border-red-500/40"
           : isDone
           ? "border-emerald-400/40"
+          : isStopped
+          ? "border-amber-500/40"
           : "border-indigo-400/30",
       ].join(" ")}
-      style={{ minWidth: 200 }}
+      style={{ minWidth: 220, maxWidth: 300 }}
     >
+      {/* Header row */}
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className="font-semibold text-white/90">
-          Vidéo {label}
-          {isDone && " ✓"}
-          {isError && " ✗"}
+          {typeLabel}{statusIcon}
         </span>
-        <button
-          type="button"
-          onClick={() => removeJob(job.id)}
-          className="rounded-full px-1 text-white/40 hover:text-white/80"
-          title="Fermer"
-        >
-          ×
-        </button>
+        <div className="flex items-center gap-1">
+          {isRunning && (
+            <button
+              type="button"
+              onClick={() => stopJob(job.id)}
+              className="rounded px-1.5 py-0.5 text-[10px] font-semibold bg-red-950/70 hover:bg-red-900 border border-red-700/40 text-red-300 transition"
+              title="Arrêter les duplications"
+            >
+              ■ Arrêter
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => removeJob(job.id)}
+            className="rounded-full px-1 text-white/40 hover:text-white/80"
+            title="Fermer"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
-      {!isDone && !isError && (
+      {/* Progress bar — only while running */}
+      {isRunning && (
         <div className="mb-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
           <div
             className="h-1.5 rounded-full bg-indigo-400 transition-[width] duration-200"
@@ -46,24 +71,47 @@ function JobBadge({ job }: { job: VideoJob }) {
         </div>
       )}
 
+      {/* Status message */}
       <p
         className={[
-          "truncate",
-          isError ? "text-red-400" : isDone ? "text-emerald-400" : "text-white/60",
+          "truncate text-[11px]",
+          isError   ? "text-red-400"
+          : isDone  ? "text-emerald-400"
+          : isStopped ? "text-amber-400"
+          : "text-white/60",
         ].join(" ")}
       >
         {isError
           ? job.errorMsg || "Erreur"
           : isDone
-          ? "Terminé"
+          ? `Terminé — ${job.completedFiles.length} fichier(s)`
+          : isStopped
+          ? job.msg
           : job.msg || `${job.progress}%`}
       </p>
+
+      {/* Completed files list — shown when stopped or done */}
+      {hasFiles && (isStopped || isDone) && (
+        <div className="mt-2 space-y-1 max-h-36 overflow-y-auto rounded-lg bg-white/5 p-1">
+          {job.completedFiles.map((f, i) => (
+            <a
+              key={i}
+              href={f.url}
+              download={f.name}
+              className="flex items-center gap-1.5 rounded px-2 py-1 text-[10px] bg-white/8 hover:bg-white/15 text-white/75 truncate transition"
+            >
+              <span className="shrink-0 text-emerald-400">↓</span>
+              <span className="truncate">{f.name}</span>
+            </a>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 /**
- * Renders a floating overlay showing all active/recent video processing jobs.
+ * Floating overlay showing all active/recent video and image processing jobs.
  * Lives in the dashboard layout so it persists across page navigation.
  */
 export default function GlobalVideoProgress() {

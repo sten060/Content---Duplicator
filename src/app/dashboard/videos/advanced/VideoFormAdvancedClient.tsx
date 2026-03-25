@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Dropzone from "../../Dropzone";
 import InfoTooltip from "@/app/dashboard/components/InfoTooltip";
-import { setJob, removeJob } from "../jobStore";
+import { setJob, addCompletedFile, removeJob } from "../jobStore";
 
 /* ============= UI helpers (sobre / bleu) ============= */
 function Card({
@@ -293,7 +293,7 @@ export default function VideoFormAdvancedClient() {
 
     // Register job in global store so progress persists across page navigation
     const jobId = Math.random().toString(36).slice(2, 8);
-    setJob({ id: jobId, channel: "advanced", progress: 0, msg: "Préparation…", status: "running" });
+    setJob({ id: jobId, type: "video", channel: "advanced", progress: 0, msg: "Préparation…", status: "running", ctrl });
 
     try {
       const rawForm = new FormData(e.currentTarget);
@@ -371,7 +371,7 @@ export default function VideoFormAdvancedClient() {
         try { const j = JSON.parse(text); msg = j?.error || msg; code = j?.code || code; } catch { if (text) msg += `: ${text.slice(0, 120)}`; }
         const errMsg = `[${code}] ${msg}`;
         setSubmitError(errMsg);
-        setJob({ id: jobId, channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        setJob({ id: jobId, type: "video", channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
         setProcessing(false);
         return;
       }
@@ -405,13 +405,16 @@ export default function VideoFormAdvancedClient() {
               if (pct !== undefined) setProgress(pct);
               if (evt.msg) setProgressMsg(evt.msg);
               if (pct !== undefined || evt.msg) {
-                setJob({ id: jobId, channel: "advanced", progress: pct ?? 0, msg: evt.msg ?? "", status: "running" });
+                setJob({ id: jobId, type: "video", channel: "advanced", progress: pct ?? 0, msg: evt.msg ?? "", status: "running" });
+              }
+              if (evt.fileReady) {
+                addCompletedFile(jobId, evt.fileReady);
               }
               if (evt.error) {
                 const code = evt.code || "VID-004";
                 const errMsg = `[${code}] ${evt.msg || "Erreur FFmpeg"}`;
                 setSubmitError(errMsg);
-                setJob({ id: jobId, channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+                setJob({ id: jobId, type: "video", channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
                 setProcessing(false);
                 return;
               }
@@ -419,9 +422,9 @@ export default function VideoFormAdvancedClient() {
                 receivedDone = true;
                 if (evt.warning) {
                   setSubmitError(evt.warning);
-                  setJob({ id: jobId, channel: "advanced", progress: 100, msg: evt.warning, status: "done" });
+                  setJob({ id: jobId, type: "video", channel: "advanced", progress: 100, msg: evt.warning, status: "done" });
                 } else {
-                  setJob({ id: jobId, channel: "advanced", progress: 100, msg: "Terminé", status: "done" });
+                  setJob({ id: jobId, type: "video", channel: "advanced", progress: 100, msg: "Terminé", status: "done" });
                 }
                 setTimeout(() => removeJob(jobId), 6000);
                 router.refresh(); // re-fetch server component → file list updates instantly
@@ -437,14 +440,16 @@ export default function VideoFormAdvancedClient() {
       if (!receivedDone) {
         const errMsg = "[CLT-004] Le serveur n'a pas répondu à temps. Réessayez avec une vidéo plus courte.";
         setSubmitError(errMsg);
-        setJob({ id: jobId, channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        setJob({ id: jobId, type: "video", channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
       }
     } catch (err: any) {
       if (err?.name === "AbortError") {
         if (ctrl.signal.reason === "timeout") {
           const errMsg = "[CLT-003] Délai dépassé — la vidéo est trop longue ou le serveur est surchargé.";
           setSubmitError(errMsg);
-          setJob({ id: jobId, channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+          setJob({ id: jobId, type: "video", channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        } else if (ctrl.signal.reason === "stopped") {
+          // Stop button clicked — job is already marked stopped by stopJob(), keep it
         } else {
           removeJob(jobId);
         }
@@ -455,7 +460,7 @@ export default function VideoFormAdvancedClient() {
           ? `[CLT-006] ${rawMsg}`
           : `[CLT-005] Erreur réseau — ${rawMsg || "connexion interrompue. Réessayez."}`;
         setSubmitError(errMsg);
-        setJob({ id: jobId, channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        setJob({ id: jobId, type: "video", channel: "advanced", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
       }
     } finally {
       setProcessing(false);

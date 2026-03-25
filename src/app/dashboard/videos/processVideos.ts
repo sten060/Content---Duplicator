@@ -458,7 +458,8 @@ export async function processVideos(
   formData: FormData,
   onProgress?: (pct: number, msg: string) => Promise<void>,
   preResolvedDir?: string,
-  preDownloadedFiles?: PreDownloadedFile[]
+  preDownloadedFiles?: PreDownloadedFile[],
+  onFileReady?: (outPath: string) => Promise<void>,
 ): Promise<{ channel: string; outputPaths: string[]; skippedCount: number }> {
   const channel = (formData.get("channel") as Channel) ?? "simple";
   const mode = (formData.get("mode") as string) ?? "simple";
@@ -855,6 +856,7 @@ export async function processVideos(
       );
       outputPaths.push(outPath);
       doneCopies++;
+      await onFileReady?.(outPath);
       await onProgress?.(
         Math.min(99, Math.round((doneCopies / totalCopies) * 100)),
         `Encodage ${doneCopies}/${totalCopies} terminé`,
