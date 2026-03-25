@@ -134,15 +134,23 @@ export async function POST(req: Request) {
         }
 
         errorCode = "VID-004";
+        const hasVolume = !!process.env.OUT_BASE;
         const { channel, outputPaths, skippedCount } = await processVideos(
           formData,
           async (pct, msg) => { send({ percent: 8 + Math.round(pct * 0.91), msg }); },
           dir,
           preDownloadedFiles,
+          // Emit each completed file so the client can show partial results
+          // and the stop button can show already-generated files.
+          hasVolume
+            ? async (outPath) => {
+                const name = path.basename(outPath);
+                send({ fileReady: { name, url: `/api/out/${userId}/${name}` } });
+              }
+            : undefined,
         );
 
         errorCode = "VID-005";
-        const hasVolume = !!process.env.OUT_BASE;
         if (!hasVolume && (hasStoragePaths || hasDirectUploads) && outputPaths.length > 0) {
           const supabase = createAdminClient();
           await supabase.storage.createBucket(OUTPUT_BUCKET, { public: false, fileSizeLimit: 524288000 }).catch(() => {});

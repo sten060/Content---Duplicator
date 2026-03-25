@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import React, { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import ToggleChip from "../ToggleChip";
+import { setJob, addCompletedFile, removeJob, stopJob, snapshot, subscribe, Job } from "../videos/jobStore";
 
 const MAX_FILES = 50;
 
@@ -44,110 +44,6 @@ function compressForUpload(file: File): Promise<File> {
   });
 }
 
-// Extract filename from Content-Disposition header
-function extractFilename(headers: Headers, fallback: string): string {
-  const cd = headers.get("Content-Disposition") ?? "";
-  const match = cd.match(/filename="([^"]+)"/);
-  return match?.[1] ?? fallback;
-}
-
-function downloadBlob(blobUrl: string, filename: string) {
-  const a = document.createElement("a");
-  a.href = blobUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-// Package all files into a single ZIP and trigger one download
-async function downloadAllAsZip(files: ReadyFile[]) {
-  const JSZip = (await import("jszip")).default;
-  const zip = new JSZip();
-  await Promise.all(
-    files.map(async ({ blobUrl, filename }) => {
-      const res = await fetch(blobUrl);
-      const buf = await res.arrayBuffer();
-      zip.file(filename, buf);
-    }),
-  );
-  const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
-  downloadBlob(URL.createObjectURL(blob), "DuupFlow_images.zip");
-}
-
-// Retry a fetch up to `maxAttempts` times on network errors, timeouts, AND HTTP 5xx.
-// HTTP 4xx (client errors) are returned immediately without retry — the payload is wrong.
-// A new AbortController is created each attempt so the signal is never reused.
-async function fetchWithRetry(
-  url: string,
-  init: Omit<RequestInit, "signal">,
-  timeoutMs: number,
-  maxAttempts = 3,
-): Promise<Response> {
-  let lastErr: unknown;
-  let lastServerErrRes: Response | undefined;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    if (attempt > 0) {
-      // Exponential backoff: 2s, 4s
-      await new Promise((r) => setTimeout(r, 2000 * attempt));
-    }
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, { ...init, signal: controller.signal });
-      clearTimeout(timer);
-      // Retry on 5xx server errors — the server may be momentarily overloaded.
-      // Return 4xx immediately: the request itself is wrong, retrying won't help.
-      if (res.status >= 500 && attempt < maxAttempts - 1) {
-        lastServerErrRes = res;
-        continue;
-      }
-      return res;
-    } catch (err) {
-      clearTimeout(timer);
-      lastErr = err;
-      // Retry on network errors AND timeouts — a new controller is created each attempt
-      if (err instanceof Error && err.name === "AbortError") {
-        // timeout — retry unless this is the last attempt
-        if (attempt === maxAttempts - 1) throw err;
-        continue;
-      }
-      // Non-abort network error — retry
-    }
-  }
-  // All attempts exhausted: return last 5xx response if available, otherwise throw
-  if (lastServerErrRes) return lastServerErrRes;
-  throw lastErr;
-}
-
-// Run `fn` on each item with at most `concurrency` in-flight at once.
-async function withConcurrency<T>(
-  items: T[],
-  concurrency: number,
-  fn: (item: T) => Promise<void>,
-  onItemDone: (done: number, total: number) => void
-) {
-  const total = items.length;
-  let done = 0;
-  const queue = [...items];
-
-  async function worker() {
-    while (queue.length > 0) {
-      const item = queue.shift();
-      if (item === undefined) return;
-      await fn(item);
-      done++;
-      onItemDone(done, total);
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, items.length) }, () => worker())
-  );
-}
-
-type ReadyFile = { blobUrl: string; filename: string };
-
 type Props = {
   initialImages: string[];
 };
@@ -157,17 +53,16 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
-  const [errors, setErrors] = useState<string[]>([]);
-  const [readyFiles, setReadyFiles] = useState<ReadyFile[]>([]);
-  const [done, setDone] = useState(false);
-  const [limitWarning, setLimitWarning] = useState<{
-    done: number;
-    requested: number;
-    current: number;
-    limit: number;
-  } | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Subscribe to global store to show this page's job completedFiles while on the page
+  const allJobs = useSyncExternalStore(subscribe, snapshot, () => [] as Job[]);
+  const activeJob = activeJobId ? allJobs.find((j) => j.id === activeJobId) : null;
+  const completedFiles = activeJob?.completedFiles ?? [];
 
   const onPick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(e.target.files || []);
@@ -193,6 +88,12 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
 
   const totalSize = useMemo(() => files.reduce((s, f) => s + f.size, 0), [files]);
 
+  function handleStop() {
+    if (activeJobId) stopJob(activeJobId);
+    abortRef.current?.abort("stopped");
+    setProcessing(false);
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (files.length === 0) return;
@@ -206,105 +107,149 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
 
     const imageFiles = files.filter((f) => f.type.startsWith("image/"));
 
-    // Build flat task list: each image × count copies
-    // Each API call = 1 image = fast (~1-3s). No timeout, results appear instantly.
-    const tasks = imageFiles.flatMap((file) =>
-      Array.from({ length: count }, () => file)
-    );
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    const jobId = Math.random().toString(36).slice(2, 8);
+    setActiveJobId(jobId);
+    setJob({ id: jobId, type: "image", channel: "image", progress: 0, msg: "Préparation…", status: "running", ctrl });
 
     setProcessing(true);
-    setErrors([]);
-    setDone(false);
-    setReadyFiles([]);
-    setLimitWarning(null);
-    setProgressLabel(`Démarrage — 0 / ${tasks.length} copies…`);
-
-    const errs: string[] = [];
-    let limitHit = false;
-    let limitHitCurrent = 0;
-    let limitHitLimit = 0;
-    let processedOk = 0;
+    setErrorMsg(null);
+    setProgress(0);
+    setProgressLabel(`Compression et envoi de ${imageFiles.length} image(s)…`);
 
     try {
-      await withConcurrency(
-        tasks,
-        1, // 1 requête à la fois — évite la contention CPU sur Railway (single-core)
-        async (file) => {
-          // Stop queue as soon as limit is hit
-          if (limitHit) return;
-
+      // ── 1. Compress + upload all images in parallel ──────────────────────
+      let completedUploads = 0;
+      const directUploadIds = await Promise.all(
+        imageFiles.map(async (file) => {
           const compressed = await compressForUpload(file);
-          const fd = new FormData();
-          fd.append("files", compressed);
-          fd.append("count", "1"); // always 1 per request — fast, no timeout
-          if (fundamentals) fd.append("fundamentals", "1");
-          if (visuals) fd.append("visuals", "1");
-          if (semi) fd.append("semi", "1");
-          if (reverse) fd.append("reverse", "1");
+          const uploadRes = await fetch(
+            `/api/upload-direct?fileName=${encodeURIComponent(compressed.name)}`,
+            { method: "POST", body: compressed, signal: ctrl.signal },
+          );
+          if (!uploadRes.ok) {
+            const j = await uploadRes.json().catch(() => ({}));
+            throw new Error(j?.error || `[CLT-006] Erreur upload HTTP ${uploadRes.status}`);
+          }
+          const { uploadId } = await uploadRes.json();
+          completedUploads++;
+          setProgressLabel(`${completedUploads}/${imageFiles.length} image(s) envoyée(s)…`);
+          setProgress(Math.round((completedUploads / imageFiles.length) * 20));
+          return uploadId as string;
+        })
+      );
 
-          try {
-            // 120s timeout — Railway has no serverless cap unlike Vercel's 60s limit.
-            // Sequential processing (concurrency=1) keeps CPU free, but heavy images
-            // can still take 30-60s; 120s gives a comfortable margin with 3 attempts.
-            let res: Response;
+      // ── 2. POST to SSE route ─────────────────────────────────────────────
+      setProgress(20);
+      setProgressLabel("Traitement des images…");
+      setJob({ id: jobId, type: "image", channel: "image", progress: 20, msg: "Traitement…", status: "running" });
+
+      const apiForm = new FormData();
+      apiForm.append("count", String(count));
+      if (fundamentals) apiForm.append("fundamentals", "1");
+      if (visuals)      apiForm.append("visuals", "1");
+      if (semi)         apiForm.append("semi", "1");
+      if (reverse)      apiForm.append("reverse", "1");
+      for (const id of directUploadIds) apiForm.append("directUploadIds", id);
+      for (const f of imageFiles)       apiForm.append("fileNames", f.name);
+
+      const res = await fetch("/api/duplicate-image-sse", {
+        method: "POST",
+        body: apiForm,
+        signal: ctrl.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        const text = await res.text().catch(() => "");
+        let msg = `HTTP ${res.status}`;
+        try { const j = JSON.parse(text); msg = j?.error || msg; } catch { if (text) msg += `: ${text.slice(0, 120)}`; }
+        const errMsg = `[IMG-002] ${msg}`;
+        setErrorMsg(errMsg);
+        setJob({ id: jobId, type: "image", channel: "image", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        return;
+      }
+
+      // ── 3. Read SSE stream ───────────────────────────────────────────────
+      const INACTIVITY_MS = 10 * 60 * 1000; // 10 min
+      let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+      const resetInactivity = () => {
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => ctrl.abort("timeout"), INACTIVITY_MS);
+      };
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let receivedDone = false;
+
+      resetInactivity();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          resetInactivity();
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
             try {
-              res = await fetchWithRetry("/api/duplicate-image", { method: "POST", body: fd }, 120_000);
-            } catch (err: unknown) {
-              const msg = err instanceof Error && err.name === "AbortError"
-                ? "[CLT-001] délai dépassé (120s après 3 tentatives)"
-                : `[CLT-002] ${err instanceof Error ? err.message : "erreur réseau"}`;
-              errs.push(`${file.name}: ${msg}`);
-              return;
-            }
-
-            if (!res.ok) {
-              const j = await res.json().catch(() => ({}));
-              // Limit reached — stop queue and record info for banner
-              if (res.status === 429 && j?.limitReached) {
-                limitHit = true;
-                limitHitCurrent = j.current ?? 0;
-                limitHitLimit = j.limit ?? 0;
+              const evt = JSON.parse(line.slice(6));
+              // Remap 0–100% server → 20–100% UI (0–20% was upload)
+              const pct = evt.percent !== undefined ? 20 + Math.round(evt.percent * 0.8) : undefined;
+              if (pct !== undefined) setProgress(pct);
+              if (evt.msg) setProgressLabel(evt.msg);
+              if (pct !== undefined || evt.msg) {
+                setJob({ id: jobId, type: "image", channel: "image", progress: pct ?? 0, msg: evt.msg ?? "", status: "running" });
+              }
+              if (evt.fileReady) {
+                addCompletedFile(jobId, evt.fileReady);
+              }
+              if (evt.error) {
+                const errMsg = `[IMG-003] ${evt.msg || "Erreur traitement image"}`;
+                setErrorMsg(errMsg);
+                setJob({ id: jobId, type: "image", channel: "image", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
                 return;
               }
-              const code = j?.code ?? (res.status >= 500 ? "IMG-002" : "IMG-001");
-              errs.push(`${file.name}: [${code}] ${j?.error ?? "erreur inconnue"}`);
-              return;
-            }
-
-            const blob = await res.blob();
-            const filename = extractFilename(res.headers, file.name);
-            const blobUrl = URL.createObjectURL(blob);
-            processedOk++;
-
-            flushSync(() => {
-              setReadyFiles((prev) => [...prev, { blobUrl, filename }]);
-            });
-          } catch (err: unknown) {
-            const msg = `[CLT-002] ${err instanceof Error ? err.message : "erreur réseau"}`;
-            errs.push(`${file.name}: ${msg}`);
+              if (evt.done) {
+                receivedDone = true;
+                setJob({ id: jobId, type: "image", channel: "image", progress: 100, msg: "Terminé", status: "done" });
+                setTimeout(() => removeJob(jobId), 8000);
+                setFiles([]);
+                return;
+              }
+            } catch {}
           }
-        },
-        (doneCount, total) => {
-          flushSync(() => {
-            setProgress(Math.round((doneCount / total) * 100));
-            setProgressLabel(`${doneCount} / ${total} copies traitées…`);
-          });
         }
-      );
-    } finally {
-      setErrors(errs);
-      if (limitHit) {
-        setLimitWarning({
-          done: processedOk,
-          requested: tasks.length,
-          current: limitHitCurrent,
-          limit: limitHitLimit,
-        });
+      } finally {
+        if (inactivityTimer) clearTimeout(inactivityTimer);
       }
+
+      if (!receivedDone) {
+        const errMsg = "[CLT-004] Le serveur n'a pas répondu. Réessayez.";
+        setErrorMsg(errMsg);
+        setJob({ id: jobId, type: "image", channel: "image", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        if (ctrl.signal.reason === "timeout") {
+          const errMsg = "[CLT-003] Délai dépassé — traitement trop long.";
+          setErrorMsg(errMsg);
+          setJob({ id: jobId, type: "image", channel: "image", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+        } else if (ctrl.signal.reason === "stopped") {
+          // Stop button clicked — job already marked stopped by stopJob()
+        } else {
+          removeJob(jobId);
+        }
+      } else {
+        const errMsg = `[CLT-005] Erreur réseau — ${err?.message || "connexion interrompue."}`;
+        setErrorMsg(errMsg);
+        setJob({ id: jobId, type: "image", channel: "image", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
+      }
+    } finally {
       setProcessing(false);
-      setProgress(100);
-      setDone(true);
-      setFiles([]);
     }
   }
 
@@ -397,18 +342,30 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
           />
         </div>
 
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={processing || files.length === 0}
-          className={`rounded-lg px-4 py-2 text-white transition ${
-            processing || files.length === 0
-              ? "bg-gray-600/60 cursor-not-allowed"
-              : "bg-fuchsia-600 hover:bg-fuchsia-500"
-          }`}
-        >
-          {processing ? "Duplication en cours…" : "Dupliquer les images"}
-        </button>
+        {/* Submit + Stop */}
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={processing || files.length === 0}
+            className={`rounded-lg px-4 py-2 text-white transition ${
+              processing || files.length === 0
+                ? "bg-gray-600/60 cursor-not-allowed"
+                : "bg-fuchsia-600 hover:bg-fuchsia-500"
+            }`}
+          >
+            {processing ? "Duplication en cours…" : "Dupliquer les images"}
+          </button>
+
+          {processing && (
+            <button
+              type="button"
+              onClick={handleStop}
+              className="rounded-lg px-4 py-2 text-sm font-semibold bg-red-950/70 hover:bg-red-900 border border-red-700/40 text-red-300 transition"
+            >
+              ■ Arrêter
+            </button>
+          )}
+        </div>
 
         {/* Progress bar */}
         {processing && (
@@ -423,58 +380,52 @@ export default function ImageFormClient({ initialImages: _ }: Props) {
           </div>
         )}
 
-        {/* Limit warning */}
-        {done && limitWarning && (
-          <div className="text-sm rounded-xl px-4 py-3 bg-amber-900/30 border border-amber-600/30 text-amber-300 space-y-1">
-            <p className="font-semibold">Limite atteinte — {limitWarning.done}/{limitWarning.requested} copies effectuées</p>
-            <p className="text-xs text-amber-400/80">
-              Quota mensuel images : {limitWarning.current}/{limitWarning.limit}. Les {limitWarning.requested - limitWarning.done} copies restantes ont été annulées.
-              Attends la date de renouvellement ou passe au plan Pro.
-            </p>
-          </div>
-        )}
-
-        {/* Errors */}
-        {done && errors.length > 0 && (
+        {/* Error */}
+        {errorMsg && (
           <div className="text-sm rounded-lg px-4 py-2 bg-red-900/40 text-red-300">
-            {errors.length} erreur(s) : {errors.join(" · ")}
+            {errorMsg}
           </div>
         )}
       </form>
 
-      {/* Ready files — shown as they arrive, outside the form */}
-      {readyFiles.length > 0 && (
+      {/* Ready files — shown as they arrive via SSE */}
+      {completedFiles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-white/80 mr-auto">
-              Prêts à télécharger ({readyFiles.length})
+              Prêts à télécharger ({completedFiles.length})
             </p>
             <button
               type="button"
-              onClick={() => downloadAllAsZip(readyFiles)}
+              onClick={async () => {
+                const JSZip = (await import("jszip")).default;
+                const zip = new JSZip();
+                await Promise.all(
+                  completedFiles.map(async ({ url, name }) => {
+                    const res = await fetch(url);
+                    const buf = await res.arrayBuffer();
+                    zip.file(name, buf);
+                  })
+                );
+                const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "DuupFlow_images.zip";
+                a.click();
+              }}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-fuchsia-600 hover:bg-fuchsia-500 text-white transition"
             >
               Tout télécharger
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                readyFiles.forEach(({ blobUrl }) => URL.revokeObjectURL(blobUrl));
-                setReadyFiles([]);
-              }}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white/70 transition"
-            >
-              Vider
-            </button>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-white/5 divide-y divide-white/5 max-h-80 overflow-y-auto">
-            {readyFiles.map(({ blobUrl, filename }, i) => (
+            {completedFiles.map(({ url, name }, i) => (
               <div key={i} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                <span className="text-xs text-white/70 truncate flex-1">{filename}</span>
+                <span className="text-xs text-white/70 truncate flex-1">{name}</span>
                 <a
-                  href={blobUrl}
-                  download={filename}
+                  href={url}
+                  download={name}
                   className="shrink-0 rounded-md px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/20 text-white transition"
                 >
                   Télécharger
