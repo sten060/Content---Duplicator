@@ -634,6 +634,8 @@ export async function processVideos(
 
         // Ensure H.264-compatible dimensions (even pixels) only when re-encoding
         if (vfParts.length > 0 || extraArgs.length > 0) {
+          // Cap to 1080p — 4K input is 4× more pixels → 4× slower; quality difference negligible
+          vfParts.unshift("scale=1920:1080:force_original_aspect_ratio=decrease:flags=fast_bilinear");
           vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2");
         }
 
@@ -776,6 +778,8 @@ export async function processVideos(
 
         // Ensure H.264-compatible dimensions only when re-encoding
         if (vfParts.length > 0 || extraArgs.length > 0) {
+          // Cap to 1080p — 4K input is 4× more pixels → 4× slower; quality difference negligible
+          vfParts.unshift("scale=1920:1080:force_original_aspect_ratio=decrease:flags=fast_bilinear");
           vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2");
         }
       }
