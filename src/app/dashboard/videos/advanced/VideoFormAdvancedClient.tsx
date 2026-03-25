@@ -3,7 +3,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import Dropzone from "../../Dropzone";
 import InfoTooltip from "@/app/dashboard/components/InfoTooltip";
 import { setJob, removeJob } from "../jobStore";
@@ -270,6 +269,17 @@ export default function VideoFormAdvancedClient() {
     Object.fromEntries(groups.map((g) => [g, true]))
   );
 
+  function getVideoDuration(file: File): Promise<number> {
+    return new Promise((resolve) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      const url = URL.createObjectURL(file);
+      video.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(video.duration); };
+      video.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+      video.src = url;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setProcessing(true);
@@ -288,7 +298,7 @@ export default function VideoFormAdvancedClient() {
       const rawForm = new FormData(e.currentTarget);
       const uploadedFiles = rawForm.getAll("files") as File[];
 
-      // Client-side size guard — 5 GB max per file (matches storage bucket limit)
+      // Client-side size guard — 5 GB max per file
       const MAX_FILE_BYTES = 5 * 1024 * 1024 * 1024;
       const oversized = uploadedFiles.filter(f => f.size > MAX_FILE_BYTES);
       if (oversized.length > 0) {
@@ -296,61 +306,38 @@ export default function VideoFormAdvancedClient() {
         throw new Error(`[CLT-006] Fichier(s) trop volumineux (max 5 Go) : ${names}`);
       }
 
-      // Always use Supabase Storage — see simple client for rationale.
-      const DIRECT_LIMIT = 0;
-      const canDirect = uploadedFiles.length > 0 && uploadedFiles.every(f => f.size <= DIRECT_LIMIT);
-
+      // All files go directly to Railway — reliable, no Supabase size limits
       let apiForm: FormData;
-      if (uploadedFiles.length > 0 && uploadedFiles[0].size > 0 && !canDirect) {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-        const userId = user?.id ?? "anon";
-
+      if (uploadedFiles.length > 0 && uploadedFiles[0].size > 0) {
         setProgressMsg(`Envoi vidéos (0/${uploadedFiles.length})…`);
         setProgress(0);
 
-        // Sequential uploads — parallel Promise.all can fail if one file errors mid-upload
-        const storagePaths: string[] = [];
+        const directUploadIds: string[] = [];
+
         for (let i = 0; i < uploadedFiles.length; i++) {
           const file = uploadedFiles[i];
           setProgressMsg(`Envoi vidéo ${i + 1}/${uploadedFiles.length} — ${file.name}…`);
 
-          let signRes: Response;
-          try {
-            signRes = await fetch("/api/storage/sign-upload", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ fileName: file.name, userId }),
-              signal: ctrl.signal,
-            });
-          } catch (err: any) {
-            if (err?.name === "AbortError") throw err;
-            throw new Error(`[CLT-007] Stockage inaccessible — réessayez dans quelques secondes.`);
-          }
-          if (!signRes.ok) {
-            const j = await signRes.json().catch(() => ({}));
-            throw new Error(j?.error || `Erreur sign-upload HTTP ${signRes.status}`);
-          }
-          const { token, path: storagePath } = await signRes.json();
-
-          let uploadErr: string | null = null;
-          try {
-            const uploadRes = await supabase.storage
-              .from("video-uploads")
-              .uploadToSignedUrl(storagePath, token, file);
-            if (uploadRes.error) uploadErr = uploadRes.error.message ?? "";
-          } catch {
-            throw new Error(`[CLT-007] Stockage inaccessible — réessayez dans quelques secondes.`);
-          }
-          if (uploadErr) {
-            const msg = uploadErr;
-            if (msg.toLowerCase().includes("maximum allowed size") || msg.toLowerCase().includes("exceeded")) {
-              throw new Error(`Fichier trop volumineux pour le stockage (max 5 Go) : ${file.name}`);
-            }
-            throw new Error(`Upload storage (${file.name}): ${msg}`);
+          // Client-side duration check (50 s max)
+          const duration = await getVideoDuration(file);
+          if (duration > 50) {
+            throw new Error(
+              `La vidéo "${file.name}" dépasse 50 secondes (${Math.round(duration)}s). ` +
+              `Durée maximum autorisée : 50 s. Veuillez rogner la vidéo avant de continuer.`
+            );
           }
 
-          storagePaths.push(storagePath);
+          // Upload directly to Railway server
+          const uploadRes = await fetch(
+            `/api/upload-direct?fileName=${encodeURIComponent(file.name)}`,
+            { method: "POST", body: file, signal: ctrl.signal },
+          );
+          if (!uploadRes.ok) {
+            const j = await uploadRes.json().catch(() => ({}));
+            throw new Error(j?.error || `[CLT-006] Erreur upload direct HTTP ${uploadRes.status}`);
+          }
+          const { uploadId } = await uploadRes.json();
+          directUploadIds.push(uploadId);
           setProgress(Math.round(((i + 1) / uploadedFiles.length) * 30));
         }
 
@@ -362,7 +349,7 @@ export default function VideoFormAdvancedClient() {
           const v = rawForm.get(key);
           if (v !== null) apiForm.append(key, v);
         }
-        for (const sp of storagePaths) apiForm.append("storagePaths", sp);
+        for (const id of directUploadIds) apiForm.append("directUploadIds", id);
         for (const f of uploadedFiles) apiForm.append("fileNames", f.name);
       } else {
         apiForm = rawForm;

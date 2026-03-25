@@ -3,7 +3,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import Dropzone from "../../Dropzone";
 import InfoTooltip from "@/app/dashboard/components/InfoTooltip";
 import { setJob, removeJob } from "../jobStore";
@@ -166,6 +165,18 @@ function PackCard({
   );
 }
 
+/* ---------- Helpers ---------- */
+function getVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    const url = URL.createObjectURL(file);
+    video.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(video.duration); };
+    video.onerror = () => { URL.revokeObjectURL(url); resolve(0); }; // unknown → allow
+    video.src = url;
+  });
+}
+
 /* ---------- Composant principal (SIMPLE) ---------- */
 export default function VideoFormSimpleClient() {
   const router = useRouter();
@@ -219,7 +230,7 @@ export default function VideoFormSimpleClient() {
       const rawForm = new FormData(e.currentTarget);
       const uploadedFiles = rawForm.getAll("files") as File[];
 
-      // Client-side size guard — 5 GB max per file (matches storage bucket limit)
+      // Client-side size guard — 5 GB max per file
       const MAX_FILE_BYTES = 5 * 1024 * 1024 * 1024;
       const oversized = uploadedFiles.filter(f => f.size > MAX_FILE_BYTES);
       if (oversized.length > 0) {
@@ -231,88 +242,28 @@ export default function VideoFormSimpleClient() {
         return;
       }
 
-      // Always upload through Supabase Storage (DIRECT_LIMIT=0): the SSE
-      // request body is tiny so the stream opens immediately and the user
-      // sees live progress right away instead of a silent wait while the
-      // entire video is buffered through the Railway server.
-      // (The 502 issue that previously affected this path is fixed by the
-      //  X-Accel-Buffering: no header on the SSE response.)
-      const DIRECT_LIMIT = 0;
-      const canDirect = uploadedFiles.length > 0 && uploadedFiles.every(f => f.size <= DIRECT_LIMIT);
-
-      // Upload each file directly to Supabase Storage to bypass Vercel's 4.5 MB body limit
+      // All files go directly to Railway — reliable, no Supabase size limits
       let apiForm: FormData;
-      if (uploadedFiles.length > 0 && uploadedFiles[0].size > 0 && !canDirect) {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-        const userId = user?.id ?? "anon";
-
-        // Sequential uploads — avoids race conditions and partial failure with Promise.all
+      if (uploadedFiles.length > 0 && uploadedFiles[0].size > 0) {
         setProgressMsg(`Envoi vidéo 1/${uploadedFiles.length}…`);
         setProgress(0);
 
-        const storagePaths: string[] = [];
         const directUploadIds: string[] = [];
-        let useDirect = false; // flip to true if Supabase rejects a file for being too large
 
         for (let i = 0; i < uploadedFiles.length; i++) {
           const file = uploadedFiles[i];
           setProgressMsg(`Envoi vidéo ${i + 1}/${uploadedFiles.length} — ${file.name}…`);
 
-          if (!useDirect) {
-            // Try Supabase storage path first
-            const signCtrl = new AbortController();
-            const signTimeout = setTimeout(() => signCtrl.abort("timeout"), 30_000);
-            let signRes: Response;
-            try {
-              signRes = await fetch("/api/storage/sign-upload", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ fileName: file.name, userId }),
-                signal: signCtrl.signal,
-              });
-            } catch (err: any) {
-              clearTimeout(signTimeout);
-              if (err?.name === "AbortError") throw new Error("[CLT-007] Serveur injoignable — réessayez dans quelques secondes.");
-              // Network error reaching sign-upload → skip Supabase, use direct upload
-              useDirect = true;
-            }
-            clearTimeout(signTimeout);
-
-            if (!useDirect && signRes!.ok) {
-              const { token, path: storagePath } = await signRes!.json();
-              let supabaseErrMsg = "";
-              try {
-                const uploadRes = await supabase.storage
-                  .from("video-uploads")
-                  .uploadToSignedUrl(storagePath, token, file);
-
-                if (!uploadRes.error) {
-                  storagePaths.push(storagePath);
-                  setProgress(Math.round(((i + 1) / uploadedFiles.length) * 30));
-                  continue; // success — next file
-                }
-                supabaseErrMsg = uploadRes.error.message ?? "";
-              } catch {
-                // uploadToSignedUrl threw (Supabase network error) → fall through to direct upload
-                useDirect = true;
-              }
-
-              if (!useDirect) {
-                if (!supabaseErrMsg.toLowerCase().includes("maximum allowed size") && !supabaseErrMsg.toLowerCase().includes("exceeded")) {
-                  throw new Error(`Upload storage (${file.name}): ${supabaseErrMsg}`);
-                }
-                // Supabase size limit hit → fall through to direct upload for this and remaining files
-                useDirect = true;
-                setProgressMsg(`Fichier trop volumineux pour Supabase — envoi direct (${file.name})…`);
-              }
-            } else if (!useDirect) {
-              // sign-upload returned non-ok → use direct upload
-              useDirect = true;
-            }
+          // Client-side duration check (50 s max) — no server round-trip needed
+          const duration = await getVideoDuration(file);
+          if (duration > 50) {
+            throw new Error(
+              `La vidéo "${file.name}" dépasse 50 secondes (${Math.round(duration)}s). ` +
+              `Durée maximum autorisée : 50 s. Veuillez rogner la vidéo avant de continuer.`
+            );
           }
 
-          // Direct upload: stream the file body to the Railway server
+          // Upload directly to Railway server
           const uploadRes = await fetch(
             `/api/upload-direct?fileName=${encodeURIComponent(file.name)}`,
             { method: "POST", body: file, signal: ctrl.signal },
@@ -329,13 +280,11 @@ export default function VideoFormSimpleClient() {
         setProgress(30);
         setProgressMsg("Envoi au serveur…");
 
-        // Build form data without the file blobs — just metadata + paths
         apiForm = new FormData();
         for (const key of ["channel", "mode", "singles", "count", "packs"]) {
           const v = rawForm.get(key);
           if (v !== null) apiForm.append(key, v);
         }
-        for (const sp of storagePaths) apiForm.append("storagePaths", sp);
         for (const id of directUploadIds) apiForm.append("directUploadIds", id);
         for (const f of uploadedFiles) apiForm.append("fileNames", f.name);
       } else {

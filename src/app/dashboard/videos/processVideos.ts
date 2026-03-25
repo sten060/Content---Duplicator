@@ -114,6 +114,21 @@ export async function getFFmpegBin(): Promise<string> {
 
 /* ------------------ utils ------------------ */
 
+/** Probe video duration (seconds) using ffmpeg -i.  Returns 0 if parsing fails. */
+async function probeVideoDuration(input: string, binPath: string): Promise<number> {
+  return new Promise((resolve) => {
+    let stderr = "";
+    const p = spawn(binPath, ["-i", input], { stdio: ["ignore", "ignore", "pipe"] });
+    p.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+    p.on("error", () => resolve(0));
+    p.on("close", () => {
+      const m = stderr.match(/Duration:\s*(\d+):(\d{2}):(\d{2}(?:\.\d+)?)/);
+      if (!m) { resolve(0); return; }
+      resolve(parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]));
+    });
+  });
+}
+
 const VIDEO_EXTS = [".mp4", ".mov", ".mkv", ".avi", ".webm"];
 
 function extOf(n: string) {
@@ -400,7 +415,7 @@ export async function processVideos(
   const singles = JSON.parse(singlesRaw || "{}");
   const ranges = JSON.parse(rangesRaw || "{}");
 
-  const totalCopies = files.length * count;
+  let totalCopies = files.length * count; // may be reduced after duration check
   let doneCopies = 0;
   const outputPaths: string[] = [];
 
@@ -426,10 +441,27 @@ export async function processVideos(
     })
   );
 
+  // ── Server-side duration guard (50 s max) ────────────────────────────────
+  const MAX_DURATION_S = 50;
+  const validEntries: typeof fileEntries = [];
+  for (const entry of fileEntries) {
+    const dur = await probeVideoDuration(entry.tmpIn, ffmpegBin);
+    if (dur > MAX_DURATION_S) {
+      await onProgress?.(2, `⚠ "${entry.fileName}" dépasse ${MAX_DURATION_S}s (${Math.round(dur)}s) — ignorée.`);
+      if (entry.ownsTmpIn) await fs.unlink(entry.tmpIn).catch(() => {});
+    } else {
+      validEntries.push(entry);
+    }
+  }
+  if (validEntries.length === 0) {
+    throw new Error(`Toutes les vidéos dépassent la durée maximale de ${MAX_DURATION_S} secondes.`);
+  }
+  totalCopies = validEntries.length * count; // recount after filtering
+
   // ── Flatten all (file × copy) into one pool so every copy of every file
   // runs concurrently — total time ≈ slowest single copy, not SUM. ───────────
   type Task = { fileName: string; tmpIn: string; fileIndex: number; copyIndex: number };
-  const allTasks: Task[] = fileEntries.flatMap(({ fileName, tmpIn }, idx) =>
+  const allTasks: Task[] = validEntries.flatMap(({ fileName, tmpIn }, idx) =>
     Array.from({ length: count }, (_, i) => ({
       fileName, tmpIn, fileIndex: idx + 1, copyIndex: i + 1,
     }))
@@ -440,7 +472,7 @@ export async function processVideos(
   // CPU count we cap concurrency at ncpus and let the OS schedule; threads per
   // process stay at 1 to avoid cross-task contention.
   const ncpus = Math.max(1, os.cpus().length);
-  const MAX_CONCURRENT = 3; // cap to avoid OOM on Railway (os.cpus() returns host CPUs, not container allocation)
+  const MAX_CONCURRENT = 6; // increased: 50s video limit keeps memory footprint bounded
   const CONCURRENCY  = Math.min(allTasks.length, ncpus, MAX_CONCURRENT);
   const threadsPerTask = CONCURRENCY > 0
     ? Math.max(1, Math.floor(ncpus / CONCURRENCY))
@@ -531,10 +563,7 @@ export async function processVideos(
           vfParts.push(`setpts=${(1 / sp).toFixed(6)}*PTS`);
           afParts.push(`atempo=${sp.toFixed(4)}`);
 
-          // Temporal frame blend — mixes each frame with the previous at 30%.
-          // Changes per-frame pixel values (affecting all hash algorithms) with no
-          // visible flicker at normal playback speed.
-          vfParts.push("tblend=all_mode=average:all_opacity=0.3");
+          // tblend removed: expensive (sequential frame decode), negligible uniquification value
         }
 
         if (packs.includes("technical")) {
