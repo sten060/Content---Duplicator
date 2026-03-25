@@ -529,15 +529,15 @@ async function scorePair(bufA: Buffer, bufB: Buffer): Promise<PairScore> {
   // Weights (sum = 0.85 — 15% reserved for metadata computed at file level)
   // pHash and dHash removed — redistribués sur les métriques restantes.
   //
-  // SSIM         13% — structural+luminance+contrast (industry standard, YouTube/Netflix)
-  // MSE          11% — raw pixel differences (96×96, catches every pixel change)
-  // chroma       10% — Cb/Cr distribution (hue, saturation, chroma noise — very sensitive)
-  // gradient     10% — gradient magnitude (sharpness, grain, noise intensity)
-  // projection    9% — row+col luminance profiles (spatial shift, any positional change)
-  // spatialGrid   9% — spatial content map (zoom, crop offset, vignette, lens)
-  // color         8% — RGB histogram (brightness, saturation changes)
-  // colorMoments  8% — mean/std/skew per channel (higher-order color stats)
-  // luma          7% — luminance histogram 64-bin (brightness/contrast/gamma)
+  // SSIM         15% — structural+luminance+contrast (industry standard, YouTube/Netflix)
+  // MSE          13% — raw pixel differences (96×96, catches every pixel change)
+  // chroma        5% — Cb/Cr distribution (hue, saturation, chroma noise)
+  // gradient      5% — gradient magnitude (sharpness, grain, noise intensity)
+  // projection   11% — row+col luminance profiles (spatial shift, any positional change)
+  // spatialGrid  10% — spatial content map (zoom, crop offset, vignette, lens)
+  // color         9% — RGB histogram (brightness, saturation changes)
+  // colorMoments  9% — mean/std/skew per channel (higher-order color stats)
+  // luma          8% — luminance histogram 64-bin (brightness/contrast/gamma)
   // metadata     15% — file metadata (EXIF, ICC, format, size, DPI) — added at file level
   const score =
     ssim * 0.15 + mse * 0.13 + chroma * 0.05 +
