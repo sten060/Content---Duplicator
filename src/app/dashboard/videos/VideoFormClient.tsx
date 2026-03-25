@@ -171,7 +171,7 @@ function SimpleTab({ channel }: { channel: "simple" | "advanced" }) {
       <input type="hidden" name="mode" value="simple" />
       <input type="hidden" name="singles" value={singlesJSON} />
 
-      <Dropzone name="files" accept="video/*" multiple maxFiles={25} />
+      <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
 
       <div>
         <label className="block text-sm font-medium mb-2 text-white/80">Nombre de copies</label>
@@ -314,7 +314,7 @@ function AdvancedTab({ channel }: { channel: "simple" | "advanced" }) {
   return (
     <form action={duplicateVideos} method="post" className="space-y-6">
       <input type="hidden" name="channel" value={channel} />
-      <Dropzone name="files" accept="video/*" multiple maxFiles={25} />
+      <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
 
       <div>
         <label className="block text-sm font-medium mb-2 text-white/80">Nombre de copies</label>

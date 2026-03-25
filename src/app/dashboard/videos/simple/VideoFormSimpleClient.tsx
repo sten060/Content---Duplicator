@@ -417,7 +417,7 @@ export default function VideoFormSimpleClient() {
       <input type="hidden" name="mode" value="simple" />
       <input type="hidden" name="singles" value={singlesJSON} />
       <GlowCard>
-        <Dropzone name="files" accept="video/*" multiple maxFiles={25} />
+        <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
       </GlowCard>
 
       <GlowCard title="Nombre de copies" dense>

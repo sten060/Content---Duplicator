@@ -513,7 +513,7 @@ export default function VideoFormAdvancedClient() {
       <input type="hidden" name="stealthMode" value={stealthMode ? "true" : "false"} />
 
       {/* Dropzone */}
-      <Dropzone name="files" accept="video/*" multiple maxFiles={25} />
+      <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
 
       {/* Copies + aide */}
       <div className="grid gap-4 sm:grid-cols-2">
