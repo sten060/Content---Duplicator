@@ -472,16 +472,14 @@ export async function processVideos(
     }))
   );
 
-  // ── CPU-aware concurrency and thread allocation ───────────────────────────
-  // Give each parallel task its own core(s).  When the task count exceeds the
-  // CPU count we cap concurrency at ncpus and let the OS schedule; threads per
-  // process stay at 1 to avoid cross-task contention.
+  // ── CPU-aware concurrency ────────────────────────────────────────────────
+  // Run one FFmpeg process per available vCPU — no artificial cap.
+  // Railway Hobby = 8 vCPU → 8 parallel encodes.
+  // Railway Pro   = 24 vCPU → 24 parallel encodes (~3× faster for large batches).
+  // Each process uses 1 thread so total CPU usage = ncpus (no oversubscription).
   const ncpus = Math.max(1, os.cpus().length);
-  const MAX_CONCURRENT = 6; // increased: 50s video limit keeps memory footprint bounded
-  const CONCURRENCY  = Math.min(allTasks.length, ncpus, MAX_CONCURRENT);
-  const threadsPerTask = CONCURRENCY > 0
-    ? Math.max(1, Math.floor(ncpus / CONCURRENCY))
-    : 1;
+  const CONCURRENCY = Math.min(allTasks.length, ncpus);
+  const threadsPerTask = 1; // 1 thread per process = ncpus total, no contention
 
   const taskErrors = await withConcurrency(allTasks, CONCURRENCY, async ({ fileName, tmpIn, fileIndex, copyIndex }) => {
     const startPct = Math.min(99, Math.round((doneCopies / totalCopies) * 100));
