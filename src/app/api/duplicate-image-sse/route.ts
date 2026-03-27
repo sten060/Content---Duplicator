@@ -71,9 +71,8 @@ async function processImage(
     // ── Saturation ±0–0.5% : multiplicatif, imperceptible même sur couleurs très saturées
     const sDir = Math.random() < 0.5 ? -1 : 1;
     const saturation = 1.0 + sDir * Math.random() * 0.005;
-    // ── Hue ±0–0.3° : rotation sous le degré, invisible à l'œil nu
-    const hue = (Math.random() < 0.5 ? -1 : 1) * Math.random() * 0.3;
-    img = img.modulate({ brightness, saturation, hue });
+    // Note: Sharp exige un entier pour hue — valeurs sub-degré impossibles, supprimé
+    img = img.modulate({ brightness, saturation });
 
     // ── Gamma 1.005–1.02 : légère correction de courbe, influence les métriques de luminance
     const gamma = 1.005 + Math.random() * 0.015;
