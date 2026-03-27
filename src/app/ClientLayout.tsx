@@ -11,18 +11,18 @@ function PromoBar() {
   const items = Array(6).fill(PROMO_TEXT);
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[60] h-9 flex items-center overflow-hidden select-none"
+      className="fixed top-0 left-0 right-0 z-[60] h-11 flex items-center overflow-hidden select-none"
       style={{ background: "linear-gradient(90deg,#4f46e5,#6366f1,#818cf8,#6366f1,#4f46e5)" }}
     >
       <div
         className="flex items-center gap-0 whitespace-nowrap"
         style={{
-          animation: "promo-scroll 28s linear infinite",
+          animation: "promo-scroll 45s linear infinite",
           willChange: "transform",
         }}
       >
         {items.map((text, i) => (
-          <span key={i} className="inline-flex items-center gap-3 px-8 text-[12px] font-medium text-white/90">
+          <span key={i} className="inline-flex items-center gap-3 px-10 text-[13.5px] font-medium text-white/90">
             <span className="text-white/40">✦</span>
             {text}
           </span>
@@ -94,7 +94,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       </Suspense>
       {showHeader && <PromoBar />}
       {showHeader && <Header />}
-      {showHeader && <div className="h-[calc(36px+4rem)] sm:h-[calc(36px+5rem)]" />}
+      {showHeader && <div className="h-[calc(50px+4rem)] sm:h-[calc(50px+5rem)]" />}
       {children}
     </>
   );
