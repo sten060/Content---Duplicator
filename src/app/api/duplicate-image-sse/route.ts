@@ -21,7 +21,6 @@ const clampDim = (n: number) => Math.max(32, Math.min(16000, Math.round(n)));
 type Flags = { semi: boolean; fundamentals: boolean; visuals: boolean; reverse: boolean };
 
 /* ============== image processing pipeline ============== */
-// Identical to the one in /api/duplicate-image/route.ts
 async function processImage(
   buffer: Buffer,
   ext: string,
