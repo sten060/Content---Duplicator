@@ -41,7 +41,7 @@ export async function GET(request: Request) {
           // No profile yet → check for pending invitation (by URL token or by email)
           const adminClient = createAdminClient();
 
-          // Vérifie d'abord si l'utilisateur est un affilié → pas d'onboarding
+          // Vérifie d'abord si l'utilisateur est un affilié → pas d'onboarding classique
           if (user.email) {
             const { data: affiliate } = await adminClient
               .from("affiliates")
@@ -56,6 +56,12 @@ export async function GET(request: Request) {
                   .from("affiliates")
                   .update({ user_id: user.id })
                   .eq("id", affiliate.id);
+              }
+              // Si l'affilié vient du login classique (next=/dashboard),
+              // le bloquer avec un message clair → il doit créer un compte classique.
+              // Si il vient du login affilié (next=/affiliate/...), le laisser passer.
+              if (!next.startsWith("/affiliate/")) {
+                return NextResponse.redirect(`${origin}/login?error=compte_affilie`);
               }
               return NextResponse.redirect(`${origin}/affiliate/dashboard`);
             }

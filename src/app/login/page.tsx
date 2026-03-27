@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 function GoogleIcon() {
@@ -17,6 +18,8 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -97,6 +100,24 @@ export default function LoginPage() {
           </div>
         ) : (
           <>
+            {urlError === "compte_affilie" && (
+              <div
+                className="rounded-xl px-4 py-4 mb-6 text-sm space-y-1"
+                style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)" }}
+              >
+                <p className="font-semibold text-amber-300">Aucun compte DuupFlow trouvé</p>
+                <p className="text-white/55 text-xs leading-relaxed">
+                  Tu as uniquement un compte partenaire affilié. Pour accéder au dashboard DuupFlow, crée un compte classique séparé.
+                </p>
+                <Link
+                  href="/register"
+                  className="inline-block mt-2 text-xs font-semibold text-amber-300 hover:text-amber-200 transition underline underline-offset-2"
+                >
+                  Créer un compte DuupFlow →
+                </Link>
+              </div>
+            )}
+
             <div className="mb-8 text-center">
               <h1 className="text-2xl font-bold text-white mb-1.5">Bon retour 👋</h1>
               <p className="text-white/45 text-sm">Connecte-toi à ton compte DuupFlow</p>

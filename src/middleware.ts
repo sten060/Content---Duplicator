@@ -60,7 +60,14 @@ export async function middleware(request: NextRequest) {
       .select("has_paid, is_guest")
       .eq("id", user.id)
       .single();
-    const hasAccess = profile?.is_guest === true || profile?.has_paid === true;
+    // Pas de profil du tout → compte affilié uniquement, pas de compte classique
+    if (!profile) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "compte_affilie");
+      return NextResponse.redirect(url);
+    }
+    const hasAccess = profile.is_guest === true || profile.has_paid === true;
     const url = request.nextUrl.clone();
     url.pathname = hasAccess ? "/dashboard" : "/checkout";
     return NextResponse.redirect(url);
@@ -74,10 +81,18 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
+    // Pas de profil du tout → compte affilié uniquement, pas de compte classique
+    if (!profile) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "compte_affilie");
+      return NextResponse.redirect(url);
+    }
+
     // Les invités (guests) héritent du paiement de leur hôte → accès autorisé
     // Les utilisateurs ayant payé → accès autorisé
     // Tous les autres → paywall
-    const hasAccess = profile?.is_guest === true || profile?.has_paid === true;
+    const hasAccess = profile.is_guest === true || profile.has_paid === true;
 
     if (!hasAccess) {
       const url = request.nextUrl.clone();
