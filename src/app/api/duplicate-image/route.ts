@@ -84,48 +84,14 @@ async function processImage(
   }
 
   if (flags.visuals) {
-    // ── 1. Brightness micro uniquement — saturation supprimée (multiplicative → rose fluo sur lèvres rouges)
-    // hue supprimé (visible sur couleurs saturées), gamma supprimé (amplifie brightness)
-    const bDir = Math.random() < 0.5 ? -1 : 1;
-    const brightness = 1.0 + bDir * Math.random() * 0.002;  // ±0–0.2%
-    img = img.modulate({ brightness });
-    // Contraste micro ±0.3%
-    const cDir = Math.random() < 0.5 ? -1 : 1;
-    const contrast = 1.0 + cDir * Math.random() * 0.003;    // ±0–0.3%
-    img = img.linear(contrast, 0);
-
-    // ── 3. Gradient de luminosité directionnel → SSIM (terme luminance locale par bloc 8×8)
-    // Principe : un changement uniforme (brightness global) préserve σxy (covariance SSIM).
-    // Un gradient spatial crée des µ différents dans chaque bloc 8×8 → SSIM chute réellement.
-    // Centre à 254/255 ≈ 0.996 → assombrissement global <0.5%, imperceptible à l'œil.
-    const gSize = 8; // 8×8 points de contrôle → gradient smooth sans blocs visibles
-    const gradBuf = Buffer.alloc(gSize * gSize);
-    const gradAngle = Math.random() * Math.PI * 2;
-    const gradDx = Math.cos(gradAngle);
-    const gradDy = Math.sin(gradAngle);
-    const gradAmp = Math.random() * 0.002;  // 0–0.2% de variation lumineuse
-    for (let gy = 0; gy < gSize; gy++) {
-      for (let gx = 0; gx < gSize; gx++) {
-        const nx = (gx / (gSize - 1)) * 2 - 1; // -1 à +1
-        const ny = (gy / (gSize - 1)) * 2 - 1;
-        const t = gradDx * nx + gradDy * ny;
-        // Centre à 254 → assombrissement global <0.5%, variation totale <0.4%
-        gradBuf[gy * gSize + gx] = Math.max(0, Math.min(255, Math.round(254 * (1 + t * gradAmp))));
-      }
-    }
-    const gradPng = await sharp(gradBuf, { raw: { width: gSize, height: gSize, channels: 1 } })
-      .resize(baseW, baseH, { fit: "fill", kernel: sharp.kernel.cubic })
-      .png()
-      .toBuffer();
-    img = img.composite([{ input: gradPng, blend: "multiply" } as sharp.OverlayOptions]).removeAlpha();
-
-    // Zoom supprimé : le resize cubique 3–4% crée une interpolation visible (flou, perte de netteté)
-    // sur le fichier de sortie même si les métriques 64×64 ne le détectent pas.
+    // Pack visuel volontairement vide : toute modification pixel (brightness, contrast, gradient,
+    // zoom) était perceptible à l'œil sur des images avec des couleurs saturées ou des tons clairs.
+    // La différenciation se fait uniquement via le crop (semi) et les métadonnées (fundamentals).
   }
 
   if (flags.fundamentals) {
-    // Teinte asymétrique ±3–8° → Chroma Cb/Cr
-    const tintHue = Math.floor(1 + Math.random() * 4) * (Math.random() < 0.5 ? 1 : -1); // ±1–4°
+    // Teinte asymétrique ±0.5–1° max → Chroma Cb/Cr subtil, imperceptible sur couleurs saturées
+    const tintHue = (0.5 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1); // ±0.5–1°
     img = img.modulate({ hue: tintHue });
   }
 
@@ -196,8 +162,9 @@ async function processImage(
     : "4:4:4";
   const progressive = flags.fundamentals ? Math.random() < 0.5 : false;
 
-  // Qualité 5–92 (plage extrême) → écart de taille fichier maximal entre duplications
-  const quality = flags.fundamentals ? (5 + Math.floor(Math.random() * 87)) : 88;
+  // Qualité 75–92 → écart de taille fichier notable sans artefacts JPEG visibles
+  // Qualité < 75 crée des blocs de compression visibles, surtout sur les zones de peau/cheveux
+  const quality = flags.fundamentals ? (75 + Math.floor(Math.random() * 17)) : 88;
 
   if (lower === ".webp") {
     return {
