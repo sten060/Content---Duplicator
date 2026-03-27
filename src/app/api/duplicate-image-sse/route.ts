@@ -45,8 +45,8 @@ async function processImage(
   }
 
   if (flags.semi) {
-    const bigPct  = 0.01 + Math.random() * 0.02;  // 1–3%
-    const smallPct = Math.random() * 0.005;          // 0–0.5%
+    const bigPct  = 0.02 + Math.random() * 0.04;  // 2–6%
+    const smallPct = Math.random() * 0.01;           // 0–1%
     const dim = Math.min(baseW, baseH);
     const L = Math.floor(dim * bigPct);
     const T = Math.floor(dim * bigPct);
@@ -62,6 +62,12 @@ async function processImage(
     img = img
       .extract({ left: safeLeft, top: safeTop, width: safeWidth, height: safeHeight })
       .resize(baseW, baseH, { fit: "fill", kernel: sharp.kernel.lanczos3 });
+
+    // Légère netteté aléatoire — fait chuter les gradients et le SSIM
+    const sigma = 0.4 + Math.random() * 0.6;   // 0.4–1.0
+    const flat  = 0.5 + Math.random() * 1.0;   // 0.5–1.5
+    const jagged = 0.3 + Math.random() * 0.7;  // 0.3–1.0
+    img = img.sharpen({ sigma, flat, jagged });
   }
 
   if (flags.visuals) {
