@@ -65,33 +65,33 @@ async function processImage(
   }
 
   if (flags.visuals) {
-    // ── Brightness ±0.5–1% : légère variation de luminosité
+    // ── Brightness ±2–5%
     const bDir = Math.random() < 0.5 ? -1 : 1;
-    const brightness = 1.0 + bDir * (0.005 + Math.random() * 0.005);
-    // ── Saturation ±0.5–1.5% : variation chromatique légère
+    const brightness = 1.0 + bDir * (0.02 + Math.random() * 0.03);
+    // ── Saturation ±3–8%
     const sDir = Math.random() < 0.5 ? -1 : 1;
-    const saturation = 1.0 + sDir * (0.005 + Math.random() * 0.010);
-    // ── Hue ±1–3° entier (Sharp exige un entier)
-    const hue = (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 3));
+    const saturation = 1.0 + sDir * (0.03 + Math.random() * 0.05);
+    // ── Hue ±3–8° entier
+    const hue = (Math.random() < 0.5 ? -1 : 1) * (3 + Math.floor(Math.random() * 6));
     img = img.modulate({ brightness, saturation, hue });
 
-    // ── Gamma 1.02–1.06 : correction de courbe légère
-    const gamma = 1.02 + Math.random() * 0.04;
+    // ── Gamma 1.05–1.15
+    const gamma = 1.05 + Math.random() * 0.10;
     img = img.gamma(gamma);
 
-    // ── Gradient directionnel 0.3–0.8% amplitude, centre 253/255
+    // ── Gradient directionnel 1–3% amplitude, centre 250/255
     const gSize = 8;
     const gradBuf = Buffer.alloc(gSize * gSize);
     const gradAngle = Math.random() * Math.PI * 2;
     const gradDx = Math.cos(gradAngle);
     const gradDy = Math.sin(gradAngle);
-    const gradAmp = 0.003 + Math.random() * 0.005;
+    const gradAmp = 0.01 + Math.random() * 0.02;
     for (let gy = 0; gy < gSize; gy++) {
       for (let gx = 0; gx < gSize; gx++) {
         const nx = (gx / (gSize - 1)) * 2 - 1;
         const ny = (gy / (gSize - 1)) * 2 - 1;
         const t = gradDx * nx + gradDy * ny;
-        gradBuf[gy * gSize + gx] = Math.max(0, Math.min(255, Math.round(253 * (1 + t * gradAmp))));
+        gradBuf[gy * gSize + gx] = Math.max(0, Math.min(255, Math.round(250 * (1 + t * gradAmp))));
       }
     }
     const gradPng = await sharp(gradBuf, { raw: { width: gSize, height: gSize, channels: 1 } })
