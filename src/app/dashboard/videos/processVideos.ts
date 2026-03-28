@@ -379,7 +379,7 @@ async function runFFmpegSafe(
   // Threads to allocate to this FFmpeg process (computed by caller from os.cpus()).
   threads = 1,
 ) {
-  const args: string[] = ["-y", "-hide_banner", "-loglevel", "error"];
+  const args: string[] = ["-y", "-hide_banner", "-loglevel", "error", "-max_muxing_queue_size", "1024"];
   // -stats prints "frame= fps= time=…" to stderr even at loglevel error,
   // so the UI can show real encoding progress without spamming log output.
   if (onTick) args.push("-stats");
@@ -395,9 +395,14 @@ async function runFFmpegSafe(
   if (useStreamCopy) {
     args.push("-c", "copy");
   } else if (audioOnly) {
+    args.push("-map", "0:v", "-map", "0:a?");
     args.push("-af", afParts.join(","));
     args.push("-c:v", "copy", "-c:a", "aac", "-b:a", "192k");
   } else {
+    // -map 0:v : always include video
+    // -map 0:a?: include audio only if present — prevents crash on no-audio inputs
+    //            when audio filters (e.g. atempo) are in afParts
+    args.push("-map", "0:v", "-map", "0:a?");
     if (vfParts.length) args.push("-vf", vfParts.join(","));
     if (afParts.length) args.push("-af", afParts.join(","));
     args.push(
