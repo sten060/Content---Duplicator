@@ -752,11 +752,16 @@ export async function processVideos(
         }
 
         if (packs.includes("metadata")) {
-          // Audio sample rate variation — changes the audio fingerprint (resampling
-          // produces a unique bitstream per copy). Video is stream-copied untouched.
-          // -bf and -g removed: they are video encoder params that force a full video
-          // re-encode, which introduces color-space / pixel-format changes → visible tint.
+          // Audio sample rate — resampling changes the full audio bitstream per copy.
           extraArgs.push("-ar", Math.random() < 0.5 ? "44100" : "48000");
+          // Audio bitrate — different AAC compression → different artifacts → different hash.
+          const abitratePool = [96, 128, 160, 192, 256];
+          extraArgs.push("-b:a", `${abitratePool[Math.floor(Math.random() * abitratePool.length)]}k`);
+          // Micro volume shift ±0.1–0.5 dB — imperceptible but changes every audio sample
+          // value, making the audio waveform hash unique per copy.
+          const sign = Math.random() < 0.5 ? 1 : -1;
+          const db = (0.1 + Math.random() * 0.4).toFixed(2);
+          afParts.push(`volume=${sign > 0 ? "" : "-"}${db}dB`);
         }
 
         // ── CRF variation — only when video is already being re-encoded ──────────
