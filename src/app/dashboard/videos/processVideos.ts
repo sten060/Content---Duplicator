@@ -118,14 +118,19 @@ export async function getFFmpegBin(): Promise<string> {
 async function probeVideoDuration(input: string, binPath: string): Promise<number> {
   return new Promise((resolve) => {
     let stderr = "";
+    let settled = false;
+    const done = (val: number) => { if (!settled) { settled = true; clearTimeout(timer); resolve(val); } };
+
     const p = spawn(binPath, ["-i", input], { stdio: ["ignore", "ignore", "pipe"] });
     p.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
-    p.on("error", () => resolve(0));
+    p.on("error", () => done(0));
     p.on("close", () => {
       const m = stderr.match(/Duration:\s*(\d+):(\d{2}):(\d{2}(?:\.\d+)?)/);
-      if (!m) { resolve(0); return; }
-      resolve(parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]));
+      done(!m ? 0 : parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]));
     });
+
+    // Safety: kill the probe if it hangs for more than 8 seconds
+    const timer = setTimeout(() => { p.kill("SIGKILL"); done(0); }, 8_000);
   });
 }
 
@@ -481,8 +486,10 @@ export async function processVideos(
 
   const singlesRaw = (formData.get("singles") as string) || "{}";
   const rangesRaw = (formData.get("advancedRanges") as string) || "{}";
-  const singles = JSON.parse(singlesRaw || "{}");
-  const ranges = JSON.parse(rangesRaw || "{}");
+  let singles: Record<string, any> = {};
+  let ranges:  Record<string, any> = {};
+  try { singles = JSON.parse(singlesRaw); } catch { /* malformed — use defaults */ }
+  try { ranges  = JSON.parse(rangesRaw);  } catch { /* malformed — use defaults */ }
 
   let totalCopies = files.length * count; // may be reduced after duration check
   let doneCopies = 0;

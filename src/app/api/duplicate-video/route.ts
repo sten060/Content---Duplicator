@@ -173,7 +173,7 @@ export async function POST(req: Request) {
               throw new Error(`Récupération storage échouée : ${error?.message ?? "inconnu"}`);
             }
             const ext     = path.extname(fileName) || ".mp4";
-            const tmpPath = path.join(os.tmpdir(), `duup_in_${Date.now()}_${i}${ext}`);
+            const tmpPath = path.join(os.tmpdir(), `duup_in_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 8)}${ext}`);
             await fs.writeFile(tmpPath, Buffer.from(await data.arrayBuffer()));
             jobEntry.tmpPaths.push(tmpPath);
             preDownloadedFiles![i] = { name: fileName, tmpPath };
