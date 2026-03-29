@@ -114,6 +114,94 @@ export async function getFFmpegBin(): Promise<string> {
 
 /* ------------------ utils ------------------ */
 
+/** Probe video color properties to detect HDR (BT.2020 / HLG / PQ). */
+type ColorInfo = {
+  isHDR: boolean;
+  colorSpace: string;   // e.g. "bt2020nc", "bt709", "unknown"
+  colorTransfer: string; // e.g. "arib-std-b67" (HLG), "smpte2084" (PQ), "bt709"
+  colorPrimaries: string; // e.g. "bt2020", "bt709"
+  pixFmt: string;        // e.g. "yuv420p10le", "yuv420p"
+};
+async function probeColorInfo(input: string, binPath: string): Promise<ColorInfo> {
+  const defaults: ColorInfo = { isHDR: false, colorSpace: "unknown", colorTransfer: "unknown", colorPrimaries: "unknown", pixFmt: "unknown" };
+  return new Promise((resolve) => {
+    let stderr = "";
+    let settled = false;
+    const done = (v: ColorInfo) => { if (!settled) { settled = true; clearTimeout(timer); resolve(v); } };
+
+    const p = spawn(binPath, ["-hide_banner", "-i", input], { stdio: ["ignore", "ignore", "pipe"] });
+    p.stderr.on("data", (d: Buffer) => { stderr += d.toString(); });
+    p.on("error", () => done(defaults));
+    p.on("close", () => {
+      // Parse color info from ffmpeg -i output, e.g.:
+      // Stream #0:0: Video: hevc ... yuv420p10le(tv, bt2020nc/bt2020/arib-std-b67) ...
+      const info = { ...defaults };
+
+      // Extract pixel format — e.g. "yuv420p10le" or "yuv420p"
+      const pfm = stderr.match(/Video:.*?\s(yuv\w+)/);
+      if (pfm) info.pixFmt = pfm[1];
+
+      // Extract color properties from parenthetical — e.g. "(tv, bt2020nc/bt2020/arib-std-b67)"
+      const cm = stderr.match(/\((?:tv|pc|unknown),\s*(\w+)\/(\w+)\/(\w+)\)/);
+      if (cm) {
+        info.colorSpace = cm[1];     // bt2020nc, bt709, smpte170m, etc.
+        info.colorPrimaries = cm[2]; // bt2020, bt709, etc.
+        info.colorTransfer = cm[3];  // arib-std-b67 (HLG), smpte2084 (PQ), bt709, etc.
+      }
+
+      // Detect HDR: BT.2020 color space OR HLG/PQ transfer function
+      info.isHDR = /bt2020/i.test(info.colorSpace) ||
+                   /bt2020/i.test(info.colorPrimaries) ||
+                   /arib-std-b67|smpte2084/i.test(info.colorTransfer);
+
+      console.log("[probeColorInfo]", input.split("/").pop(), JSON.stringify(info));
+      done(info);
+    });
+
+    const timer = setTimeout(() => { p.kill("SIGKILL"); done(defaults); }, 8_000);
+  });
+}
+
+/** Check if ffmpeg has a specific filter available (e.g. "zscale"). */
+let _hasZscale: boolean | null = null;
+async function hasZscaleFilter(binPath: string): Promise<boolean> {
+  if (_hasZscale !== null) return _hasZscale;
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (v: boolean) => { if (!settled) { settled = true; clearTimeout(t); _hasZscale = v; resolve(v); } };
+    const p = spawn(binPath, ["-filters"], { stdio: ["ignore", "pipe", "ignore"] });
+    let out = "";
+    p.stdout.on("data", (d: Buffer) => { out += d.toString(); });
+    p.on("error", () => done(false));
+    p.on("close", () => done(out.includes("zscale")));
+    const t = setTimeout(() => { p.kill("SIGKILL"); done(false); }, 5_000);
+  });
+}
+
+/**
+ * Build the HDR→SDR filter chain prefix.
+ * Uses zscale+tonemap if available (best quality), falls back to
+ * colorspace filter (handles color matrix, good enough to fix tint).
+ */
+function hdrToSdrFilters(useZscale: boolean): string[] {
+  if (useZscale) {
+    return [
+      "zscale=t=linear:npl=100",
+      "format=gbrpf32le",
+      "zscale=p=bt709",
+      "tonemap=hable:desat=0",
+      "zscale=t=bt709:m=bt709:r=tv",
+      "format=yuv420p",
+    ];
+  }
+  // Fallback: colorspace filter handles BT.2020→BT.709 matrix + transfer.
+  // Less accurate than zscale+tonemap but eliminates the yellow tint.
+  return [
+    "colorspace=all=bt709:iall=bt2020:fast=1",
+    "format=yuv420p",
+  ];
+}
+
 /** Probe video duration (seconds) using ffmpeg -i.  Returns 0 if parsing fails. */
 async function probeVideoDuration(input: string, binPath: string): Promise<number> {
   return new Promise((resolve) => {
@@ -564,35 +652,33 @@ export async function processVideos(
     })
   );
 
-  // ── Server-side duration guard (50 s max) — probes run in parallel ──────
+  // ── Server-side duration guard (50 s max) + color probe — run in parallel ──
   const MAX_DURATION_S = 50;
   const durResults = await Promise.all(
     fileEntries.map(async (entry) => ({
       entry,
       dur: await probeVideoDuration(entry.tmpIn, ffmpegBin),
+      color: await probeColorInfo(entry.tmpIn, ffmpegBin),
     }))
   );
-  const validEntries: typeof fileEntries = [];
-  for (const { entry, dur } of durResults) {
+  type ValidEntry = typeof fileEntries[number] & { color: ColorInfo };
+  const validEntries: ValidEntry[] = [];
+  for (const { entry, dur, color } of durResults) {
     if (dur <= 0) {
-      // Probe couldn't parse duration — may be a valid HEVC/unusual file that ffmpeg -i
-      // couldn't read the moov atom from (e.g. moov atom at EOF, Apple HEVC metadata).
-      // Do a quick decode test before rejecting: if FFmpeg can read 1 frame it's valid.
       const readable = await canFFmpegReadFile(entry.tmpIn, ffmpegBin);
       if (!readable) {
         console.warn(`[processVideos] rejected "${entry.fileName}": probe=0 and 1-frame test failed`);
         await onProgress?.(2, `⚠ "${entry.fileName}" est invalide ou corrompu — ignorée.`);
         if (entry.ownsTmpIn) await fs.unlink(entry.tmpIn).catch(() => {});
       } else {
-        // Valid file — duration unknown, will process without the 50 s guard
         console.log(`[processVideos] accepted "${entry.fileName}": probe=0 but 1-frame test passed (likely HEVC)`);
-        validEntries.push(entry);
+        validEntries.push({ ...entry, color });
       }
     } else if (dur > MAX_DURATION_S) {
       await onProgress?.(2, `⚠ "${entry.fileName}" dépasse ${MAX_DURATION_S}s (${Math.round(dur)}s) — ignorée.`);
       if (entry.ownsTmpIn) await fs.unlink(entry.tmpIn).catch(() => {});
     } else {
-      validEntries.push(entry);
+      validEntries.push({ ...entry, color });
     }
   }
   if (validEntries.length === 0) {
@@ -602,10 +688,10 @@ export async function processVideos(
 
   // ── Flatten all (file × copy) into one pool so every copy of every file
   // runs concurrently — total time ≈ slowest single copy, not SUM. ───────────
-  type Task = { fileName: string; tmpIn: string; fileIndex: number; copyIndex: number };
-  const allTasks: Task[] = validEntries.flatMap(({ fileName, tmpIn }, idx) =>
+  type Task = { fileName: string; tmpIn: string; fileIndex: number; copyIndex: number; color: ColorInfo };
+  const allTasks: Task[] = validEntries.flatMap(({ fileName, tmpIn, color }, idx) =>
     Array.from({ length: count }, (_, i) => ({
-      fileName, tmpIn, fileIndex: idx + 1, copyIndex: i + 1,
+      fileName, tmpIn, fileIndex: idx + 1, copyIndex: i + 1, color,
     }))
   );
 
@@ -622,9 +708,11 @@ export async function processVideos(
   );
   const CONCURRENCY = Math.min(allTasks.length, MAX_CONCURRENT);
   const threadsPerTask = 1;
-  console.log(`[processVideos] ncpus=${ncpus} MAX_CONCURRENT=${MAX_CONCURRENT} CONCURRENCY=${CONCURRENCY} tasks=${allTasks.length}`);
+  // Check for zscale availability (needed for HDR→SDR tone mapping)
+  const useZscale = await hasZscaleFilter(ffmpegBin);
+  console.log(`[processVideos] ncpus=${ncpus} MAX_CONCURRENT=${MAX_CONCURRENT} CONCURRENCY=${CONCURRENCY} tasks=${allTasks.length} zscale=${useZscale}`);
 
-  const taskErrors = await withConcurrency(allTasks, CONCURRENCY, async ({ fileName, tmpIn, fileIndex, copyIndex }) => {
+  const taskErrors = await withConcurrency(allTasks, CONCURRENCY, async ({ fileName, tmpIn, fileIndex, copyIndex, color }) => {
     const startPct = Math.min(99, Math.round((doneCopies / totalCopies) * 100));
     await onProgress?.(startPct, `Encodage ${doneCopies + 1}/${totalCopies}…`);
 
@@ -782,17 +870,18 @@ export async function processVideos(
 
         // When video will be re-encoded, ensure even dimensions and cap at 1920px.
         if (vfParts.length > 0 || packs.includes("technical")) {
-          // ── CRITICAL: convert pixel format FIRST, before any scale operation. ──
-          // iPhone MOV files are often HEVC yuv420p10le (10-bit). When swscale
-          // encounters a scale filter, it does an internal pixel format conversion
-          // (10-bit → 8-bit) using default color matrix assumptions that can be
-          // wrong for the source, producing a yellow tint.
-          // By converting to yuv420p FIRST, all subsequent scale operations are
-          // yuv420p → yuv420p (same format) so swscale only resizes, no color
-          // conversion happens.
-          vfParts.unshift("format=yuv420p");
-          // Cap at 1920px after format conversion — swscale operates on 8-bit now.
-          vfParts.splice(1, 0,
+          // ── HDR → SDR conversion when source is BT.2020 / HLG / PQ ──────────
+          // Without this, BT.2020 pixel data encoded as H.264 (BT.709) produces
+          // a visible yellow/warm tint because of color matrix mismatch.
+          if (color.isHDR) {
+            const hdr = hdrToSdrFilters(useZscale);
+            vfParts.unshift(...hdr);
+          } else {
+            vfParts.unshift("format=yuv420p");
+          }
+          // Cap at 1920px after format/HDR conversion.
+          const insertIdx = color.isHDR ? hdrToSdrFilters(useZscale).length : 1;
+          vfParts.splice(insertIdx, 0,
             "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
           );
           // Ensure even dimensions after all filters (pad/rotation can produce odd dims).
@@ -945,12 +1034,17 @@ export async function processVideos(
           ["-crf", "-b:v", "-profile:v", "-level:v", "-g"].includes(a)
         );
         if (willFullEncode) {
-          // Same as simple mode: format conversion FIRST to avoid tint.
-          vfParts.unshift("format=yuv420p");
-          vfParts.splice(1, 0,
+          // Same HDR→SDR logic as simple mode.
+          if (color.isHDR) {
+            const hdr = hdrToSdrFilters(useZscale);
+            vfParts.unshift(...hdr);
+          } else {
+            vfParts.unshift("format=yuv420p");
+          }
+          const insertIdx = color.isHDR ? hdrToSdrFilters(useZscale).length : 1;
+          vfParts.splice(insertIdx, 0,
             "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
           );
-          // Ensure even dimensions after all filters.
           vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=lanczos");
         }
       }
