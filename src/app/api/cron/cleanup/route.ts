@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const maxAgeHours = Number(req.nextUrl.searchParams.get("hours") ?? "2");
+  const maxAgeHours = Number(req.nextUrl.searchParams.get("hours") ?? "1");
   const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
 
   const deleted = await cleanupOldFiles(maxAgeMs);

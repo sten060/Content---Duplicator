@@ -43,7 +43,7 @@ export { OUT_BASE };
  * every user's subfolder under OUT_BASE.
  * Safe to call fire-and-forget — never throws.
  */
-export async function cleanupOldFiles(maxAgeMs = 2 * 60 * 60 * 1000): Promise<number> {
+export async function cleanupOldFiles(maxAgeMs = 1 * 60 * 60 * 1000): Promise<number> {
   let deleted = 0;
   try {
     const base = OUT_BASE;
