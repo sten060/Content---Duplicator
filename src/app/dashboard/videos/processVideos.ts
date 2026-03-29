@@ -460,7 +460,9 @@ async function runFFmpegSafe(
       "-preset", "ultrafast",      // ultrafast: prioritise encoding speed (3–5× faster than fast)
       "-threads", String(threads),  // caller allocates threads based on os.cpus()
       "-crf", "18",                // CRF 18: high visual quality, same speed with ultrafast preset
-      "-pix_fmt", "yuv420p",       // H.264 compatibility — convert 10-bit/full-range inputs
+      // pix_fmt yuv420p is now set via format=yuv420p inside the filter graph
+      // to avoid swscale inserting an implicit auto-scaler after the filter chain
+      // that can introduce a yellow tint from BT.601/BT.709 matrix mismatch.
       "-c:a", "aac",
       "-b:a", "192k",
     );
@@ -472,6 +474,9 @@ async function runFFmpegSafe(
   if (metaArgs.length) args.push(...metaArgs);
 
   args.push(output);
+
+  // Log the full FFmpeg command for debugging tint / filter issues
+  console.log("[ffmpeg-cmd]", ffmpegBin, args.join(" "));
 
   await new Promise<void>((resolve, reject) => {
     const p = spawn(ffmpegBin, args, { stdio: ["ignore", "ignore", "pipe"] });
@@ -777,20 +782,22 @@ export async function processVideos(
           extraArgs.push("-crf", String(15 + Math.floor(Math.random() * 6)));
         }
 
-        // Scale filters whenever video will be re-encoded (visual filters OR technical pack).
-        // Technical pack forces a full encode (CRF/bitrate/profile in extraArgs) so it also
-        // needs the scale filter chain to ensure proper pixel format and colorspace handling.
+        // When video will be re-encoded, ensure even dimensions and cap at 1920px.
+        // Use format=yuv420p inside the filter graph to avoid swscale implicit
+        // colorspace conversion that causes a yellow tint on re-encode.
         if (vfParts.length > 0 || packs.includes("technical")) {
-          // Cap the LONGER side at 1920 px using force_original_aspect_ratio=decrease.
-          // A 1920×1920 bounding box handles both landscape (1920×1080) and portrait
-          // (1080×1920) videos correctly — each fits within the box without squishing.
-          // No explicit color matrix: let FFmpeg preserve the source colorspace to avoid
-          // tint issues when the source is BT.601 or has unspecified metadata.
+          // Cap the LONGER side at 1920 px — but use min(iw,1920) to avoid UPSCALING
+          // videos that are already ≤1920. force_original_aspect_ratio=decrease only
+          // shrinks, never grows, so this is safe for smaller inputs too.
           vfParts.unshift(
-            "scale=1920:1920:force_original_aspect_ratio=decrease:flags=fast_bilinear",
+            "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
           );
+          // Force pixel format in the filter graph itself — avoids the implicit
+          // swscale color matrix conversion that -pix_fmt yuv420p triggers as a
+          // separate auto-inserted scaler at the end of the pipeline.
+          vfParts.push("format=yuv420p");
           // Ensure even dimensions after all filters (pad/rotation can produce odd dims).
-          vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2");
+          vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=lanczos");
         }
 
       } else {
@@ -939,12 +946,14 @@ export async function processVideos(
           ["-crf", "-b:v", "-profile:v", "-level:v", "-g"].includes(a)
         );
         if (willFullEncode) {
-          // Same 1920×1920 bounding box as simple mode: handles landscape and portrait.
+          // Same approach as simple mode: cap at 1920px, use format=yuv420p in
+          // the filter graph to avoid swscale implicit colorspace conversion.
           vfParts.unshift(
-            "scale=1920:1920:force_original_aspect_ratio=decrease:flags=fast_bilinear",
+            "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
           );
+          vfParts.push("format=yuv420p");
           // Ensure even dimensions after all filters (pad/rotation can produce odd dims).
-          vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2");
+          vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=lanczos");
         }
       }
 
