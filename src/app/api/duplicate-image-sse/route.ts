@@ -186,7 +186,7 @@ async function processImage(
 
 /* ============== SSE handler ============== */
 export async function POST(req: Request) {
-  void cleanupOldFiles(2 * 60 * 60 * 1000);
+  void cleanupOldFiles(1 * 60 * 60 * 1000);
 
   let form: FormData;
   try {
