@@ -169,17 +169,16 @@ async function probeColorInfo(input: string, binPath: string): Promise<ColorInfo
 
 /**
  * Build the HDR→SDR filter chain prefix.
- * Uses scale with in_color_matrix/out_color_matrix to convert BT.2020→BT.709.
- * This is lightweight (no extra memory), always available in any FFmpeg build,
- * and sufficient to eliminate the yellow tint caused by color matrix mismatch.
+ * Uses the colorspace filter to convert BT.2020→BT.709 color matrix + transfer.
+ * Available since FFmpeg 3.4, lightweight, handles the full conversion.
  */
 function hdrToSdrFilters(): string[] {
-  // 1. Convert to yuv420p first (handles 10-bit→8-bit)
-  // 2. Scale with explicit BT.2020→BT.709 color matrix conversion
-  //    (scale=iw:ih is a no-op resize but forces swscale to run the matrix conversion)
+  // colorspace filter: converts color matrix (bt2020→bt709), transfer function
+  // (HLG/PQ→bt709), and primaries in one step. fast=1 for speed.
+  // format=yuv420p after: converts 10-bit→8-bit for H.264 compatibility.
   return [
+    "colorspace=all=bt709:iall=bt2020:fast=1",
     "format=yuv420p",
-    "scale=iw:ih:in_color_matrix=bt2020:out_color_matrix=bt709",
   ];
 }
 
