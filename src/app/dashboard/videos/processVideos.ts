@@ -686,7 +686,7 @@ export async function processVideos(
           // crop: take (iw/zoom × ih/zoom) from position (iw*offx, ih*offy)
           // scale: bring the sub-region back to full original dimensions — bicubic: good quality/speed ratio
           vfParts.push(`crop=iw/${zf}:ih/${zf}:x=iw*${offx}:y=ih*${offy}`);
-          vfParts.push(`scale=iw*${zf}:ih*${zf}:flags=bicubic`);
+          vfParts.push(`scale=iw*${zf}:ih*${zf}:flags=bicubic:in_color_matrix=bt709:out_color_matrix=bt709`);
 
           // lenscorrection removed: most expensive filter (~50% of encode time), geometric
           // remapping recalculates every pixel with bilinear interpolation per frame.
@@ -737,14 +737,14 @@ export async function processVideos(
           const deg = a + Math.random() * (b - a);
           const rad = (deg * Math.PI) / 180;
           // c=black (opaque) — black@0 would be alpha=0 which H.264 encodes as bright green
-          vfParts.push(`rotate=${rad.toFixed(6)}:c=black:ow=rotw(iw):oh=roth(ih),scale=iw*1.04:ih*1.04,crop=in_w:in_h:(ow-in_w)/2:(oh-in_h)/2`);
+          vfParts.push(`rotate=${rad.toFixed(6)}:c=black:ow=rotw(iw):oh=roth(ih),scale=iw*1.04:ih*1.04:in_color_matrix=bt709:out_color_matrix=bt709,crop=in_w:in_h:(ow-in_w)/2:(oh-in_h)/2`);
         }
 
         if (singles?.dims?.enabled) {
           const fx = Number(singles.dims.w_factor ?? 1);
           const fy = Number(singles.dims.h_factor ?? 1);
           if (fx > 0 && fy > 0 && (fx !== 1 || fy !== 1)) {
-            vfParts.push(`scale=iw*${fx.toFixed(6)}:ih*${fy.toFixed(6)}:flags=bicubic`);
+            vfParts.push(`scale=iw*${fx.toFixed(6)}:ih*${fy.toFixed(6)}:flags=bicubic:in_color_matrix=bt709:out_color_matrix=bt709`);
           }
         }
 
@@ -798,7 +798,7 @@ export async function processVideos(
             "scale=1920:1920:force_original_aspect_ratio=decrease:flags=fast_bilinear:in_color_matrix=bt709:out_color_matrix=bt709",
           );
           // Ensure even dimensions after all filters (pad/rotation can produce odd dims).
-          vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2");
+          vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:in_color_matrix=bt709:out_color_matrix=bt709");
         }
 
       } else {
@@ -866,7 +866,7 @@ export async function processVideos(
           const zf = z.toFixed(6);
           // BUG FIX: old code used crop=iw:ih which evaluated x=(in_w-out_w)/2=0 (no crop at all).
           // Correct: scale up/down, then crop-back only when zoomed IN to restore original dimensions.
-          vfParts.push(`scale=iw*${zf}:ih*${zf}:flags=fast_bilinear`);
+          vfParts.push(`scale=iw*${zf}:ih*${zf}:flags=fast_bilinear:in_color_matrix=bt709:out_color_matrix=bt709`);
           if (z > 1.0) {
             // After scale up: iw = W*z, ih = H*z. Crop center region back to W×H.
             vfParts.push(`crop=iw/${zf}:ih/${zf}:x=(iw-iw/${zf})/2:y=(ih-ih/${zf})/2`);
@@ -899,7 +899,7 @@ export async function processVideos(
         const dimW = ranges?.dim_w?.enabled ? _clamp(Number(ranges.dim_w.min), -30, 30) : 0;
         const dimH = ranges?.dim_h?.enabled ? _clamp(Number(ranges.dim_h.min), -30, 30) : 0;
         if (dimW || dimH) {
-          vfParts.push(`scale=iw*${(1 + dimW / 100).toFixed(6)}:ih*${(1 + dimH / 100).toFixed(6)}:flags=bicubic`);
+          vfParts.push(`scale=iw*${(1 + dimW / 100).toFixed(6)}:ih*${(1 + dimH / 100).toFixed(6)}:flags=bicubic:in_color_matrix=bt709:out_color_matrix=bt709`);
         }
 
         const padPx = get("border_px", 0, 0, 0, 200);
@@ -953,7 +953,7 @@ export async function processVideos(
             "scale=1920:1920:force_original_aspect_ratio=decrease:flags=fast_bilinear:in_color_matrix=bt709:out_color_matrix=bt709",
           );
           // Ensure even dimensions after all filters (pad/rotation can produce odd dims).
-          vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2");
+          vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:in_color_matrix=bt709:out_color_matrix=bt709");
         }
       }
 
