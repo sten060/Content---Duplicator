@@ -167,43 +167,19 @@ async function probeColorInfo(input: string, binPath: string): Promise<ColorInfo
   });
 }
 
-/** Check if ffmpeg has a specific filter available (e.g. "zscale"). */
-let _hasZscale: boolean | null = null;
-async function hasZscaleFilter(binPath: string): Promise<boolean> {
-  if (_hasZscale !== null) return _hasZscale;
-  return new Promise((resolve) => {
-    let settled = false;
-    const done = (v: boolean) => { if (!settled) { settled = true; clearTimeout(t); _hasZscale = v; resolve(v); } };
-    const p = spawn(binPath, ["-filters"], { stdio: ["ignore", "pipe", "ignore"] });
-    let out = "";
-    p.stdout.on("data", (d: Buffer) => { out += d.toString(); });
-    p.on("error", () => done(false));
-    p.on("close", () => done(out.includes("zscale")));
-    const t = setTimeout(() => { p.kill("SIGKILL"); done(false); }, 5_000);
-  });
-}
-
 /**
  * Build the HDR→SDR filter chain prefix.
- * Uses zscale+tonemap if available (best quality), falls back to
- * colorspace filter (handles color matrix, good enough to fix tint).
+ * Uses scale with in_color_matrix/out_color_matrix to convert BT.2020→BT.709.
+ * This is lightweight (no extra memory), always available in any FFmpeg build,
+ * and sufficient to eliminate the yellow tint caused by color matrix mismatch.
  */
-function hdrToSdrFilters(useZscale: boolean): string[] {
-  if (useZscale) {
-    return [
-      "zscale=t=linear:npl=100",
-      "format=gbrpf32le",
-      "zscale=p=bt709",
-      "tonemap=hable:desat=0",
-      "zscale=t=bt709:m=bt709:r=tv",
-      "format=yuv420p",
-    ];
-  }
-  // Fallback: colorspace filter handles BT.2020→BT.709 matrix + transfer.
-  // Less accurate than zscale+tonemap but eliminates the yellow tint.
+function hdrToSdrFilters(): string[] {
+  // 1. Convert to yuv420p first (handles 10-bit→8-bit)
+  // 2. Scale with explicit BT.2020→BT.709 color matrix conversion
+  //    (scale=iw:ih is a no-op resize but forces swscale to run the matrix conversion)
   return [
-    "colorspace=all=bt709:iall=bt2020:fast=1",
     "format=yuv420p",
+    "scale=iw:ih:in_color_matrix=bt2020:out_color_matrix=bt709",
   ];
 }
 
@@ -714,8 +690,7 @@ export async function processVideos(
   const CONCURRENCY = Math.min(allTasks.length, MAX_CONCURRENT);
   const threadsPerTask = 1;
   // Check for zscale availability (needed for HDR→SDR tone mapping)
-  const useZscale = await hasZscaleFilter(ffmpegBin);
-  console.log(`[processVideos] ncpus=${ncpus} MAX_CONCURRENT=${MAX_CONCURRENT} CONCURRENCY=${CONCURRENCY} tasks=${allTasks.length} zscale=${useZscale}`);
+  console.log(`[processVideos] ncpus=${ncpus} MAX_CONCURRENT=${MAX_CONCURRENT} CONCURRENCY=${CONCURRENCY} tasks=${allTasks.length}`);
 
   const taskErrors = await withConcurrency(allTasks, CONCURRENCY, async ({ fileName, tmpIn, fileIndex, copyIndex, color }) => {
     const startPct = Math.min(99, Math.round((doneCopies / totalCopies) * 100));
@@ -879,13 +854,13 @@ export async function processVideos(
           // Without this, BT.2020 pixel data encoded as H.264 (BT.709) produces
           // a visible yellow/warm tint because of color matrix mismatch.
           if (color.isHDR) {
-            const hdr = hdrToSdrFilters(useZscale);
+            const hdr = hdrToSdrFilters();
             vfParts.unshift(...hdr);
           } else {
             vfParts.unshift("format=yuv420p");
           }
           // Cap at 1920px after format/HDR conversion.
-          const insertIdx = color.isHDR ? hdrToSdrFilters(useZscale).length : 1;
+          const insertIdx = color.isHDR ? hdrToSdrFilters().length : 1;
           vfParts.splice(insertIdx, 0,
             "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
           );
@@ -1041,12 +1016,12 @@ export async function processVideos(
         if (willFullEncode) {
           // Same HDR→SDR logic as simple mode.
           if (color.isHDR) {
-            const hdr = hdrToSdrFilters(useZscale);
+            const hdr = hdrToSdrFilters();
             vfParts.unshift(...hdr);
           } else {
             vfParts.unshift("format=yuv420p");
           }
-          const insertIdx = color.isHDR ? hdrToSdrFilters(useZscale).length : 1;
+          const insertIdx = color.isHDR ? hdrToSdrFilters().length : 1;
           vfParts.splice(insertIdx, 0,
             "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
           );
