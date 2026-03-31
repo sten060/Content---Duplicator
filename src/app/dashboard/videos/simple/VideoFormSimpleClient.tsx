@@ -70,8 +70,8 @@ function SubmitWithProgress({ pending }: { pending: boolean }) {
         type="submit"
         disabled={pending}
         className={[
-          "inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-medium transition-all",
-          pending ? "bg-white/10 text-white/50 cursor-not-allowed" : "bg-indigo-500 text-white hover:bg-indigo-400",
+          "inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all",
+          pending ? "bg-white/10 text-white/50 cursor-not-allowed" : "bg-gradient-to-r from-indigo-500 to-sky-500 text-white hover:shadow-[0_4px_20px_rgba(99,102,241,.35)]",
         ].join(" ")}
       >
         {pending ? "Duplication en cours…" : "Dupliquer les vidéos"}
@@ -448,47 +448,56 @@ export default function VideoFormSimpleClient() {
       <input type="hidden" name="singles" value={singlesJSON} />
       {country && <input type="hidden" name="country" value={country} />}
       {iphoneMeta && <input type="hidden" name="iphoneMeta" value="1" />}
-      <GlowCard>
+
+      {/* Dropzone — seul élément avec bordure */}
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
         <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
-      </GlowCard>
+      </div>
 
-      <GlowCard title="Nombre de copies" dense>
-        <input type="number" name="count" min={1} defaultValue={1} className="w-full rounded-lg border border-white/10 bg-white/[.04] px-3 py-2 text-sm text-white/90" />
-      </GlowCard>
+      <div className="h-px bg-white/[0.06]" />
 
-      <GlowCard title="Options métadonnées" dense>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-white/70 mb-1">Localisation pays (optionnel)</label>
-            <input
-              type="text"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              placeholder="Ex: France, États-Unis, Japon…"
-              className="w-full rounded-lg border border-white/10 bg-white/[.04] px-3 py-2 text-sm text-white/90 placeholder:text-white/30"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setIphoneMeta(!iphoneMeta)}
-            className={[
-              "w-full rounded-xl border px-4 py-3 text-left transition-all",
-              iphoneMeta
-                ? "border-indigo-400/30 bg-indigo-500/10"
-                : "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06]",
-            ].join(" ")}
-          >
-            <div className="font-medium text-sm text-white/85">Priorité d'algorithme</div>
-            <div className="text-xs text-white/45 mt-0.5">Injecte des métadonnées réalistes iPhone pour tromper les plateformes (appareil, caméra, iOS, GPS, focale…)</div>
-          </button>
+      {/* Nombre de copies + Localisation — côte à côte, compact */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-white/70 mb-1.5">Nombre de copies</label>
+          <input type="number" name="count" min={1} defaultValue={1} className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90" />
         </div>
-      </GlowCard>
+        <div>
+          <label className="block text-sm font-medium text-white/70 mb-1.5">Localisation pays <span className="text-white/30">(optionnel)</span></label>
+          <input
+            type="text"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="Ex: France, États-Unis, Japon…"
+            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90 placeholder:text-white/25"
+          />
+        </div>
+      </div>
 
-      <GlowCard title="Packs (cumulables)">
+      {/* Priorité d'algorithme */}
+      <button
+        type="button"
+        onClick={() => setIphoneMeta(!iphoneMeta)}
+        className={[
+          "w-full sm:w-auto rounded-xl border px-4 py-3 text-left transition-all",
+          iphoneMeta
+            ? "border-indigo-400/30 bg-indigo-500/10"
+            : "border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05]",
+        ].join(" ")}
+      >
+        <div className="font-semibold text-sm text-white/90">⚡ Priorité d'algorithme</div>
+        <div className="text-xs text-white/45 mt-0.5">Métadonnées réalistes iPhone (appareil, caméra, iOS, GPS, focale…)</div>
+      </button>
+
+      <div className="h-px bg-white/[0.06]" />
+
+      {/* Packs */}
+      <div>
         <input type="hidden" name="packs" value={packsSelected.join(",")} />
+        <h3 className="text-sm font-semibold text-white/90 mb-3">Packs <span className="text-white/40 font-normal">(cumulables)</span></h3>
 
-        <p className="text-xs font-medium text-white/60 uppercase tracking-wide mb-2">Sans modification visuelle</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-4">
+        <p className="text-xs font-medium text-indigo-300/60 uppercase tracking-wide mb-2">Sans modification visuelle</p>
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 mb-4">
           {(["metadata", "audio", "motion", "technical"] as (keyof typeof PACKS)[]).map((k) => (
             <PackCard
               key={k}
@@ -501,8 +510,8 @@ export default function VideoFormSimpleClient() {
           ))}
         </div>
 
-        <p className="text-xs font-medium text-white/60 uppercase tracking-wide mb-2">Avec modification visuelle</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <p className="text-xs font-medium text-indigo-300/60 uppercase tracking-wide mb-2">Avec modification visuelle</p>
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
           {(["visual"] as (keyof typeof PACKS)[]).map((k) => (
             <PackCard
               key={k}
@@ -514,31 +523,37 @@ export default function VideoFormSimpleClient() {
             />
           ))}
         </div>
-      </GlowCard>
+      </div>
 
-      <GlowCard title="Filtres seuls (cumulables)">
-        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="h-px bg-white/[0.06]" />
+
+      {/* Filtres seuls */}
+      <div>
+        <h3 className="text-sm font-semibold text-white/90 mb-3">Filtres seuls</h3>
+        <div className="flex flex-wrap gap-4">
           <Toggle checked={flip} onChange={setFlip} label="Flip (vertical)" />
           <Toggle checked={reverse} onChange={setReverse} label="Reverse (miroir horizontal)" />
         </div>
-      </GlowCard>
+      </div>
+
+      <div className="h-px bg-white/[0.06]" />
 
       <SubmitWithProgress pending={processing} />
 
       {processing && progress !== null && (
         <div className="mt-2">
-          <div className="h-2 w-full rounded bg-white/10 overflow-hidden">
+          <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
             <div
-              className="h-2 bg-indigo-500 transition-[width] duration-200"
+              className="h-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-sky-500 transition-[width] duration-200"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </div>
-          <p className="mt-1 text-xs text-white/70">{progressMsg || `Progression… ${progress}%`}</p>
+          <p className="mt-1 text-xs text-white/50">{progressMsg || `Progression… ${progress}%`}</p>
         </div>
       )}
 
       {errorMsg && (
-        <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+        <p className="mt-3 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-4 py-2 text-sm text-red-400">
           {errorMsg}
         </p>
       )}
