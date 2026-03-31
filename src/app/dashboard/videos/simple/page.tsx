@@ -14,7 +14,7 @@ export default async function VideosSimplePage() {
     <main className="p-6 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-extrabold tracking-tight">Duplication Vidéos — Simple</h1>
-        <Link href="/dashboard/videos" className="text-sm underline">Retour</Link>
+        <Link href="/dashboard/videos" className="text-sm text-white/40 hover:text-white/70 transition">← Retour</Link>
       </div>
 
       <VideoFormClient />

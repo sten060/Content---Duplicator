@@ -14,13 +14,10 @@ export default async function VideosAdvancedPage() {
     <main className="p-6 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-extrabold tracking-tight">Duplication Vidéos — Avancé</h1>
-        <Link href="/dashboard/videos" className="text-sm underline">← Retour</Link>
+        <Link href="/dashboard/videos" className="text-sm text-white/40 hover:text-white/70 transition">← Retour</Link>
       </div>
 
-      <section className="rounded-2xl border border-white/10 p-6 shadow-[0_0_60px_rgba(90,170,255,.25)]
-                          bg-[radial-gradient(1200px_600px_at_10%_-10%,_rgba(90,170,255,.18),_transparent_60%),_linear-gradient(135deg,_rgba(10,25,60,.85),_rgba(20,45,100,.55))]">
-        <VideoFormAdvancedClient />
-      </section>
+      <VideoFormAdvancedClient />
 
       <VideoFilesClient initialFiles={files} channel="advanced" />
     </main>

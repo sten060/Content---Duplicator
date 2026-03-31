@@ -16,10 +16,7 @@ export default async function ImagesPage({ searchParams }: { searchParams?: { ok
 
       <h1 className="text-3xl font-extrabold tracking-tight">Duplication Images</h1>
 
-      <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-fuchsia-950/30 p-6 shadow-2xl shadow-fuchsia-900/20">
-        <ImageFormClient initialImages={initialImages} />
-      </section>
-
+      <ImageFormClient initialImages={initialImages} />
     </main>
   );
 }
