@@ -15,44 +15,34 @@ export default async function VideosHub({
     <main className="p-6 space-y-8">
       <Toasts ok={ok} err={err} warn={warn} />
 
-      <header className="space-y-2">
-        <h1 className="text-4xl font-extrabold tracking-tight">DuupFlow — Duplication Vidéos</h1>
-        <p className="text-white/70">Choisis ton mode de travail. Simple pour aller vite. Avancé pour tout régler aux petits oignons.</p>
+      <header>
+        <h1 className="text-3xl font-extrabold tracking-tight">Duplication Vidéos</h1>
+        <p className="text-sm text-white/50 mt-1">Choisis ton mode de travail.</p>
       </header>
 
-      <section className="grid gap-6 md:grid-cols-2">
-        {/* SIMPLE — conserve le thème indigo d'origine */}
+      <div className="h-px bg-white/[0.06]" />
+
+      <section className="grid gap-4 md:grid-cols-2 max-w-2xl">
         <Link
           href="/dashboard/videos/simple"
-          className="group rounded-2xl border border-white/10 p-6 shadow-2xl shadow-indigo-950/25
-                     bg-[radial-gradient(900px_400px_at_0%_-10%,_rgba(130,100,255,.18),_transparent_60%),_linear-gradient(135deg,_rgba(15,20,60,.85),_rgba(35,20,80,.45))]
-                     hover:shadow-[0_0_60px_rgba(130,100,255,.25)] transition"
+          className="group flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] px-5 py-4 hover:bg-indigo-500/[0.06] hover:border-indigo-400/20 transition-all"
         >
-          <h2 className="text-xl font-semibold mb-2">Mode Simple</h2>
-          <p className="text-sm text-white/75">
-            Packs légers + filtres clés (flip, rotation, dimension, bordure, miroir). Tout est cumulable.
-          </p>
-          <div className="mt-4 inline-flex items-center gap-2 text-indigo-200 group-hover:gap-3 transition">
-            <span>Commencer</span>
-            <span>→</span>
+          <div>
+            <h2 className="text-sm font-semibold text-white/90">Mode Simple</h2>
+            <p className="text-xs text-white/45 mt-0.5">Packs légers, filtres clés, rapide</p>
           </div>
+          <span className="text-indigo-400 text-sm opacity-0 group-hover:opacity-100 transition">→</span>
         </Link>
 
-        {/* AVANCÉ — bleu clair néon */}
         <Link
           href="/dashboard/videos/advanced"
-          className="group rounded-2xl border border-white/10 p-6 shadow-2xl
-                     bg-[radial-gradient(900px_400px_at_0%_-10%,_rgba(90,170,255,.20),_transparent_60%),_linear-gradient(135deg,_rgba(10,25,60,.85),_rgba(20,45,100,.50))]
-                     hover:shadow-[0_0_60px_rgba(90,170,255,.30)] transition"
+          className="group flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] px-5 py-4 hover:bg-sky-500/[0.06] hover:border-sky-400/20 transition-all"
         >
-          <h2 className="text-xl font-semibold mb-2">Mode Avancé</h2>
-          <p className="text-sm text-white/80">
-            Contrôles précis (Min/Max ou W×H), templates, rendu cohérent avec tirage aléatoire par copie.
-          </p>
-          <div className="mt-4 inline-flex items-center gap-2 text-sky-200 group-hover:gap-3 transition">
-            <span>Configurer</span>
-            <span>→</span>
+          <div>
+            <h2 className="text-sm font-semibold text-white/90">Mode Avancé</h2>
+            <p className="text-xs text-white/45 mt-0.5">Contrôles précis, templates, Min/Max</p>
           </div>
+          <span className="text-sky-400 text-sm opacity-0 group-hover:opacity-100 transition">→</span>
         </Link>
       </section>
     </main>
