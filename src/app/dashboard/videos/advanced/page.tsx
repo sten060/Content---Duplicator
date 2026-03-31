@@ -11,7 +11,10 @@ export default async function VideosAdvancedPage() {
   const files = await listOutVideosAdvanced();
 
   return (
-    <main className="p-6 space-y-8">
+    <main className="relative p-6 space-y-8">
+      {/* Fond bleu clair flouté */}
+      <div className="fixed top-0 left-56 right-0 h-[500px] pointer-events-none"
+           style={{ background: "radial-gradient(800px 400px at 50% -100px, rgba(56,189,248,.10), transparent 70%)" }} />
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-extrabold tracking-tight">Duplication Vidéos — Avancé</h1>
         <Link href="/dashboard/videos" className="text-sm text-white/40 hover:text-white/70 transition">← Retour</Link>

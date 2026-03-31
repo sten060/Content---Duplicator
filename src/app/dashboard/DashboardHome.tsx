@@ -193,57 +193,50 @@ const GUIDE_KEY = "duupflow_guide_v2";
 
 function ModuleCard({ mod }: { mod: typeof MODULES[0] }) {
   return (
-    <div
-      className="group rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 hover:translate-y-[-2px]"
+    <Link
+      href={mod.href}
+      className="group relative rounded-2xl p-5 transition-all overflow-hidden"
       style={{
-        background: "rgba(10,14,40,0.55)",
-        border: "1px solid rgba(255,255,255,0.07)",
+        background: mod.colorBg.replace("0.10", "0.04"),
+        border: `1px solid ${mod.colorBorder.replace("0.22", "0.15")}`,
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = mod.colorBorder;
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px ${mod.colorBg}`;
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${mod.colorBg}`;
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)";
+        (e.currentTarget as HTMLElement).style.borderColor = mod.colorBorder.replace("0.22", "0.15");
         (e.currentTarget as HTMLElement).style.boxShadow = "none";
       }}
     >
-      {/* Icon + badge */}
-      <div className="flex items-start justify-between">
+      {/* Radial glow on hover */}
+      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+           style={{ background: `radial-gradient(400px at 30% 20%, ${mod.colorBg}, transparent 70%)` }} />
+
+      <div className="relative flex items-start gap-4">
         <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center"
+          className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: mod.colorBg, border: `1px solid ${mod.colorBorder}`, color: mod.color }}
         >
           {mod.icon}
         </div>
-        {mod.badge && (
-          <span
-            className="text-[9px] font-bold px-2 py-0.5 rounded-md tracking-wide"
-            style={{ background: "rgba(56,189,248,0.10)", color: "#38BDF8", border: "1px solid rgba(56,189,248,0.22)" }}
-          >
-            {mod.badge}
-          </span>
-        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white/90">{mod.title}</h3>
+            {mod.badge && (
+              <span
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wide"
+                style={{ background: "rgba(56,189,248,0.10)", color: "#38BDF8", border: "1px solid rgba(56,189,248,0.22)" }}
+              >
+                {mod.badge}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-white/45 mt-1 leading-relaxed">{mod.desc}</p>
+        </div>
+        <span className="text-sm opacity-0 group-hover:opacity-100 transition shrink-0 mt-1" style={{ color: mod.color }}>→</span>
       </div>
-
-      {/* Text */}
-      <div className="flex-1">
-        <h3 className="text-sm font-semibold text-white mb-1.5">{mod.title}</h3>
-        <p className="text-xs text-white/45 leading-relaxed">{mod.desc}</p>
-      </div>
-
-      {/* CTA */}
-      <Link
-        href={mod.href}
-        className="inline-flex items-center gap-1.5 self-start text-xs font-semibold transition-all group-hover:gap-2"
-        style={{ color: mod.color }}
-      >
-        Ouvrir
-        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M3 8h10M9 4l4 4-4 4" />
-        </svg>
-      </Link>
-    </div>
+    </Link>
   );
 }
 
