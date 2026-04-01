@@ -691,6 +691,7 @@ export async function processVideos(
   const rangesRaw = (formData.get("advancedRanges") as string) || "{}";
   const userCountry = (formData.get("country") as string) || "";
   const useIphoneMeta = formData.get("iphoneMeta") === "1";
+  console.log("[processVideos] country=", userCountry, "iphoneMeta=", useIphoneMeta, "raw=", formData.get("iphoneMeta"));
   let singles: Record<string, any> = {};
   let ranges:  Record<string, any> = {};
   try { singles = JSON.parse(singlesRaw); } catch { /* malformed — use defaults */ }
