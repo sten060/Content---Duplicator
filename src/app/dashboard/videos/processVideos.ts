@@ -627,7 +627,9 @@ async function runFFmpegSafe(
     if (extraArgs.length) args.push(...extraArgs);
   }
 
-  args.push("-movflags", "+faststart");
+  // use_metadata_tags: allows custom metadata keys (com.apple.quicktime.* etc.)
+  // to be written into the MOV/MP4 container instead of being silently ignored.
+  args.push("-movflags", "+faststart+use_metadata_tags");
   if (metaArgs.length) args.push(...metaArgs);
 
   args.push(output);
@@ -691,7 +693,6 @@ export async function processVideos(
   const rangesRaw = (formData.get("advancedRanges") as string) || "{}";
   const userCountry = (formData.get("country") as string) || "";
   const useIphoneMeta = formData.get("iphoneMeta") === "1";
-  console.log("[processVideos] country=", userCountry, "iphoneMeta=", useIphoneMeta, "raw=", formData.get("iphoneMeta"));
   let singles: Record<string, any> = {};
   let ranges:  Record<string, any> = {};
   try { singles = JSON.parse(singlesRaw); } catch { /* malformed — use defaults */ }
