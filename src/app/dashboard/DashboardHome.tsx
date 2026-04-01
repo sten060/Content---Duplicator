@@ -380,7 +380,7 @@ export default function DashboardHome({
   }
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-8 w-full">
 
       {/* Header */}
       <div className="mb-8">
@@ -420,7 +420,7 @@ export default function DashboardHome({
       </p>
 
       {/* Module grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {MODULES.map((mod) => (
           <ModuleCard key={mod.href} mod={mod} />
         ))}

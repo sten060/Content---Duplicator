@@ -560,23 +560,19 @@ export default function VideoFormAdvancedClient() {
       <input type="hidden" name="channel" value="advanced" />
       <input type="hidden" name="mode" value="advanced" />
       <input type="hidden" name="advancedRanges" value={JSON.stringify(serialRanges)} />
-      {/* Dropzone */}
-      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+      {/* Dropzone + Copies */}
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
         <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
-      </div>
-
-      <div className="h-px bg-white/[0.06]" />
-
-      {/* Copies */}
-      <div className="max-w-xs">
-        <label className="block text-sm font-medium text-white/70 mb-1.5">Nombre de copies</label>
-        <input
-          type="number"
-          name="count"
-          min={1}
-          defaultValue={1}
-          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90"
-        />
+        <div className="max-w-xs">
+          <label className="block text-sm font-medium text-white/70 mb-1.5">Nombre de copies</label>
+          <input
+            type="number"
+            name="count"
+            min={1}
+            defaultValue={1}
+            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90"
+          />
+        </div>
       </div>
 
       <div className="h-px bg-white/[0.06]" />

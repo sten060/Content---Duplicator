@@ -22,47 +22,57 @@ export default async function VideosHub({
 
       <div className="h-px bg-white/[0.06]" />
 
-      <section className="grid gap-5 md:grid-cols-2">
-        {/* Mode Simple — indigo glow border */}
+      <section className="grid gap-4 md:grid-cols-2">
+        {/* Mode Simple — indigo */}
         <Link
           href="/dashboard/videos/simple"
-          className="group relative rounded-2xl p-5 transition-all overflow-hidden
+          className="group relative rounded-2xl p-4 transition-all overflow-hidden
                      border border-indigo-500/20 hover:border-indigo-400/40
                      hover:shadow-[0_0_30px_rgba(99,102,241,.15)]"
           style={{ background: "rgba(99,102,241,0.04)" }}
         >
           <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                style={{ background: "radial-gradient(600px at 30% 20%, rgba(99,102,241,.08), transparent 70%)" }} />
-          <div className="relative">
-            <h2 className="text-lg font-bold text-white/90">Mode Simple</h2>
-            <p className="text-sm text-white/50 mt-1">
-              Packs légers + filtres clés (flip, rotation, dimension, bordure, miroir). Tout est cumulable.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-2 text-sm text-indigo-300 group-hover:gap-3 transition-all">
-              <span>Commencer</span>
-              <span>→</span>
+          <div className="relative flex items-start gap-3">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 mt-0.5 shrink-0 text-indigo-400" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <div>
+              <h2 className="text-base font-bold text-white/90">Mode Simple</h2>
+              <p className="text-xs text-white/50 mt-0.5">
+                Rapide et efficace — idéal pour dupliquer en masse sans configuration.
+              </p>
+              <div className="mt-2 inline-flex items-center gap-2 text-xs text-indigo-300 group-hover:gap-3 transition-all">
+                <span>Commencer</span>
+                <span>→</span>
+              </div>
             </div>
           </div>
         </Link>
 
-        {/* Mode Avancé — sky glow border */}
+        {/* Mode Avancé — sky */}
         <Link
           href="/dashboard/videos/advanced"
-          className="group relative rounded-2xl p-5 transition-all overflow-hidden
+          className="group relative rounded-2xl p-4 transition-all overflow-hidden
                      border border-sky-500/20 hover:border-sky-400/40
                      hover:shadow-[0_0_30px_rgba(56,189,248,.15)]"
           style={{ background: "rgba(56,189,248,0.04)" }}
         >
           <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                style={{ background: "radial-gradient(600px at 30% 20%, rgba(56,189,248,.08), transparent 70%)" }} />
-          <div className="relative">
-            <h2 className="text-lg font-bold text-white/90">Mode Avancé</h2>
-            <p className="text-sm text-white/50 mt-1">
-              Contrôles précis (Min/Max ou W×H), templates, rendu cohérent avec tirage aléatoire par copie.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-2 text-sm text-sky-300 group-hover:gap-3 transition-all">
-              <span>Configurer</span>
-              <span>→</span>
+          <div className="relative flex items-start gap-3">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 mt-0.5 shrink-0 text-sky-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+            </svg>
+            <div>
+              <h2 className="text-base font-bold text-white/90">Mode Avancé</h2>
+              <p className="text-xs text-white/50 mt-0.5">
+                Contrôle total — configure chaque filtre manuellement avec templates.
+              </p>
+              <div className="mt-2 inline-flex items-center gap-2 text-xs text-sky-300 group-hover:gap-3 transition-all">
+                <span>Configurer</span>
+                <span>→</span>
+              </div>
             </div>
           </div>
         </Link>

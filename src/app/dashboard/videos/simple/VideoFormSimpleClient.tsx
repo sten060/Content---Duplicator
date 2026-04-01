@@ -450,28 +450,26 @@ export default function VideoFormSimpleClient() {
       {iphoneMeta && <input type="hidden" name="iphoneMeta" value="1" />}
 
       {/* Dropzone — seul élément avec bordure */}
-      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
         <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
+        <div className="max-w-xs">
+          <label className="block text-sm font-medium text-white/70 mb-1.5">Nombre de copies</label>
+          <input type="number" name="count" min={1} defaultValue={1} className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90" />
+        </div>
       </div>
 
       <div className="h-px bg-white/[0.06]" />
 
-      {/* Nombre de copies + Localisation — côte à côte, compact */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-white/70 mb-1.5">Nombre de copies</label>
-          <input type="number" name="count" min={1} defaultValue={1} className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-white/70 mb-1.5">Localisation pays <span className="text-white/30">(optionnel)</span></label>
-          <input
-            type="text"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            placeholder="Ex: France, États-Unis, Japon…"
-            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90 placeholder:text-white/25"
-          />
-        </div>
+      {/* Localisation pays */}
+      <div className="max-w-sm">
+        <label className="block text-sm font-medium text-white/70 mb-1.5">Localisation pays <span className="text-white/30">(optionnel)</span></label>
+        <input
+          type="text"
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          placeholder="Ex: France, États-Unis, Japon…"
+          className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90 placeholder:text-white/25"
+        />
       </div>
 
       {/* Priorité d'algorithme */}
@@ -498,7 +496,7 @@ export default function VideoFormSimpleClient() {
 
         <p className="text-xs font-medium text-indigo-300/60 uppercase tracking-wide mb-2">Sans modification visuelle</p>
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-          {(["metadata", "audio", "motion", "technical"] as (keyof typeof PACKS)[]).map((k) => (
+          {(["metadata", "audio"] as (keyof typeof PACKS)[]).map((k) => (
             <PackCard
               key={k}
               name={k}
@@ -512,7 +510,7 @@ export default function VideoFormSimpleClient() {
 
         <p className="text-xs font-medium text-indigo-300/60 uppercase tracking-wide mb-2">Avec modification visuelle</p>
         <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-          {(["visual"] as (keyof typeof PACKS)[]).map((k) => (
+          {(["motion", "technical", "visual"] as (keyof typeof PACKS)[]).map((k) => (
             <PackCard
               key={k}
               name={k}

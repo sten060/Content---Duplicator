@@ -100,8 +100,8 @@ export default function Dropzone({
       <div
         onDrop={onDrop}
         onDragOver={(e) => e.preventDefault()}
-        className="rounded-2xl border border-white/15 bg-white/5 p-6 text-center text-white/80
-                   ring-1 ring-inset ring-white/10 hover:bg-white/10 transition cursor-pointer"
+        className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 text-center text-white/80
+                   hover:border-white/[0.15] transition cursor-pointer"
         onClick={() => inputRef.current?.click()}
       >
         <div className="text-lg font-medium">Glissez vos fichiers ici</div>
