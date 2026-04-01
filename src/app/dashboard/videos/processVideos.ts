@@ -388,67 +388,8 @@ const IPHONE_LENS = [
   { focal: "2.22", focalEq: "13", aperture: "2.2", lens: "iPhone 15 Pro back triple camera 2.22mm f/2.2" },
 ];
 
-/**
- * Returns a COMPLETE set of metadata args that mimics a real iPhone recording.
- * Clears ALL existing metadata first, then writes ONLY Apple QuickTime tags.
- * No title, artist, genre, comment, etc. — real iPhones don't have those.
- */
-function getIphoneMetadataArgs(country?: string): string[] {
-  const device = pickRandom(IPHONE_MODELS);
-  const lens = pickRandom(IPHONE_LENS);
-  const daysAgo = Math.floor(Math.random() * 30);
-  const hoursAgo = Math.floor(Math.random() * 24);
-  const minsAgo = Math.floor(Math.random() * 60);
-  const secsAgo = Math.floor(Math.random() * 60);
-  const creationDate = new Date(Date.now() - daysAgo * 86400000 - hoursAgo * 3600000 - minsAgo * 60000 - secsAgo * 1000);
-  const isoDate = creationDate.toISOString().slice(0, 19) + "Z";
-  // Local date with timezone offset (like real iPhone: 2026-02-04T15:07:19+0100)
-  const tzOffsetH = 1 + Math.floor(Math.random() * 3); // +01 to +03
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const localDate = `${creationDate.getFullYear()}-${pad(creationDate.getMonth()+1)}-${pad(creationDate.getDate())}T${pad(creationDate.getHours())}:${pad(creationDate.getMinutes())}:${pad(creationDate.getSeconds())}+${pad(tzOffsetH)}00`;
-  // Random GPS
-  const lat = (43 + Math.random() * 6).toFixed(4);
-  const lon = (1 + Math.random() * 7).toFixed(4);
-  const alt = (20 + Math.random() * 200).toFixed(3);
-  const gpsIso6709 = `+${lat}+${lon.padStart(8, "0")}+${alt}/`;
-  const locationAccuracy = (5 + Math.random() * 20).toFixed(6);
-  // Apple photos originating signature (random base64-like)
-  const sigChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let sig = "";
-  for (let i = 0; i < 36; i++) sig += sigChars[Math.floor(Math.random() * sigChars.length)];
-
-  const location = country || pickRandom(VIDEO_LOCATIONS);
-
-  return [
-    "-map_metadata", "-1",
-    // Container brand — real iPhones use "qt" not "isom"
-    "-metadata", `major_brand=qt  `,
-    "-metadata", `minor_version=0`,
-    "-metadata", `compatible_brands=qt  `,
-    "-metadata", `creation_time=${isoDate}`,
-    // Apple QuickTime atoms — exactly like a real iPhone
-    "-metadata", `com.apple.quicktime.location.accuracy.horizontal=${locationAccuracy}`,
-    "-metadata", `com.apple.quicktime.full-frame-rate-playback-intent=0`,
-    "-metadata", `com.apple.quicktime.location.ISO6709=${gpsIso6709}`,
-    "-metadata", `com.apple.quicktime.make=${device.make}`,
-    "-metadata", `com.apple.quicktime.model=${device.model}`,
-    "-metadata", `com.apple.quicktime.software=${device.software}`,
-    "-metadata", `com.apple.quicktime.creationdate=${localDate}`,
-    "-metadata", `com.apple.photos.originating.signature=${sig}`,
-    // Stream handlers — exactly like a real iPhone
-    "-metadata:s:v:0", `language=und`,
-    "-metadata:s:v:0", `handler_name=Core Media Video`,
-    "-metadata:s:a:0", `language=und`,
-    "-metadata:s:a:0", `handler_name=Core Media Audio`,
-  ];
-}
-
 function getVideoMetadataArgs(opts?: { country?: string; iphoneMeta?: boolean }): string[] {
-  // iPhone mode: return ONLY Apple QuickTime metadata, no random title/artist/genre
-  if (opts?.iphoneMeta) {
-    return getIphoneMetadataArgs(opts.country);
-  }
-
+  // Always start with base metadata (creation_time, encoder, brand, uid)
   const encoder = pickRandom(VIDEO_ENCODERS);
   const daysAgo = Math.floor(Math.random() * 365);
   const hoursAgo = Math.floor(Math.random() * 24);
@@ -459,7 +400,7 @@ function getVideoMetadataArgs(opts?: { country?: string; iphoneMeta?: boolean })
   const compatBrands = VIDEO_COMPAT_BRANDS[brand];
   const minorVersion = pickRandom([512, 0, 1, 2]);
   const uid = `${randMetaHex(8)}-${randMetaHex(4)}-${randMetaHex(4)}-${randMetaHex(4)}-${randMetaHex(12)}`;
-  // Only essential metadata — avoid suspicious extra tags that real videos don't have
+
   const args: string[] = [
     "-map_metadata", "-1",
     "-metadata", `creation_time=${isoDate}`,
@@ -470,10 +411,54 @@ function getVideoMetadataArgs(opts?: { country?: string; iphoneMeta?: boolean })
     "-metadata", `compatible_brands=${compatBrands}`,
     "-metadata:g", `uid=${uid}`,
   ];
+
   // Location only if user specified a country
   if (opts?.country) {
     args.push("-metadata", `location=${opts.country}`);
   }
+
+  // iPhone metadata: overlay Apple QuickTime tags ON TOP of base metadata.
+  // FFmpeg processes args in order — later -metadata flags override earlier ones.
+  if (opts?.iphoneMeta) {
+    const device = pickRandom(IPHONE_MODELS);
+    const secsAgo = Math.floor(Math.random() * 86400 * 30);
+    const iphoneDate = new Date(Date.now() - secsAgo * 1000);
+    const iphoneIso = iphoneDate.toISOString().slice(0, 19) + "Z";
+    const tzOffsetH = 1 + Math.floor(Math.random() * 3);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const localDate = `${iphoneDate.getFullYear()}-${pad(iphoneDate.getMonth()+1)}-${pad(iphoneDate.getDate())}T${pad(iphoneDate.getHours())}:${pad(iphoneDate.getMinutes())}:${pad(iphoneDate.getSeconds())}+${pad(tzOffsetH)}00`;
+    const lat = (43 + Math.random() * 6).toFixed(4);
+    const lon = (1 + Math.random() * 7).toFixed(4);
+    const alt = (20 + Math.random() * 200).toFixed(3);
+    const gpsIso6709 = `+${lat}+${lon.padStart(8, "0")}+${alt}/`;
+    const locationAccuracy = (5 + Math.random() * 20).toFixed(6);
+    const sigChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let sig = "";
+    for (let i = 0; i < 36; i++) sig += sigChars[Math.floor(Math.random() * sigChars.length)];
+    const iphoneLocation = opts.country || pickRandom(VIDEO_LOCATIONS);
+
+    // Override container brand to match iPhone (qt, not isom)
+    args.push(
+      "-metadata", `major_brand=qt  `,
+      "-metadata", `minor_version=0`,
+      "-metadata", `compatible_brands=qt  `,
+      "-metadata", `creation_time=${iphoneIso}`,
+      "-metadata", `location=${iphoneLocation}`,
+      // Apple QuickTime atoms
+      "-metadata", `com.apple.quicktime.location.accuracy.horizontal=${locationAccuracy}`,
+      "-metadata", `com.apple.quicktime.full-frame-rate-playback-intent=0`,
+      "-metadata", `com.apple.quicktime.location.ISO6709=${gpsIso6709}`,
+      "-metadata", `com.apple.quicktime.make=${device.make}`,
+      "-metadata", `com.apple.quicktime.model=${device.model}`,
+      "-metadata", `com.apple.quicktime.software=${device.software}`,
+      "-metadata", `com.apple.quicktime.creationdate=${localDate}`,
+      "-metadata", `com.apple.photos.originating.signature=${sig}`,
+      // Stream handlers
+      "-metadata:s:v:0", `handler_name=Core Media Video`,
+      "-metadata:s:a:0", `handler_name=Core Media Audio`,
+    );
+  }
+
   return args;
 }
 
