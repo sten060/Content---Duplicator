@@ -356,7 +356,7 @@ export default function ImageFormClient({ initialImages }: Props) {
         </div>
 
         {/* Priorité d'algorithme */}
-        <ToggleChip name="iphoneMeta" value="1" label="⚡ Priorité d'algorithme" hint="Métadonnées réalistes iPhone (appareil, caméra, iOS, GPS, focale…)" />
+        <ToggleChip name="iphoneMeta" value="1" label="⚡ Priorité d'algorithme" hint="Métadonnées réalistes iPhone (appareil, caméra, iOS, GPS, focale…)" accent="pink" />
 
         <div className="h-px bg-white/[0.06]" />
 

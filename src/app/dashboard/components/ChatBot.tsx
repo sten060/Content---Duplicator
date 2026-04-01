@@ -131,7 +131,7 @@ export default function ChatBot() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-lg hover:bg-indigo-400 transition-all"
+        className="fixed top-5 right-5 z-50 h-12 w-12 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-lg hover:bg-indigo-400 transition-all"
       >
         {open ? (
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
@@ -147,7 +147,7 @@ export default function ChatBot() {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-20 right-5 z-50 w-80 max-h-[28rem] rounded-2xl border border-white/[0.08] flex flex-col overflow-hidden"
+          className="fixed top-20 right-5 z-50 w-80 max-h-[28rem] rounded-2xl border border-white/[0.08] flex flex-col overflow-hidden"
           style={{ background: "rgba(10,14,30,0.95)", backdropFilter: "blur(20px)" }}
         >
           {/* Header */}

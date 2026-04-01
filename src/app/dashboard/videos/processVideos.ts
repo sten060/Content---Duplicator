@@ -933,12 +933,8 @@ export async function processVideos(
           } else {
             vfParts.unshift("format=yuv420p");
           }
-          // Cap at 1920px after format/HDR conversion.
-          const insertIdx = color.isHDR ? hdrToSdrFilters().length : 1;
-          vfParts.splice(insertIdx, 0,
-            "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
-          );
           // Ensure even dimensions after all filters (pad/rotation can produce odd dims).
+          // No resolution cap — preserve original quality (1080p stays 1080p, 4K stays 4K).
           vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=lanczos");
         }
 
@@ -1095,10 +1091,7 @@ export async function processVideos(
           } else {
             vfParts.unshift("format=yuv420p");
           }
-          const insertIdx = color.isHDR ? hdrToSdrFilters().length : 1;
-          vfParts.splice(insertIdx, 0,
-            "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
-          );
+          // No resolution cap — preserve original quality.
           vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=lanczos");
         }
       }
