@@ -136,11 +136,10 @@ export default function AvantagesPage() {
             </p>
           </div>
         </div>
-      </div>
 
-      {/* Alternating sections — relative z-10 to stay above the fixed wall */}
+      {/* Alternating sections */}
       <div className="relative z-10">
-      {sections.map((s, i) => {
+        {sections.map((s, i) => {
         const reversed = i % 2 !== 0;
         return (
           <section key={i} className="py-16 px-6">
