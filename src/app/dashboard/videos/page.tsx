@@ -15,43 +15,65 @@ export default async function VideosHub({
     <main className="p-6 space-y-8">
       <Toasts ok={ok} err={err} warn={warn} />
 
-      <header className="space-y-2">
-        <h1 className="text-4xl font-extrabold tracking-tight">DuupFlow — Duplication Vidéos</h1>
-        <p className="text-white/70">Choisis ton mode de travail. Simple pour aller vite. Avancé pour tout régler aux petits oignons.</p>
+      <header>
+        <h1 className="text-3xl font-extrabold tracking-tight">Duplication Vidéos</h1>
+        <p className="text-sm text-white/50 mt-1">Choisis ton mode de travail.</p>
       </header>
 
-      <section className="grid gap-6 md:grid-cols-2">
-        {/* SIMPLE — conserve le thème indigo d'origine */}
+      <div className="h-px bg-white/[0.06]" />
+
+      <section className="grid gap-4 md:grid-cols-2">
+        {/* Mode Simple — indigo */}
         <Link
           href="/dashboard/videos/simple"
-          className="group rounded-2xl border border-white/10 p-6 shadow-2xl shadow-indigo-950/25
-                     bg-[radial-gradient(900px_400px_at_0%_-10%,_rgba(130,100,255,.18),_transparent_60%),_linear-gradient(135deg,_rgba(15,20,60,.85),_rgba(35,20,80,.45))]
-                     hover:shadow-[0_0_60px_rgba(130,100,255,.25)] transition"
+          className="group relative rounded-2xl p-4 transition-all overflow-hidden
+                     border border-indigo-500/20 hover:border-indigo-400/40
+                     hover:shadow-[0_0_30px_rgba(99,102,241,.15)]"
+          style={{ background: "rgba(99,102,241,0.04)" }}
         >
-          <h2 className="text-xl font-semibold mb-2">Mode Simple</h2>
-          <p className="text-sm text-white/75">
-            Packs légers + filtres clés (flip, rotation, dimension, bordure, miroir). Tout est cumulable.
-          </p>
-          <div className="mt-4 inline-flex items-center gap-2 text-indigo-200 group-hover:gap-3 transition">
-            <span>Commencer</span>
-            <span>→</span>
+          <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+               style={{ background: "radial-gradient(600px at 30% 20%, rgba(99,102,241,.08), transparent 70%)" }} />
+          <div className="relative flex items-start gap-3">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 mt-0.5 shrink-0 text-indigo-400" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <div>
+              <h2 className="text-base font-bold text-white/90">Mode Simple</h2>
+              <p className="text-xs text-white/50 mt-0.5">
+                Rapide et efficace — idéal pour dupliquer en masse sans configuration.
+              </p>
+              <div className="mt-2 inline-flex items-center gap-2 text-xs text-indigo-300 group-hover:gap-3 transition-all">
+                <span>Commencer</span>
+                <span>→</span>
+              </div>
+            </div>
           </div>
         </Link>
 
-        {/* AVANCÉ — bleu clair néon */}
+        {/* Mode Avancé — sky */}
         <Link
           href="/dashboard/videos/advanced"
-          className="group rounded-2xl border border-white/10 p-6 shadow-2xl
-                     bg-[radial-gradient(900px_400px_at_0%_-10%,_rgba(90,170,255,.20),_transparent_60%),_linear-gradient(135deg,_rgba(10,25,60,.85),_rgba(20,45,100,.50))]
-                     hover:shadow-[0_0_60px_rgba(90,170,255,.30)] transition"
+          className="group relative rounded-2xl p-4 transition-all overflow-hidden
+                     border border-sky-500/20 hover:border-sky-400/40
+                     hover:shadow-[0_0_30px_rgba(56,189,248,.15)]"
+          style={{ background: "rgba(56,189,248,0.04)" }}
         >
-          <h2 className="text-xl font-semibold mb-2">Mode Avancé</h2>
-          <p className="text-sm text-white/80">
-            Contrôles précis (Min/Max ou W×H), templates, rendu cohérent avec tirage aléatoire par copie.
-          </p>
-          <div className="mt-4 inline-flex items-center gap-2 text-sky-200 group-hover:gap-3 transition">
-            <span>Configurer</span>
-            <span>→</span>
+          <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+               style={{ background: "radial-gradient(600px at 30% 20%, rgba(56,189,248,.08), transparent 70%)" }} />
+          <div className="relative flex items-start gap-3">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 mt-0.5 shrink-0 text-sky-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+            </svg>
+            <div>
+              <h2 className="text-base font-bold text-white/90">Mode Avancé</h2>
+              <p className="text-xs text-white/50 mt-0.5">
+                Contrôle total — configure chaque filtre manuellement avec templates.
+              </p>
+              <div className="mt-2 inline-flex items-center gap-2 text-xs text-sky-300 group-hover:gap-3 transition-all">
+                <span>Configurer</span>
+                <span>→</span>
+              </div>
+            </div>
           </div>
         </Link>
       </section>

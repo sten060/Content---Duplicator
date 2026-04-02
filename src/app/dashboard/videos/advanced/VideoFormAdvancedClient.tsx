@@ -21,20 +21,12 @@ function Card({
   right,
   children,
 }: {
-  title?: React.ReactNode;   // ✅ accepte texte ou JSX
+  title?: React.ReactNode;
   right?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className="
-        relative rounded-2xl border border-white/10 bg-white/[.035] p-4
-        shadow-[inset_0_1px_0_rgba(255,255,255,.06)]
-        hover:shadow-[inset_0_1px_0_rgba(255,255,255,.08),_0_0_28px_rgba(90,150,255,.18)]
-        transition
-      "
-      style={{ backdropFilter: 'blur(8px)' }}
-    >
+    <section className="relative">
       {(title || right) && (
         <div className="mb-3 flex items-center justify-between">
           {title ? (
@@ -52,25 +44,22 @@ function Card({
 
 function SubmitWithProgress({ pending }: { pending: boolean }) {
   return (
-    <div className="sticky bottom-0 left-0 right-0 z-10 mt-6">
-      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-[linear-gradient(135deg,_rgba(35,80,180,.22),_rgba(75,140,255,.12))] p-3 backdrop-blur shadow-[0_0_34px_rgba(80,150,255,.22)]">
-        <button
-          type="submit"
-          disabled={pending}
-          className={`rounded-lg px-4 py-2 font-medium text-white transition ${
-            pending ? "cursor-not-allowed bg-sky-500/50" : "bg-sky-500 hover:bg-sky-400"
-          }`}
-        >
-          {pending ? "Duplication…" : "Générer"}
-        </button>
-
-      </div>
+    <div className="mt-6">
+      <button
+        type="submit"
+        disabled={pending}
+        className={`rounded-lg px-4 py-2 font-medium text-white transition ${
+          pending ? "cursor-not-allowed bg-sky-500/50" : "bg-sky-500 hover:bg-sky-400"
+        }`}
+      >
+        {pending ? "Duplication…" : "Générer"}
+      </button>
     </div>
   );
 }
 
 /* ================== Définition des filtres ================== */
-type Group = "Visuel" | "Mouvement" | "Techniques" | "Audio" | "Boutons";
+type Group = "Tags" | "Visuel" | "Mouvement" | "Techniques" | "Audio" | "Options";
 
 type Ctrl = {
   key: string;
@@ -85,8 +74,14 @@ type Ctrl = {
 };
 
 const CONTROLS: Ctrl[] = [
-  { key: "flip", label: "Flip (vertical)", group: "Boutons", min: 0, max: 1, type: "toggle" },
-  { key: "reverse", label: "Reverse (miroir horizontal)", group: "Boutons", min: 0, max: 1, type: "toggle" },
+  // Métadonnées
+  { key: "meta_creation_time", label: "Date de création", group: "Tags", min: 0, max: 1, type: "toggle", hint: "Activé = date aléatoire" },
+  { key: "meta_encoder", label: "Encodeur / Logiciel", group: "Tags", min: 0, max: 1, type: "toggle", hint: "Activé = logiciel aléatoire" },
+  { key: "meta_brand", label: "Brand / Format container", group: "Tags", min: 0, max: 1, type: "toggle" },
+  { key: "meta_uid", label: "Identifiant unique (UID)", group: "Tags", min: 0, max: 1, type: "toggle" },
+  // Options
+  { key: "flip", label: "Flip (vertical)", group: "Options", min: 0, max: 1, type: "toggle" },
+  { key: "reverse", label: "Reverse (miroir horizontal)", group: "Options", min: 0, max: 1, type: "toggle" },
 
   // Neutral values: sat/con/gam → 1.0 (no change), brightness → 0.0, hue → 0.0
   // Setting defaults to neutral ensures enabling a filter without changing values = no effect.
@@ -160,6 +155,11 @@ const LIMITS: Record<
 
 /* ============ Infos packs (infobulles) ============ */
 const HELP_ADVANCED: Record<Group, React.ReactNode> = {
+  "Tags": (
+    <div>
+      Active individuellement chaque métadonnée à injecter. Si aucun bouton n'est activé, les métadonnées originales sont préservées.
+    </div>
+  ),
   Visuel: (
     <div>
       <b>Valeurs subtiles (imperceptibles)</b><br />
@@ -191,9 +191,9 @@ const HELP_ADVANCED: Record<Group, React.ReactNode> = {
       Bitrate audio <b>96 → 256</b> kb/s (AAC).
     </div>
   ),
-  Boutons: (
+  Options: (
     <div>
-      <b>Flip</b> : vertical. <b>Reverse</b> : miroir horizontal. Cumulables.
+      <b>Flip</b> : vertical. <b>Reverse</b> : miroir horizontal. <b>Localisation</b> : pays injecté dans les métadonnées. <b>Priorité d'algorithme</b> : métadonnées iPhone réalistes.
     </div>
   ),
 };
@@ -285,12 +285,12 @@ export default function VideoFormAdvancedClient() {
   };
 
   const groups = useMemo(() => {
-    const wanted: Group[] = ["Visuel", "Mouvement", "Techniques", "Audio", "Boutons"];
+    const wanted: Group[] = ["Tags", "Visuel", "Mouvement", "Techniques", "Audio", "Options"];
     return wanted.filter((g) => CONTROLS.some((c) => c.group === g));
   }, []);
 
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(groups.map((g) => [g, true]))
+    Object.fromEntries(groups.map((g) => [g, false]))
   );
 
   function getVideoDuration(file: File): Promise<number> {
@@ -371,7 +371,7 @@ export default function VideoFormAdvancedClient() {
         setProgressMsg("Envoi au serveur…");
 
         apiForm = new FormData();
-        for (const key of ["channel", "mode", "advancedRanges", "count"]) {
+        for (const key of ["channel", "mode", "advancedRanges", "count", "country", "iphoneMeta"]) {
           const v = rawForm.get(key);
           if (v !== null) apiForm.append(key, v);
         }
@@ -568,114 +568,36 @@ export default function VideoFormAdvancedClient() {
       <input type="hidden" name="channel" value="advanced" />
       <input type="hidden" name="mode" value="advanced" />
       <input type="hidden" name="advancedRanges" value={JSON.stringify(serialRanges)} />
-      <input type="hidden" name="stealthMode" value={stealthMode ? "true" : "false"} />
-
-      {/* Dropzone */}
-      <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
-
-      {/* Copies + aide */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card title="Copies">
+      {/* Dropzone + Copies */}
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
+        <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
+        <div className="max-w-xs">
+          <label className="block text-sm font-medium text-white/70 mb-1.5">Nombre de copies</label>
           <input
             type="number"
             name="count"
             min={1}
             defaultValue={1}
-            className="block w-full rounded-lg border border-white/15 bg-transparent px-3 py-2 text-white/90"
+            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90"
           />
-        </Card>
-
-        <Card
-        title={
-            <span className="inline-flex items-center gap-2">
-              Aide rapide
-              <InfoTooltip>
-                Active un filtre puis renseigne <b>Min</b> et <b>Max</b>. Une valeur au hasard
-                dans l'intervalle est tirée pour chaque copie. <b>Dimensions</b> s'applique
-                en pourcentage (W×H) et reste constant pour toutes les copies.
-              </InfoTooltip>
-            </span>
-          }
-        >
-          <p className="text-sm text-white/70">
-            Pour un rendu naturel, reste dans les bornes conseillées des infobulles des packs.
-          </p>
-        </Card>
+        </div>
       </div>
 
-      {/* Stealth Mode */}
-      <Card
-        title={
-          <span className="inline-flex items-center gap-2">
-            Mode Stealth (Anti-détection)
-            <InfoTooltip>
-              <b>Mode Stealth activé</b> : applique des transformations beaucoup plus agressives
-              pour réduire la similarité à 40-50% (au lieu de 87%). Modifie la structure interne
-              de la vidéo sans changer l'apparence visuelle : noise élevé (5-15), denoise variable,
-              rotation subtile (-0.5 à +0.5°), flip aléatoire, scale variation (98-102%),
-              variations de bitrate (800-3000 kbps), GOP (30-250), FPS (23.5-30.5),
-              format pixel aléatoire, CRF (20-26), ajustements bass/treble.
-              <br/><br/>
-              <b>Idéal pour contourner les détecteurs de plateforme.</b>
-              <br/><br/>
-              ⚠️ En mode Stealth, TOUS les filtres sont appliqués automatiquement,
-              indépendamment des paramètres que vous configurez ci-dessous.
-            </InfoTooltip>
-          </span>
-        }
-      >
-        <label className="inline-flex cursor-pointer select-none items-center gap-3 text-sm">
-          <span className="relative inline-flex h-5 w-9 items-center rounded-full bg-white/15 transition">
-            <input
-              type="checkbox"
-              checked={stealthMode}
-              onChange={(e) => setStealthMode(e.target.checked)}
-              className="sr-only"
-            />
-            <span
-              className={[
-                "absolute left-0.5 top-0.5 h-4 w-4 rounded-full transition",
-                stealthMode
-                  ? "translate-x-4 bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,.9)]"
-                  : "bg-white/70",
-              ].join(" ")}
-            />
-          </span>
-          <span className="text-white/85">
-            {stealthMode
-              ? "Stealth activé — Similarité cible: 40-50%"
-              : "Stealth désactivé — Similarité: ~87%"}
-          </span>
-        </label>
-        {stealthMode && (
-          <div className="mt-3 rounded-lg border border-amber-300/30 bg-amber-400/10 p-3 text-xs text-amber-300/90">
-            <p className="font-semibold">⚠️ Mode Stealth actif</p>
-            <p className="mt-1">
-              Toutes les transformations agressives seront appliquées automatiquement
-              pour maximiser la différence détectable tout en préservant le visuel.
-              Les filtres configurés manuellement ci-dessous seront ignorés.
-            </p>
-          </div>
-        )}
-      </Card>
+      <div className="h-px bg-white/[0.06]" />
 
-      {/* Groupes */}
+      {/* Groupes de filtres */}
       {groups.map((g) => (
         <Card
           key={g}
           title={
-            <span className="inline-flex items-center gap-2">
-              {g}
-              <InfoTooltip>{HELP_ADVANCED[g]}</InfoTooltip>
-            </span>
-          }
-          right={
             <button
               type="button"
               onClick={() => setOpen((o) => ({ ...o, [g]: !o[g] }))}
-              className="rounded-md border border-white/15 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
+              className="inline-flex items-center gap-2 cursor-pointer select-none"
             >
-              {open[g] ? "Replier" : "Déplier"}
+              {g}
+              <InfoTooltip>{HELP_ADVANCED[g]}</InfoTooltip>
+              <span className="text-[10px] text-white/40">{open[g] ? "▲" : "▼"}</span>
             </button>
           }
         >
@@ -820,6 +742,35 @@ export default function VideoFormAdvancedClient() {
                   </div>
                 );
               })}
+
+              {/* Localisation — in Tags group */}
+              {g === "Tags" && (
+                <div className="col-span-full flex flex-wrap items-end gap-4 mt-1">
+                  <div className="flex-1 min-w-[200px] max-w-xs">
+                    <label className="block text-sm font-medium text-white/70 mb-1">Localisation pays</label>
+                    <input
+                      type="text"
+                      name="country"
+                      placeholder="Ex: France, États-Unis, Japon…"
+                      className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-sm text-white/90 placeholder:text-white/25"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Priorité algorithme — in Options group */}
+              {g === "Options" && (
+                <div className="col-span-full flex flex-wrap items-end gap-4 mt-1">
+                  <label className="inline-flex cursor-pointer select-none items-center gap-3 text-sm py-1.5">
+                    <span className="relative inline-flex h-5 w-9 items-center rounded-full bg-white/15 transition">
+                      <input type="checkbox" name="iphoneMeta" value="1" className="sr-only peer" />
+                      <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white/70 peer-checked:translate-x-4 peer-checked:bg-sky-400 peer-checked:shadow-[0_0_10px_rgba(56,189,248,.9)] transition" />
+                    </span>
+                    <span className="text-white/85">⚡ Priorité d&apos;algorithme</span>
+                  </label>
+                  <InfoTooltip>Simule une vidéo iPhone avec métadonnées Apple authentiques (QuickTime, GPS, signature). Le fichier sort en .mov.</InfoTooltip>
+                </div>
+              )}
             </div>
           )}
         </Card>

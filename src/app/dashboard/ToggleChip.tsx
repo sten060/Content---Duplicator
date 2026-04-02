@@ -9,6 +9,13 @@ type ToggleChipProps = {
   value?: string;
   /** permet d'avoir la case cochée par défaut */
   defaultChecked?: boolean;
+  /** couleur d'accent pour l'état coché */
+  accent?: "indigo" | "pink";
+};
+
+const accentStyles = {
+  indigo: "peer-checked:border-indigo-400/30 peer-checked:bg-indigo-500/10",
+  pink: "peer-checked:border-fuchsia-400/30 peer-checked:bg-fuchsia-500/10",
 };
 
 export default function ToggleChip({
@@ -17,6 +24,7 @@ export default function ToggleChip({
   hint,
   value = "1",
   defaultChecked = false,
+  accent = "indigo",
 }: ToggleChipProps) {
   return (
     <label className="block">
@@ -27,10 +35,9 @@ export default function ToggleChip({
         defaultChecked={defaultChecked}
         className="peer sr-only"
       />
-      <div className="select-none rounded-lg border border-white/10 bg-white/5 px-4 py-3 transition
-                      peer-checked:border-indigo-500/40 peer-checked:bg-indigo-500/10">
-        <div className="font-medium">{label}</div>
-        {hint && <div className="text-sm text-white/70">{hint}</div>}
+      <div className={`select-none rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 transition-all ${accentStyles[accent]}`}>
+        <div className="font-medium text-sm text-white/85">{label}</div>
+        {hint && <div className="text-xs text-white/45 mt-0.5">{hint}</div>}
       </div>
     </label>
   );

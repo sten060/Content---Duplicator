@@ -105,7 +105,7 @@ const GUIDE_STEPS = [
     title: "Duplication Images",
     subtitle: "Étape 1 / 5 — Le cœur de DuupFlow",
     content:
-      "Charge une image et génère autant de copies que tu veux. Chaque copie a des métadonnées EXIF/XMP uniques — invisible pour les plateformes.",
+      "Génère des copies uniques avec métadonnées EXIF/XMP aléatoires. Active la Priorité d'algorithme pour injecter des EXIF Apple authentiques (appareil, GPS, focale). Ajoute une localisation pays pour un réalisme total.",
     icon: (
       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="3" y="3" width="18" height="18" rx="3" />
@@ -123,7 +123,7 @@ const GUIDE_STEPS = [
     title: "Duplication Vidéos",
     subtitle: "Étape 2 / 5 — Vos vidéos rendues uniques",
     content:
-      "Ré-encode chaque copie avec des paramètres aléatoires — FPS, GOP, bitrate, codec. Chaque fichier est techniquement différent, indétectable.",
+      "Ré-encode chaque copie avec des paramètres uniques. Nouveautés : Priorité d'algorithme (métadonnées iPhone .mov), Pixel magique (hash unique par frame), Métadonnées technique (bitrate, GOP, FPS, profil H.264). Qualité 4K préservée.",
     icon: (
       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="2" y="5" width="14" height="14" rx="2" />
@@ -140,7 +140,7 @@ const GUIDE_STEPS = [
     title: "Comparateur de similarité",
     subtitle: "Étape 3 / 5 — Valide tes copies",
     content:
-      "Après duplication, vérifie que tes copies sont bien uniques. Le comparateur donne un score précis de similarité visuelle.",
+      "Compare deux fichiers côte à côte avec analyse ffprobe complète. Score de similarité en pourcentage, différences surlignées en vert. Glisse tes fichiers en drag & drop pour une vérification instantanée.",
     icon: (
       <svg viewBox="0 0 24 24" className="h-7 w-7 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="11" cy="11" r="7" />
@@ -157,7 +157,7 @@ const GUIDE_STEPS = [
     title: "Variation IA & Détection IA",
     subtitle: "Étapes 4 & 5 / 5 — La puissance de l'IA",
     content:
-      "Masque la signature IA dans les métadonnées sans toucher au fichier visuellement (disponible maintenant). Le module Variation IA — génération de variantes de contenu par IA — sera bientôt disponible, tu seras notifié dès son lancement 🚀",
+      "La Détection IA efface toutes les signatures IA (EXIF, XMP, IPTC, C2PA) et les remplace par une identité humaine réaliste. Ton contenu IA passe pour un contenu créé par un humain. Le module Variation IA arrive bientôt.",
     icon: (
       <svg viewBox="0 0 24 24" className="h-7 w-7 text-sky-400" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" />
@@ -193,57 +193,50 @@ const GUIDE_KEY = "duupflow_guide_v2";
 
 function ModuleCard({ mod }: { mod: typeof MODULES[0] }) {
   return (
-    <div
-      className="group rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200 hover:translate-y-[-2px]"
+    <Link
+      href={mod.href}
+      className="group relative rounded-2xl p-5 transition-all overflow-hidden"
       style={{
-        background: "rgba(10,14,40,0.55)",
-        border: "1px solid rgba(255,255,255,0.07)",
+        background: mod.colorBg.replace("0.10", "0.04"),
+        border: `1px solid ${mod.colorBorder.replace("0.22", "0.15")}`,
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = mod.colorBorder;
-        (e.currentTarget as HTMLElement).style.boxShadow = `0 8px 32px ${mod.colorBg}`;
+        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${mod.colorBg}`;
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)";
+        (e.currentTarget as HTMLElement).style.borderColor = mod.colorBorder.replace("0.22", "0.15");
         (e.currentTarget as HTMLElement).style.boxShadow = "none";
       }}
     >
-      {/* Icon + badge */}
-      <div className="flex items-start justify-between">
+      {/* Radial glow on hover */}
+      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+           style={{ background: `radial-gradient(400px at 30% 20%, ${mod.colorBg}, transparent 70%)` }} />
+
+      <div className="relative flex items-start gap-4">
         <div
-          className="h-10 w-10 rounded-xl flex items-center justify-center"
+          className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: mod.colorBg, border: `1px solid ${mod.colorBorder}`, color: mod.color }}
         >
           {mod.icon}
         </div>
-        {mod.badge && (
-          <span
-            className="text-[9px] font-bold px-2 py-0.5 rounded-md tracking-wide"
-            style={{ background: "rgba(56,189,248,0.10)", color: "#38BDF8", border: "1px solid rgba(56,189,248,0.22)" }}
-          >
-            {mod.badge}
-          </span>
-        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white/90">{mod.title}</h3>
+            {mod.badge && (
+              <span
+                className="text-[9px] font-bold px-1.5 py-0.5 rounded tracking-wide"
+                style={{ background: "rgba(56,189,248,0.10)", color: "#38BDF8", border: "1px solid rgba(56,189,248,0.22)" }}
+              >
+                {mod.badge}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-white/45 mt-1 leading-relaxed">{mod.desc}</p>
+        </div>
+        <span className="text-sm opacity-0 group-hover:opacity-100 transition shrink-0 mt-1" style={{ color: mod.color }}>→</span>
       </div>
-
-      {/* Text */}
-      <div className="flex-1">
-        <h3 className="text-sm font-semibold text-white mb-1.5">{mod.title}</h3>
-        <p className="text-xs text-white/45 leading-relaxed">{mod.desc}</p>
-      </div>
-
-      {/* CTA */}
-      <Link
-        href={mod.href}
-        className="inline-flex items-center gap-1.5 self-start text-xs font-semibold transition-all group-hover:gap-2"
-        style={{ color: mod.color }}
-      >
-        Ouvrir
-        <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M3 8h10M9 4l4 4-4 4" />
-        </svg>
-      </Link>
-    </div>
+    </Link>
   );
 }
 
@@ -366,6 +359,115 @@ function GuideModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+/* ─── News Modal ─── */
+const NEWS_SECTIONS = [
+  {
+    title: "Duplication Vidéo",
+    color: "#6366F1",
+    items: [
+      { name: "Priorité d'algorithme", desc: "Simule un iPhone réel (métadonnées Apple, .mov)", detail: "Chaque copie reçoit des métadonnées Apple authentiques (modèle iPhone, version iOS, caméra, GPS, signature). Le fichier sort en .mov — exactement comme une vidéo filmée depuis un iPhone. Les plateformes ne font plus la différence." },
+      { name: "Pixel magique", desc: "Bruit imperceptible pour hash unique", detail: "Ajoute du bruit luma invisible à l'œil nu sur chaque pixel, chaque frame. Le fichier a un hash complètement différent de l'original — les algorithmes de détection de doublons le voient comme un fichier totalement nouveau." },
+      { name: "Métadonnées technique", desc: "Bitrate, GOP, FPS, profil H.264 aléatoires", detail: "Modifie les paramètres techniques d'encodage (bitrate 3–22 Mb/s, GOP, framerate, profil H.264). Chaque copie a une empreinte technique unique sans changement visuel perceptible." },
+      { name: "Localisation pays", desc: "Injecte le pays dans les métadonnées", detail: "Renseigne un pays et il sera intégré dans les métadonnées de chaque copie. Utile pour cibler un marché spécifique ou simuler l'origine géographique du contenu." },
+      { name: "Qualité originale préservée", desc: "Plus de cap 1920px, 4K reste 4K", detail: "Tes vidéos conservent leur résolution d'origine. Une vidéo 1080p reste 1080p, une 4K reste 4K. Aucune perte de qualité liée au redimensionnement." },
+    ],
+  },
+  {
+    title: "Duplication Image",
+    color: "#C026D3",
+    items: [
+      { name: "Priorité d'algorithme", desc: "EXIF Apple authentiques (appareil, GPS, focale)", detail: "Injecte un profil EXIF complet d'iPhone : modèle d'appareil, objectif, focale, ouverture, ISO, GPS, signature Apple. Tes images semblent provenir d'un vrai appareil photo." },
+      { name: "Localisation pays", desc: "Pays injecté dans l'EXIF", detail: "Le pays que tu choisis est intégré dans les données EXIF de chaque copie. Les plateformes associent le contenu à cette localisation." },
+    ],
+  },
+  {
+    title: "Comparateur",
+    color: "#10B981",
+    items: [
+      { name: "Analyse ffprobe", desc: "Compare les métadonnées exactes de deux fichiers", detail: "Upload deux fichiers et visualise côte à côte toutes leurs métadonnées : format, tags, flux vidéo, flux audio. Tu vois exactement ce qui diffère entre l'original et la copie." },
+      { name: "Score de similarité", desc: "Pourcentage de ressemblance", detail: "Un score automatique calcule le pourcentage de champs identiques entre les deux fichiers. Vert = bien distinct, rouge = trop similaire." },
+      { name: "Drag & drop", desc: "Glisse tes fichiers directement", detail: "Plus besoin de naviguer dans tes dossiers — glisse simplement tes fichiers dans les zones de dépôt pour lancer la comparaison instantanément." },
+    ],
+  },
+  {
+    title: "Support",
+    color: "#F59E0B",
+    items: [
+      { name: "Chatbot intelligent", desc: "Assistance instantanée avec FAQ complète", detail: "Un assistant intégré répond à tes questions en temps réel. Il te guide étape par étape pour résoudre les problèmes courants, et redirige vers le support humain si nécessaire." },
+      { name: "Page Support", desc: "Telegram + Email en un clic", detail: "Accède directement au support via Telegram pour une réponse rapide, ou par email pour les demandes plus détaillées. Tout est accessible depuis le dashboard." },
+    ],
+  },
+];
+
+function NewsModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(6,9,24,0.88)", backdropFilter: "blur(10px)" }}
+    >
+      <div
+        className="w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden flex flex-col"
+        style={{
+          background: "rgba(10,14,40,0.98)",
+          border: "1px solid rgba(56,189,248,0.25)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 60px rgba(56,189,248,0.10)",
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-8 pt-7 pb-4">
+          <div>
+            <h2 className="text-xl font-semibold text-white tracking-tight">Nouveautés</h2>
+            <p className="text-xs text-white/40 mt-1">Les dernières fonctionnalités de DuupFlow</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/30 hover:text-white/60 transition h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/5"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-6">
+          {NEWS_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <h3
+                className="text-sm font-semibold mb-3 flex items-center gap-2"
+                style={{ color: section.color }}
+              >
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: section.color }}
+                />
+                {section.title}
+              </h3>
+              <div className="space-y-2">
+                {section.items.map((item) => (
+                  <div
+                    key={item.name}
+                    className="rounded-lg px-4 py-3 text-sm"
+                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                  >
+                    <div>
+                      <span className="font-medium text-white/85">{item.name}</span>
+                      <span className="text-white/40"> — {item.desc}</span>
+                    </div>
+                    {item.detail && (
+                      <p className="mt-1.5 text-xs text-white/35 leading-relaxed">{item.detail}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardHome({
   firstName,
   agencyName,
@@ -374,6 +476,7 @@ export default function DashboardHome({
   agencyName: string | null;
 }) {
   const [showGuide, setShowGuide] = useState(false);
+  const [showNews, setShowNews] = useState(false);
 
   useEffect(() => {
     if (!localStorage.getItem(GUIDE_KEY)) {
@@ -387,7 +490,7 @@ export default function DashboardHome({
   }
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-8 w-full">
 
       {/* Header */}
       <div className="mb-8">
@@ -405,16 +508,27 @@ export default function DashboardHome({
           <p className="text-sm text-white/40">
             Choisis un module pour travailler tes contenus.
           </p>
-          <button
-            onClick={() => setShowGuide(true)}
-            className="text-xs text-indigo-400/70 hover:text-indigo-400 transition flex items-center gap-1"
-          >
-            <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="8" cy="8" r="6" />
-              <path d="M8 7v4M8 5.5v.5" />
-            </svg>
-            Guide
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowNews(true)}
+              className="text-xs text-sky-400/70 hover:text-sky-400 transition flex items-center gap-1"
+            >
+              <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M13 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM5 5h6M5 8h6M5 11h3" />
+              </svg>
+              Nouveautés
+            </button>
+            <button
+              onClick={() => setShowGuide(true)}
+              className="text-xs text-indigo-400/70 hover:text-indigo-400 transition flex items-center gap-1"
+            >
+              <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="8" cy="8" r="6" />
+                <path d="M8 7v4M8 5.5v.5" />
+              </svg>
+              Guide
+            </button>
+          </div>
         </div>
       </div>
 
@@ -427,7 +541,7 @@ export default function DashboardHome({
       </p>
 
       {/* Module grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {MODULES.map((mod) => (
           <ModuleCard key={mod.href} mod={mod} />
         ))}
@@ -435,6 +549,9 @@ export default function DashboardHome({
 
       {/* Guide modal */}
       {showGuide && <GuideModal onClose={closeGuide} />}
+
+      {/* News modal */}
+      {showNews && <NewsModal onClose={() => setShowNews(false)} />}
     </div>
   );
 }

@@ -11,15 +11,15 @@ export default async function ImagesPage({ searchParams }: { searchParams?: { ok
   const err = searchParams?.err ? decodeURIComponent(searchParams.err) : undefined;
 
   return (
-    <main className="p-6 space-y-8">
+    <main className="relative p-6 space-y-8">
+      {/* Fond rose flouté */}
+      <div className="fixed top-0 left-56 right-0 h-[500px] pointer-events-none"
+           style={{ background: "radial-gradient(800px 400px at 50% -100px, rgba(192,38,211,.10), transparent 70%)" }} />
       <Toasts ok={ok} err={err} />
 
       <h1 className="text-3xl font-extrabold tracking-tight">Duplication Images</h1>
 
-      <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-fuchsia-950/30 p-6 shadow-2xl shadow-fuchsia-900/20">
-        <ImageFormClient initialImages={initialImages} />
-      </section>
-
+      <ImageFormClient initialImages={initialImages} />
     </main>
   );
 }

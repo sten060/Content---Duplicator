@@ -10,85 +10,85 @@ const TESTIMONIALS = [
   {
     text: "DuupFlow nous a fait gagner des heures. On réutilise nos meilleurs contenus sans jamais être pénalisés par les algorithmes.",
     name: "S.M.",
-    role: "Fondateur d'agence marketing",
-    initials: "SM",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar1.jpeg",
     color: "#6366F1",
   },
   {
     text: "DuupFlow fait ça en quelques secondes et les résultats sont incomparables. Mon reach a explosé depuis que je l'utilise.",
     name: "J.R.",
-    role: "Créatrice de contenu",
-    initials: "JR",
+    role: "Créateur de contenu",
+    avatar: "/testimonials/avatar2.jpeg",
     color: "#8B5CF6",
   },
   {
     text: "Je vérifie chaque copie avant de publier grâce au Comparateur. Mon taux d'engagement a doublé en un mois.",
     name: "A.K.",
-    role: "Growth Marketer",
-    initials: "AK",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar3.jpeg",
     color: "#38BDF8",
   },
   {
     text: "50 copies d'un même Reel, chacune unique. TikTok ne l'a jamais détecté. C'est exactement ce qu'il nous fallait.",
     name: "L.B.",
-    role: "Responsable Marketing Digital",
-    initials: "LB",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar4.jpeg",
     color: "#EC4899",
   },
   {
     text: "Notre portée organique a explosé. On publie le même contenu sur 6 plateformes sans aucune pénalité algorithmique.",
     name: "P.D.",
-    role: "Directeur Créatif",
-    initials: "PD",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar5.jpeg",
     color: "#10B981",
   },
   {
     text: "Notre CAC a baissé de 30% depuis qu'on scale avec DuupFlow. La duplication automatique des meilleurs contenus, c'est du génie.",
     name: "T.M.",
-    role: "Performance Manager",
-    initials: "TM",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar6.jpeg",
     color: "#F59E0B",
   },
   {
     text: "Avant DuupFlow, chaque post demandait une nouvelle création. Maintenant on réutilise nos top performers à l'infini.",
     name: "N.V.",
-    role: "Content Strategist",
-    initials: "NV",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar7.jpeg",
     color: "#6366F1",
   },
   {
     text: "Le module Détection IA est parfait. Je publie des contenus générés par IA sans aucun marqueur détectable.",
     name: "R.C.",
-    role: "Designer Freelance",
-    initials: "RC",
+    role: "Mentor",
+    avatar: "/testimonials/avatar8.jpeg",
     color: "#8B5CF6",
   },
   {
     text: "DuupFlow gère 3 clients en simultané. On génère 100+ copies par semaine sans effort supplémentaire.",
     name: "F.L.",
-    role: "Fondateur d'agence",
-    initials: "FL",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar9.jpeg",
     color: "#38BDF8",
   },
   {
     text: "Ce qui me plaît avec DuupFlow, c'est la simplicité. Upload, dupliquer, télécharger. 30 secondes chrono.",
     name: "C.B.",
-    role: "Créatrice UGC",
-    initials: "CB",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar10.jpeg",
     color: "#EC4899",
   },
   {
     text: "Mon taux d'impression sur TikTok a triplé en 2 semaines après avoir commencé à utiliser DuupFlow.",
     name: "K.D.",
-    role: "TikToker",
-    initials: "KD",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar11.jpeg",
     color: "#10B981",
   },
   {
     text: "DuupFlow est devenu notre outil #1. Pas une seule pénalité depuis 4 mois d'utilisation intensive.",
     name: "O.M.",
-    role: "Social Media Manager",
-    initials: "OM",
+    role: "Agence OFM",
+    avatar: "/testimonials/avatar2.jpeg",
     color: "#F59E0B",
   },
 ];
@@ -108,8 +108,12 @@ const PRICING_FAQS = [
     a: "Il n'y a aucune limite sur le nombre de fichiers ou de copies générées. Tu peux importer autant de contenus que tu veux et créer autant de variantes que nécessaire, sans restriction mensuelle.",
   },
   {
-    q: "Y a-t-il une période d'essai gratuite ?",
-    a: "Nous proposons une garantie satisfait ou remboursé de 7 jours. Si DuupFlow ne correspond pas à tes attentes dans les 7 premiers jours, contacte-nous et nous te remboursons intégralement.",
+    q: "Qu'est-ce que la Priorité d'algorithme ?",
+    a: "La Priorité d'algorithme injecte des métadonnées Apple authentiques dans tes fichiers — modèle iPhone, version iOS, objectif caméra, coordonnées GPS. Les algorithmes des plateformes traitent ton contenu comme s'il provenait d'un appareil réel, ce qui booste ta portée organique.",
+  },
+  {
+    q: "À quoi sert le Pixel magique ?",
+    a: "Le Pixel magique ajoute du bruit imperceptible à chaque pixel de chaque frame. Le résultat est visuellement identique à l'original, mais le hash du fichier est complètement différent. Les algorithmes de détection de doublons voient un fichier unique à chaque copie.",
   },
   {
     q: "Comment fonctionne la facturation ?",
@@ -131,12 +135,7 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
         &ldquo;{t.text}&rdquo;
       </p>
       <div className="flex items-center gap-2">
-        <div
-          className="h-6 w-6 sm:h-7 sm:w-7 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-bold text-white shrink-0"
-          style={{ background: t.color }}
-        >
-          {t.initials}
-        </div>
+        <img src={t.avatar} alt={t.name} className="h-6 w-6 sm:h-7 sm:w-7 rounded-full object-cover shrink-0" />
         <div>
           <p className="text-[11px] sm:text-xs font-semibold text-white leading-none mb-0.5">{t.name}</p>
           <p className="text-[9px] sm:text-[10px] text-white/40">{t.role}</p>

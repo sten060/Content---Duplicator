@@ -35,16 +35,14 @@ function GlowCard({
   return (
     <section
       className={[
-        "relative rounded-2xl border border-white/10",
-        "bg-[linear-gradient(180deg,rgba(16,24,40,.35),rgba(16,24,40,.25))]",
-        "backdrop-blur-md",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,.06),0_0_24px_rgba(90,140,255,.14)]",
-        dense ? "p-3" : "p-4",
+        "relative rounded-2xl border border-white/[0.08]",
+        "bg-white/[0.03] backdrop-blur-xl",
+        dense ? "p-3" : "p-5",
       ].join(" ")}
     >
       {(title || right) && (
         <div className="mb-3 flex items-center justify-between">
-          {title ? <h3 className="text-sm font-semibold leading-none text-white/90">{title}</h3> : <span />}
+          {title ? <h3 className="text-sm font-medium leading-none text-white/80">{title}</h3> : <span />}
           {right}
         </div>
       )}
@@ -72,14 +70,11 @@ function SubmitWithProgress({ pending }: { pending: boolean }) {
         type="submit"
         disabled={pending}
         className={[
-          "group relative inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium",
-          "transition will-change-transform",
-          pending ? "bg-slate-600 text-white/80 cursor-not-allowed" : "bg-gradient-to-r from-indigo-500 to-sky-500 text-white hover:scale-[1.01]",
-          "shadow-[0_8px_30px_rgba(80,140,255,.25)]",
+          "inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all",
+          pending ? "bg-white/10 text-white/50 cursor-not-allowed" : "bg-gradient-to-r from-indigo-500 to-sky-500 text-white hover:shadow-[0_4px_20px_rgba(99,102,241,.35)]",
         ].join(" ")}
       >
         {pending ? "Duplication en cours…" : "Dupliquer les vidéos"}
-        <span className="absolute inset-0 rounded-lg ring-1 ring-white/10" />
       </button>
     </div>
   );
@@ -87,28 +82,38 @@ function SubmitWithProgress({ pending }: { pending: boolean }) {
 
 /* ---------- Packs + Aide ---------- */
 const PACKS: Record<
-  "metadata" | "audio" | "motion" | "visual" | "technical",
+  "metadata" | "metadata_technical" | "pixel_magic" | "audio" | "motion" | "visual",
   { label: string; hint: string; filters: string[] }
 > = {
-  metadata: { label: "Métadonnées", hint: "Titres/encodage neutre", filters: [] },
-  audio:     { label: "Audio",      hint: "volume / petite EQ / bitrate", filters: ["volume", "waveformshift", "audiobitrate"] },
-  motion:    { label: "Mouvement",  hint: "zoom, légère rotation",         filters: ["speed", "zoom", "rotation", "pixelshift"] },
-  visual:    { label: "Visuels",    hint: "EQ, hue, unsharp, grain",       filters: ["eq", "hue", "unsharp", "noise", "vignette", "lens"] },
-  technical: { label: "Technique",  hint: "bitrate vidéo, GOP, fps",       filters: ["bitrate", "gop", "profile", "fps"] },
+  metadata:           { label: "Métadonnées",           hint: "Date, encodeur, brand, uid",               filters: [] },
+  metadata_technical: { label: "Métadonnées technique", hint: "bitrate vidéo, GOP, fps, profil H.264",    filters: ["bitrate", "gop", "profile", "fps"] },
+  pixel_magic:        { label: "Pixel magique",         hint: "Bruit luma imperceptible — hash unique",   filters: [] },
+  audio:              { label: "Audio",                 hint: "volume / petite EQ / bitrate",              filters: ["volume", "waveformshift", "audiobitrate"] },
+  motion:             { label: "Mouvement",             hint: "zoom, légère rotation",                     filters: ["speed", "zoom", "rotation", "pixelshift"] },
+  visual:             { label: "Visuels",               hint: "EQ, hue, unsharp",                          filters: ["eq", "hue", "unsharp", "vignette", "lens"] },
 };
 
 const PACK_HELP: Record<keyof typeof PACKS, React.ReactNode> = {
   metadata: (
     <div>
-      Aucune altération visuelle/son. Sortie MP4 H.264/AAC, yuv420p, faststart (lecture web rapide).
+      Injecte des métadonnées aléatoires : date, logiciel de montage, brand container, identifiant unique. Aucune modification visuelle.
+    </div>
+  ),
+  metadata_technical: (
+    <div>
+      Bitrate vidéo 3–22 Mb/s • GOP 30–500 • Profil H.264 (baseline/main/high) • FPS aléatoire.
+    </div>
+  ),
+  pixel_magic: (
+    <div>
+      Ajoute du bruit luma imperceptible à chaque pixel, chaque frame. Change le hash du fichier sans modification visible.
     </div>
   ),
   visual: (
     <div>
-      Variations imperceptibles (tirées aléatoirement) :<br />
+      Variations imperceptibles :<br />
       Luminosité ±3% • Contraste ±5% • Saturation ±5% • Gamma ±3% •
-      Hue ±3° • Unsharp très doux (0.3) • Grain fin (alls=2).<br />
-      Aucune modification visible — uniquement des variations sub-perceptuelles.
+      Hue ±3° • Unsharp très doux.
     </div>
   ),
   motion: (
@@ -116,12 +121,6 @@ const PACK_HELP: Record<keyof typeof PACKS, React.ReactNode> = {
       Modifications infimes non visuelles :<br />
       Zoom 1.01×–1.04× • Micro panoramique 0–10% • Vitesse ±1–3% (audio synchronisé).<br />
       Imperceptible à l&apos;œil, suffisant pour diversifier l&apos;empreinte numérique.
-    </div>
-  ),
-  technical: (
-    <div>
-      Bitrate vidéo 10–12.5 Mb/s • GOP 230–340 • Profil H.264 (baseline/main/high) •
-      Niveaux 5.0–6.0 • FPS aléatoire parmi 23.976/24/25/29.97/30/59.94/60.
     </div>
   ),
   audio: (
@@ -150,17 +149,17 @@ function PackCard({
       type="button"
       onClick={() => onToggle(name)}
       className={[
-        "group rounded-xl border px-4 py-3 text-left transition",
-        "border-white/10 bg-white/[.04] backdrop-blur-md",
-        "hover:shadow-[0_0_24px_rgba(99,179,237,.18)] hover:border-sky-300/40",
-        selected ? "ring-1 ring-sky-300/50 shadow-[0_0_24px_rgba(56,189,248,.28)]" : "",
+        "group rounded-xl border px-4 py-3 text-left transition-all",
+        selected
+          ? "border-indigo-400/30 bg-indigo-500/10"
+          : "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06]",
       ].join(" ")}
     >
-      <div className="font-semibold text-white/90 inline-flex items-center gap-2">
+      <div className="font-medium text-sm text-white/85 inline-flex items-center gap-2">
         {label}
         <InfoTooltip>{PACK_HELP[name]}</InfoTooltip>
       </div>
-      <div className="text-xs text-white/60">{hint}</div>
+      <div className="text-xs text-white/45 mt-0.5">{hint}</div>
     </button>
   );
 }
@@ -186,16 +185,19 @@ export default function VideoFormSimpleClient() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({
-    metadata: true,
+    metadata: false,
+    metadata_technical: false,
+    pixel_magic: false,
     audio: false,
     motion: false,
     visual: false,
-    technical: false,
   });
   const packsSelected = useMemo(() => Object.entries(selected).filter(([, v]) => v).map(([k]) => k), [selected]);
 
   const [flip, setFlip] = useState(false);
   const [reverse, setReverse] = useState(false);
+  const [country, setCountry] = useState("");
+  const [iphoneMeta, setIphoneMeta] = useState(false);
 
   const [rotEnabled, setRotEnabled] = useState(false);
   const [rotMin, setRotMin] = useState(-5);
@@ -283,7 +285,7 @@ export default function VideoFormSimpleClient() {
         setProgressMsg("Envoi au serveur…");
 
         apiForm = new FormData();
-        for (const key of ["channel", "mode", "singles", "count", "packs"]) {
+        for (const key of ["channel", "mode", "singles", "count", "packs", "country", "iphoneMeta"]) {
           const v = rawForm.get(key);
           if (v !== null) apiForm.append(key, v);
         }
@@ -322,10 +324,9 @@ export default function VideoFormSimpleClient() {
 
           if (!res.ok || !res.body) {
             const text = await res.text().catch(() => "");
-            let msg = `HTTP ${res.status}`;
             let code = res.status >= 500 ? "VID-002" : "VID-001";
-            try { const j = JSON.parse(text); msg = j?.error || msg; code = j?.code || code; } catch { if (text) msg += `: ${text.slice(0, 120)}`; }
-            const errMsg = `[${code}] ${msg}`;
+            try { const j = JSON.parse(text); code = j?.code || code; } catch {}
+            const errMsg = `[${code}] Une erreur est survenue. Réessayez ou contactez le support.`;
             setErrorMsg(errMsg);
             setJob({ id: jobId, type: "video", channel: "simple", progress: 0, msg: errMsg, status: "error", errorMsg: errMsg });
             setProcessing(false);
@@ -449,18 +450,28 @@ export default function VideoFormSimpleClient() {
       <input type="hidden" name="channel" value="simple" />
       <input type="hidden" name="mode" value="simple" />
       <input type="hidden" name="singles" value={singlesJSON} />
-      <GlowCard>
+      {country && <input type="hidden" name="country" value={country} />}
+      {iphoneMeta && <input type="hidden" name="iphoneMeta" value="1" />}
+
+      {/* Dropzone — seul élément avec bordure */}
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-3">
         <Dropzone name="files" accept="video/*" multiple maxFiles={40} />
-      </GlowCard>
+        <div className="max-w-xs">
+          <label className="block text-sm font-medium text-white/70 mb-1.5">Nombre de copies</label>
+          <input type="number" name="count" min={1} defaultValue={1} className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90" />
+        </div>
+      </div>
 
-      <GlowCard title="Nombre de copies" dense>
-        <input type="number" name="count" min={1} defaultValue={1} className="w-full rounded-lg border border-white/10 bg-white/[.04] px-3 py-2 text-sm text-white/90" />
-      </GlowCard>
+      <div className="h-px bg-white/[0.06]" />
 
-      <GlowCard title="Packs (cumulables)">
+      {/* Packs */}
+      <div>
         <input type="hidden" name="packs" value={packsSelected.join(",")} />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {(Object.keys(PACKS) as (keyof typeof PACKS)[]).map((k) => (
+        <h3 className="text-sm font-semibold text-white/90 mb-3">Packs <span className="text-white/40 font-normal">(cumulables)</span></h3>
+
+        <p className="text-xs font-medium text-indigo-300/60 uppercase tracking-wide mb-2">Sans modification visuelle</p>
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 mb-4">
+          {(["metadata", "metadata_technical", "pixel_magic"] as (keyof typeof PACKS)[]).map((k) => (
             <PackCard
               key={k}
               name={k}
@@ -471,34 +482,63 @@ export default function VideoFormSimpleClient() {
             />
           ))}
         </div>
-        <p className="mt-2 text-xs text-white/55">
-          Ces packs sont <b>légers</b>. Les filtres seuls ci-dessous s’ajoutent par-dessus.
-        </p>
-      </GlowCard>
 
-      <GlowCard title="Filtres seuls (cumulables)">
-        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <p className="text-xs font-medium text-indigo-300/60 uppercase tracking-wide mb-2">Avec modification visuelle</p>
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          {(["audio", "motion", "visual"] as (keyof typeof PACKS)[]).map((k) => (
+            <PackCard
+              key={k}
+              name={k}
+              label={PACKS[k].label}
+              hint={PACKS[k].hint}
+              selected={selected[k]}
+              onToggle={(n) => setSelected((s) => ({ ...s, [n]: !s[n] }))}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="h-px bg-white/[0.06]" />
+
+      {/* Options */}
+      <div>
+        <h3 className="text-sm font-semibold text-white/90 mb-3">Options</h3>
+        <div className="flex flex-wrap items-end gap-4">
           <Toggle checked={flip} onChange={setFlip} label="Flip (vertical)" />
           <Toggle checked={reverse} onChange={setReverse} label="Reverse (miroir horizontal)" />
+          <div className="flex-1 min-w-[200px] max-w-xs">
+            <label className="block text-sm font-medium text-white/70 mb-1">Localisation pays</label>
+            <input
+              type="text"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              placeholder="Ex: France, États-Unis, Japon…"
+              className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-sm text-white/90 placeholder:text-white/25"
+            />
+          </div>
+          <Toggle checked={iphoneMeta} onChange={setIphoneMeta} label="⚡ Priorité d'algorithme" />
+          <InfoTooltip>Simule une vidéo provenant d&apos;un iPhone réel en injectant des métadonnées Apple authentiques (appareil, iOS, caméra, GPS, signature).</InfoTooltip>
         </div>
-      </GlowCard>
+      </div>
+
+      <div className="h-px bg-white/[0.06]" />
 
       <SubmitWithProgress pending={processing} />
 
       {processing && progress !== null && (
         <div className="mt-2">
-          <div className="h-2 w-full rounded bg-white/10 overflow-hidden">
+          <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
             <div
-              className="h-2 bg-indigo-500 transition-[width] duration-200"
+              className="h-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-sky-500 transition-[width] duration-200"
               style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
             />
           </div>
-          <p className="mt-1 text-xs text-white/70">{progressMsg || `Progression… ${progress}%`}</p>
+          <p className="mt-1 text-xs text-white/50">{progressMsg || `Progression… ${progress}%`}</p>
         </div>
       )}
 
       {errorMsg && (
-        <p className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
+        <p className="mt-3 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-4 py-2 text-sm text-red-400">
           {errorMsg}
         </p>
       )}

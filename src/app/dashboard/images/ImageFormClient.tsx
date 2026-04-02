@@ -272,8 +272,8 @@ export default function ImageFormClient({ initialImages }: Props) {
           onDrop={onDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={() => !processing && inputRef.current?.click()}
-          className="group relative rounded-xl border border-white/15 bg-gradient-to-br from-white/5 to-fuchsia-950/20 p-4 ring-inset transition
-                     hover:ring-2 hover:ring-fuchsia-500/50 cursor-pointer"
+          className="group relative rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 transition
+                     hover:border-fuchsia-500/30 cursor-pointer"
           aria-label="Zone de dépôt"
         >
           <div className="pointer-events-none select-none">
@@ -330,39 +330,66 @@ export default function ImageFormClient({ initialImages }: Props) {
           </div>
         </div>
 
-        {/* Filters */}
-        <fieldset className="space-y-3">
-          <legend className="text-sm font-semibold text-white/90 mb-1">Filtres</legend>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <ToggleChip name="fundamentals" value="1" label="Filtres fondamentaux" hint="up/downscale, qualité, chroma, ICC, EXIF/XMP…" defaultChecked />
-            <ToggleChip name="visuals" value="1" label="Filtres visuels" hint="brightness, saturation, gamma, contrast, hue…" />
-            <ToggleChip name="semi" value="1" label="Semi-visuels" hint="kernel aléatoire, micro-crop, léger resize" defaultChecked />
-            <ToggleChip name="reverse" value="1" label="Reverse (miroir horizontal)" hint="Miroir horizontal de l'image. Cumulable avec les packs." />
-          </div>
-        </fieldset>
-
         {/* Copies */}
-        <div className="max-w-xs">
-          <label className="block text-sm font-medium mb-2 text-white/80">Nombre de copies</label>
+        <div className="max-w-[200px]">
+          <label className="block text-sm font-medium text-white/70 mb-1">Nombre de copies</label>
           <input
             type="number"
             name="count"
             min={1}
             defaultValue={1}
-            className="block w-full rounded-lg border border-white/15 bg-transparent px-3 py-2 text-white/90"
+            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90"
           />
         </div>
+
+        <div className="h-px bg-white/[0.06]" />
+
+        {/* Localisation + Priorité algorithme */}
+        <div className="max-w-md">
+          <label className="block text-sm font-medium text-white/70 mb-1.5">Localisation pays <span className="text-white/30">(optionnel)</span></label>
+          <input
+            type="text"
+            name="country"
+            placeholder="Ex: France, États-Unis, Japon…"
+            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90 placeholder:text-white/25"
+          />
+        </div>
+
+        {/* Priorité d'algorithme */}
+        <ToggleChip name="iphoneMeta" value="1" label="⚡ Priorité d'algorithme" hint="Simule une photo iPhone — injecte EXIF Apple authentiques (appareil, caméra, iOS, GPS, focale, signature)" accent="pink" />
+
+        <div className="h-px bg-white/[0.06]" />
+
+        {/* Filtres */}
+        <div>
+          <h3 className="text-sm font-semibold text-white/90 mb-3">Filtres <span className="text-white/40 font-normal">(cumulables)</span></h3>
+
+          <p className="text-xs font-medium text-fuchsia-300/60 uppercase tracking-wide mb-2">Sans modification visuelle</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-4">
+            <ToggleChip name="fundamentals" value="1" label="Filtres fondamentaux" hint="up/downscale, qualité, chroma, ICC, EXIF/XMP…" defaultChecked accent="pink" />
+            <ToggleChip name="reverse" value="1" label="Reverse (miroir horizontal)" hint="Miroir horizontal de l'image" accent="pink" />
+          </div>
+
+          <p className="text-xs font-medium text-fuchsia-300/60 uppercase tracking-wide mb-2">Avec modification visuelle</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <ToggleChip name="visuals" value="1" label="Filtres visuels" hint="brightness, saturation, gamma, contrast, hue…" accent="pink" />
+            <ToggleChip name="semi" value="1" label="Semi-visuels" hint="kernel aléatoire, micro-crop, léger resize" defaultChecked accent="pink" />
+          </div>
+        </div>
+
+        <div className="h-px bg-white/[0.06]" />
 
         {/* Submit + Stop */}
         <div className="flex items-center gap-3">
           <button
             type="submit"
             disabled={processing || files.length === 0}
-            className={`rounded-lg px-4 py-2 text-white transition ${
+            className={[
+              "inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all",
               processing || files.length === 0
-                ? "bg-gray-600/60 cursor-not-allowed"
-                : "bg-fuchsia-600 hover:bg-fuchsia-500"
-            }`}
+                ? "bg-white/10 text-white/50 cursor-not-allowed"
+                : "bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white hover:shadow-[0_4px_20px_rgba(192,38,211,.35)]",
+            ].join(" ")}
           >
             {processing ? "Duplication en cours…" : "Dupliquer les images"}
           </button>
@@ -371,7 +398,7 @@ export default function ImageFormClient({ initialImages }: Props) {
             <button
               type="button"
               onClick={handleStop}
-              className="rounded-lg px-4 py-2 text-sm font-semibold bg-red-950/70 hover:bg-red-900 border border-red-700/40 text-red-300 transition"
+              className="rounded-xl px-4 py-2.5 text-sm font-semibold bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/15 transition"
             >
               ■ Arrêter
             </button>
@@ -381,13 +408,13 @@ export default function ImageFormClient({ initialImages }: Props) {
         {/* Progress bar */}
         {processing && (
           <div className="space-y-1">
-            <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
+            <div className="w-full bg-white/[0.06] rounded-full h-1.5 overflow-hidden">
               <div
-                className="h-2.5 rounded-full bg-fuchsia-500 transition-all duration-300"
+                className="h-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-xs text-white/60">{progressLabel}</p>
+            <p className="text-xs text-white/50">{progressLabel}</p>
           </div>
         )}
 

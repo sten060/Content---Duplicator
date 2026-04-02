@@ -363,62 +363,138 @@ function randMetaHex(n = 8): string {
   for (let i = 0; i < n; i++) s += Math.floor(Math.random() * 16).toString(16);
   return s;
 }
-function getVideoMetadataArgs(): string[] {
-  const artist = pickRandom(VIDEO_HUMAN_NAMES);
-  const composer = pickRandom(VIDEO_HUMAN_NAMES);
-  const encoder = pickRandom(VIDEO_ENCODERS);
-  const comment = pickRandom(VIDEO_COMMENTS);
-  const title = pickRandom(VIDEO_TITLES);
-  const genre = pickRandom(VIDEO_GENRES);
-  const service = pickRandom(VIDEO_SERVICE_NAMES);
-  const location = pickRandom(VIDEO_LOCATIONS);
-  const lang = pickRandom(VIDEO_LANGUAGES);
-  const brand = pickRandom(VIDEO_BRANDS);
-  const compatBrands = VIDEO_COMPAT_BRANDS[brand];
-  const minorVersion = pickRandom([512, 0, 1, 2]);
-  const uid = `${randMetaHex(8)}-${randMetaHex(4)}-${randMetaHex(4)}-${randMetaHex(4)}-${randMetaHex(12)}`;
-  const sessionId = randMetaHex(16);
-  const daysAgo = Math.floor(Math.random() * 365);
-  const hoursAgo = Math.floor(Math.random() * 24);
-  const minsAgo = Math.floor(Math.random() * 60);
-  const creationDate = new Date(Date.now() - daysAgo * 86400000 - hoursAgo * 3600000 - minsAgo * 60000);
-  const isoDate = creationDate.toISOString().slice(0, 19) + "Z";
-  const year = creationDate.getFullYear();
-  const trackNum = 1 + Math.floor(Math.random() * 99);
-  return [
-    "-map_metadata", "-1",
-    "-metadata", `title=${title}`,
-    "-metadata", `artist=${artist}`,
-    "-metadata", `author=${artist}`,
-    "-metadata", `composer=${composer}`,
-    "-metadata", `album=${comment}`,
-    "-metadata", `encoder=${encoder}`,
-    "-metadata", `encoded_by=${encoder}`,
-    "-metadata", `creation_time=${isoDate}`,
-    "-metadata", `date=${year}`,
-    "-metadata", `comment=${comment}`,
-    "-metadata", `description=${comment}`,
-    "-metadata", `synopsis=${comment}`,
-    "-metadata", `copyright=© ${year} ${artist}`,
-    "-metadata", `publisher=${artist}`,
-    "-metadata", `genre=${genre}`,
-    "-metadata", `language=${lang}`,
-    "-metadata", `location=${location}`,
-    "-metadata", `service_name=${service}`,
-    "-metadata", `handler_name=${encoder}`,
-    "-metadata", `network=${service}`,
-    "-metadata", `episode_sort=${trackNum}`,
-    "-metadata", `track=${trackNum}`,
-    "-metadata", `major_brand=${brand}`,
-    "-metadata", `minor_version=${minorVersion}`,
-    "-metadata", `compatible_brands=${compatBrands}`,
-    "-metadata:g", `uid=${uid}`,
-    "-metadata:g", `session_id=${sessionId}`,
-    "-metadata:s:v:0", `language=${lang}`,
-    "-metadata:s:v:0", `handler_name=${encoder}`,
-    "-metadata:s:a:0", `language=${lang}`,
-    "-metadata:s:a:0", `handler_name=${encoder}`,
-  ];
+/* ---- iPhone-realistic metadata for "Priorité d'algorithme" mode ---- */
+const IPHONE_MODELS = [
+  { make: "Apple", model: "iPhone 17 Pro Max", software: "26.2" },
+  { make: "Apple", model: "iPhone 17 Pro", software: "26.1" },
+  { make: "Apple", model: "iPhone 17 Air", software: "26.1" },
+  { make: "Apple", model: "iPhone 17", software: "26.0" },
+  { make: "Apple", model: "iPhone 16 Pro Max", software: "18.4.1" },
+  { make: "Apple", model: "iPhone 16 Pro", software: "18.3.2" },
+  { make: "Apple", model: "iPhone 16", software: "18.3.1" },
+  { make: "Apple", model: "iPhone 15 Pro Max", software: "18.2.1" },
+  { make: "Apple", model: "iPhone 15 Pro", software: "18.2" },
+  { make: "Apple", model: "iPhone 15", software: "18.1" },
+];
+const IPHONE_LENS = [
+  { focal: "6.86", focalEq: "24", aperture: "1.78", lens: "iPhone 17 Pro Max back triple camera 6.86mm f/1.78" },
+  { focal: "6.86", focalEq: "24", aperture: "1.78", lens: "iPhone 16 Pro Max back triple camera 6.86mm f/1.78" },
+  { focal: "6.765", focalEq: "24", aperture: "1.78", lens: "iPhone 16 Pro back triple camera 6.765mm f/1.78" },
+  { focal: "2.22", focalEq: "13", aperture: "2.2", lens: "iPhone 17 Pro back triple camera 2.22mm f/2.2" },
+  { focal: "2.22", focalEq: "13", aperture: "2.2", lens: "iPhone 16 Pro back triple camera 2.22mm f/2.2" },
+  { focal: "9.0", focalEq: "77", aperture: "2.8", lens: "iPhone 16 Pro back triple camera 9mm f/2.8" },
+  { focal: "5.7", focalEq: "28", aperture: "1.6", lens: "iPhone 17 Pro Max back triple camera 5.7mm f/1.6" },
+  { focal: "6.765", focalEq: "24", aperture: "1.78", lens: "iPhone 15 Pro back triple camera 6.765mm f/1.78" },
+  { focal: "2.22", focalEq: "13", aperture: "2.2", lens: "iPhone 15 Pro back triple camera 2.22mm f/2.2" },
+];
+
+type MetaOpts = {
+  country?: string;
+  iphoneMeta?: boolean;
+  // Advanced mode: individual controls (undefined = all enabled for simple mode)
+  controls?: {
+    creation_time?: { enabled: boolean; value?: string };
+    encoder?: { enabled: boolean; value?: string };
+    brand?: { enabled: boolean };
+    uid?: { enabled: boolean };
+  };
+};
+
+function getVideoMetadataArgs(opts?: MetaOpts): string[] {
+  const ctrl = opts?.controls;
+  const allOn = !ctrl; // simple mode: all metadata enabled when function is called
+
+  const args: string[] = ["-map_metadata", "-1"];
+
+  // creation_time
+  if (allOn || ctrl?.creation_time?.enabled) {
+    const customDate = ctrl?.creation_time?.value;
+    if (customDate) {
+      args.push("-metadata", `creation_time=${customDate}`);
+    } else {
+      const daysAgo = Math.floor(Math.random() * 365);
+      const hoursAgo = Math.floor(Math.random() * 24);
+      const minsAgo = Math.floor(Math.random() * 60);
+      const d = new Date(Date.now() - daysAgo * 86400000 - hoursAgo * 3600000 - minsAgo * 60000);
+      args.push("-metadata", `creation_time=${d.toISOString().slice(0, 19)}Z`);
+    }
+  }
+
+  // encoder / encoded_by
+  if (allOn || ctrl?.encoder?.enabled) {
+    const enc = ctrl?.encoder?.value || pickRandom(VIDEO_ENCODERS);
+    args.push("-metadata", `encoder=${enc}`, "-metadata", `encoded_by=${enc}`);
+  }
+
+  // major_brand / minor_version / compatible_brands
+  if (allOn || ctrl?.brand?.enabled) {
+    const brand = pickRandom(VIDEO_BRANDS);
+    args.push(
+      "-metadata", `major_brand=${brand}`,
+      "-metadata", `minor_version=${pickRandom([512, 0, 1, 2])}`,
+      "-metadata", `compatible_brands=${VIDEO_COMPAT_BRANDS[brand]}`,
+    );
+  }
+
+  // uid
+  if (allOn || ctrl?.uid?.enabled) {
+    const uid = `${randMetaHex(8)}-${randMetaHex(4)}-${randMetaHex(4)}-${randMetaHex(4)}-${randMetaHex(12)}`;
+    args.push("-metadata:g", `uid=${uid}`);
+  }
+
+  // Location
+  if (opts?.country) {
+    args.push("-metadata", `location=${opts.country}`);
+  }
+
+  // iPhone metadata: overlay Apple QuickTime tags ON TOP of base metadata.
+  // FFmpeg processes args in order — later -metadata flags override earlier ones.
+  if (opts?.iphoneMeta) {
+    const device = pickRandom(IPHONE_MODELS);
+    const secsAgo = Math.floor(Math.random() * 86400 * 30);
+    const iphoneDate = new Date(Date.now() - secsAgo * 1000);
+    const iphoneIso = iphoneDate.toISOString().slice(0, 19) + "Z";
+    const tzOffsetH = 1 + Math.floor(Math.random() * 3);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const localDate = `${iphoneDate.getFullYear()}-${pad(iphoneDate.getMonth()+1)}-${pad(iphoneDate.getDate())}T${pad(iphoneDate.getHours())}:${pad(iphoneDate.getMinutes())}:${pad(iphoneDate.getSeconds())}+${pad(tzOffsetH)}00`;
+    const lat = (43 + Math.random() * 6).toFixed(4);
+    const lon = (1 + Math.random() * 7).toFixed(4);
+    const alt = (20 + Math.random() * 200).toFixed(3);
+    const gpsIso6709 = `+${lat}+${lon.padStart(8, "0")}+${alt}/`;
+    const locationAccuracy = (5 + Math.random() * 20).toFixed(6);
+    const sigChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let sig = "";
+    for (let i = 0; i < 36; i++) sig += sigChars[Math.floor(Math.random() * sigChars.length)];
+    // Override container brand to match iPhone (qt, not isom)
+    args.push(
+      "-metadata", `major_brand=qt  `,
+      "-metadata", `minor_version=0`,
+      "-metadata", `compatible_brands=qt  `,
+      "-metadata", `creation_time=${iphoneIso}`,
+    );
+    // Location + GPS only if user specified a country
+    if (opts.country) {
+      args.push(
+        "-metadata", `location=${opts.country}`,
+        "-metadata", `com.apple.quicktime.location.accuracy.horizontal=${locationAccuracy}`,
+        "-metadata", `com.apple.quicktime.location.ISO6709=${gpsIso6709}`,
+      );
+    }
+    args.push(
+      // Apple QuickTime atoms
+      "-metadata", `com.apple.quicktime.full-frame-rate-playback-intent=0`,
+      "-metadata", `com.apple.quicktime.make=${device.make}`,
+      "-metadata", `com.apple.quicktime.model=${device.model}`,
+      "-metadata", `com.apple.quicktime.software=${device.software}`,
+      "-metadata", `com.apple.quicktime.creationdate=${localDate}`,
+      "-metadata", `com.apple.photos.originating.signature=${sig}`,
+      // Stream handlers
+      "-metadata:s:v:0", `handler_name=Core Media Video`,
+      "-metadata:s:a:0", `handler_name=Core Media Audio`,
+    );
+  }
+
+  return args;
 }
 
 const LIMITS: Record<string, { min: number; max: number }> = {
@@ -541,9 +617,12 @@ async function runFFmpegSafe(
     if (extraArgs.length) args.push(...extraArgs);
   }
 
-  args.push("-movflags", "+faststart");
+  // use_metadata_tags: allows custom metadata keys (com.apple.quicktime.* etc.)
+  // to be written into the MOV/MP4 container instead of being silently ignored.
+  args.push("-movflags", "+faststart+use_metadata_tags");
   if (metaArgs.length) args.push(...metaArgs);
 
+  if (output.endsWith(".mov")) args.push("-f", "mov");
   args.push(output);
 
   await new Promise<void>((resolve, reject) => {
@@ -565,8 +644,8 @@ async function runFFmpegSafe(
     p.on("close", (code) => {
       clearTimeout(timer);
       if (code === 0) return resolve();
-      console.error("FFmpeg error:", stderr);
-      reject(new Error(`FFmpeg failed (${code})\n${stderr}`));
+      console.error("[FFmpeg] stderr:", stderr);
+      reject(new Error(`FFmpeg failed (${code})`));
     });
     const timer = setTimeout(() => {
       p.kill("SIGKILL");
@@ -603,6 +682,8 @@ export async function processVideos(
 
   const singlesRaw = (formData.get("singles") as string) || "{}";
   const rangesRaw = (formData.get("advancedRanges") as string) || "{}";
+  const userCountry = (formData.get("country") as string) || "";
+  const useIphoneMeta = formData.get("iphoneMeta") === "1";
   let singles: Record<string, any> = {};
   let ranges:  Record<string, any> = {};
   try { singles = JSON.parse(singlesRaw); } catch { /* malformed — use defaults */ }
@@ -643,7 +724,7 @@ export async function processVideos(
       color: await probeColorInfo(entry.tmpIn, ffmpegBin),
     }))
   );
-  type ValidEntry = typeof fileEntries[number] & { color: ColorInfo };
+  type ValidEntry = typeof fileEntries[number] & { color: ColorInfo; duration: number };
   const validEntries: ValidEntry[] = [];
   for (const { entry, dur, color } of durResults) {
     if (dur <= 0) {
@@ -654,13 +735,13 @@ export async function processVideos(
         if (entry.ownsTmpIn) await fs.unlink(entry.tmpIn).catch(() => {});
       } else {
         console.log(`[processVideos] accepted "${entry.fileName}": probe=0 but 1-frame test passed (likely HEVC)`);
-        validEntries.push({ ...entry, color });
+        validEntries.push({ ...entry, color, duration: dur });
       }
     } else if (dur > MAX_DURATION_S) {
       await onProgress?.(2, `⚠ "${entry.fileName}" dépasse ${MAX_DURATION_S}s (${Math.round(dur)}s) — ignorée.`);
       if (entry.ownsTmpIn) await fs.unlink(entry.tmpIn).catch(() => {});
     } else {
-      validEntries.push({ ...entry, color });
+      validEntries.push({ ...entry, color, duration: dur });
     }
   }
   if (validEntries.length === 0) {
@@ -670,10 +751,10 @@ export async function processVideos(
 
   // ── Flatten all (file × copy) into one pool so every copy of every file
   // runs concurrently — total time ≈ slowest single copy, not SUM. ───────────
-  type Task = { fileName: string; tmpIn: string; fileIndex: number; copyIndex: number; color: ColorInfo };
-  const allTasks: Task[] = validEntries.flatMap(({ fileName, tmpIn, color }, idx) =>
+  type Task = { fileName: string; tmpIn: string; fileIndex: number; copyIndex: number; color: ColorInfo; duration: number };
+  const allTasks: Task[] = validEntries.flatMap(({ fileName, tmpIn, color, duration }, idx) =>
     Array.from({ length: count }, (_, i) => ({
-      fileName, tmpIn, fileIndex: idx + 1, copyIndex: i + 1, color,
+      fileName, tmpIn, fileIndex: idx + 1, copyIndex: i + 1, color, duration,
     }))
   );
 
@@ -693,42 +774,45 @@ export async function processVideos(
   // Check for zscale availability (needed for HDR→SDR tone mapping)
   console.log(`[processVideos] ncpus=${ncpus} MAX_CONCURRENT=${MAX_CONCURRENT} CONCURRENCY=${CONCURRENCY} tasks=${allTasks.length}`);
 
-  const taskErrors = await withConcurrency(allTasks, CONCURRENCY, async ({ fileName, tmpIn, fileIndex, copyIndex, color }) => {
+  const taskErrors = await withConcurrency(allTasks, CONCURRENCY, async ({ fileName, tmpIn, fileIndex, copyIndex, color, duration: videoDuration }) => {
     const startPct = Math.min(99, Math.round((doneCopies / totalCopies) * 100));
     await onProgress?.(startPct, `Encodage ${doneCopies + 1}/${totalCopies}…`);
 
     // copyTag unique par copie : 8 chars base-36 aléatoires → ex. "x4k9mz2q"
     const copyTag = Math.random().toString(36).slice(2, 10).padEnd(8, "0");
-    const outName = videoOutName({
+    let outName = videoOutName({
       channel,
       date: stamp,
       fileIndex,
       copyIndex,
       copyTag,
     });
+      if (useIphoneMeta) outName = outName.replace(/\.mp4$/, ".mov");
       const outPath = path.join(dir, outName);
 
       const vfParts: string[] = [];
       const afParts: string[] = [];
       const extraArgs: string[] = [];
+      const packs = String(formData.get("packs") || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
 
       if (mode === "simple") {
         /* ----------- MODE SIMPLE ----------- */
-        const packs = String(formData.get("packs") || "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
 
         if (packs.includes("visual")) {
           // eq — brightness ±5%, contrast ±10%, saturation ±10%, gamma ±7%
-          // Plages légèrement élargies pour un fingerprint visuel plus fort
           const b  = clamp(Number((-0.05 + Math.random() * 0.10).toFixed(3)), LIMITS.brightness.min, LIMITS.brightness.max);
           const ct = clamp(Number((0.95 + Math.random() * 0.10).toFixed(3)),  LIMITS.contrast.min,   LIMITS.contrast.max);
           const st = clamp(Number((0.90 + Math.random() * 0.20).toFixed(3)),  LIMITS.saturation.min, LIMITS.saturation.max);
           const gm = clamp(Number((0.93 + Math.random() * 0.14).toFixed(3)),  0.1, 3.0);
           vfParts.push(`eq=brightness=${b}:contrast=${ct}:saturation=${st}:gamma=${gm}`);
-          // Luma-only temporal noise — changes every pixel every frame → unique hash
-          // Increased range 4–8 for stronger pixel-level uniqueness
+          // noise moved to "pixel_magic" standalone toggle
+        }
+
+        // Pixel Magique — luma noise, imperceptible but changes every pixel hash
+        if (packs.includes("pixel_magic")) {
           const ns = 2 + Math.floor(Math.random() * 3);  // 2–4 luma
           vfParts.push(`noise=c0s=${ns}:c0f=t`);
         }
@@ -766,7 +850,7 @@ export async function processVideos(
           // tblend removed: expensive (sequential frame decode), negligible uniquification value
         }
 
-        if (packs.includes("technical")) {
+        if (packs.includes("metadata_technical")) {
           const crf = 14 + Math.floor(Math.random() * 15);
           extraArgs.push("-crf", String(crf));
           const vbit = clamp(3000 + Math.floor(Math.random() * 19001), LIMITS.vbitrate.min, LIMITS.vbitrate.max);
@@ -830,27 +914,14 @@ export async function processVideos(
           vfParts.push(`pad=iw*(1+${padLeft}+${padRight}):ih*(1+${padTop}+${padBottom}):iw*${padLeft}:ih*${padTop}:color=black`);
         }
 
-        if (packs.includes("metadata")) {
-          // Audio sample rate — resampling changes the full audio bitstream per copy.
-          extraArgs.push("-ar", Math.random() < 0.5 ? "44100" : "48000");
-          // Audio bitrate — different AAC compression → different artifacts → different hash.
-          const abitratePool = [96, 128, 160, 192, 256];
-          extraArgs.push("-b:a", `${abitratePool[Math.floor(Math.random() * abitratePool.length)]}k`);
-          // Micro volume shift ±0.1–0.5 dB — imperceptible but changes every audio sample
-          // value, making the audio waveform hash unique per copy.
-          const sign = Math.random() < 0.5 ? 1 : -1;
-          const db = (0.1 + Math.random() * 0.4).toFixed(2);
-          afParts.push(`volume=${sign > 0 ? "" : "-"}${db}dB`);
-        }
-
         // ── CRF variation — only when video is already being re-encoded ──────────
         // Adding CRF without video filters would force a full encode and change visuals.
-        if (vfParts.length > 0 && !packs.includes("technical")) {
+        if (vfParts.length > 0 && !packs.includes("metadata_technical")) {
           extraArgs.push("-crf", String(15 + Math.floor(Math.random() * 6)));
         }
 
         // When video will be re-encoded, ensure even dimensions and cap at 1920px.
-        if (vfParts.length > 0 || packs.includes("technical")) {
+        if (vfParts.length > 0 || packs.includes("metadata_technical")) {
           // ── HDR → SDR conversion when source is BT.2020 / HLG / PQ ──────────
           // Without this, BT.2020 pixel data encoded as H.264 (BT.709) produces
           // a visible yellow/warm tint because of color matrix mismatch.
@@ -860,12 +931,8 @@ export async function processVideos(
           } else {
             vfParts.unshift("format=yuv420p");
           }
-          // Cap at 1920px after format/HDR conversion.
-          const insertIdx = color.isHDR ? hdrToSdrFilters().length : 1;
-          vfParts.splice(insertIdx, 0,
-            "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
-          );
           // Ensure even dimensions after all filters (pad/rotation can produce odd dims).
+          // No resolution cap — preserve original quality (1080p stays 1080p, 4K stays 4K).
           vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=lanczos");
         }
 
@@ -981,12 +1048,21 @@ export async function processVideos(
         const gop = get("gop", 0, 0, 10, 300);
         if (gop.enabled) extraArgs.push("-g", String(Math.round(gop.value)));
 
+        // Cut start/end: trim seconds from the beginning and/or end of the video.
+        // Values = seconds to TRIM (not absolute positions).
+        // cut_start 0.05–0.10 → skip random 0.05–0.10s from beginning
+        // cut_end 0.05–0.10 → remove random 0.05–0.10s from the end
         const cStart = get("cut_start", 0, 0, 0, Number.MAX_SAFE_INTEGER);
         const cEnd   = get("cut_end",   0, 0, 0, Number.MAX_SAFE_INTEGER);
-        if (cStart.enabled && cStart.value > 0) extraArgs.push("-ss", cStart.value.toFixed(3));
-        if (cEnd.enabled && cEnd.value > 0) {
-          const to = !cStart.enabled ? cEnd.value : Math.max(cStart.value + 0.05, cEnd.value);
-          extraArgs.push("-to", to.toFixed(3));
+        const trimStart = cStart.enabled && cStart.value > 0 ? cStart.value : 0;
+        const trimEnd   = cEnd.enabled && cEnd.value > 0 ? cEnd.value : 0;
+        if (trimStart > 0) {
+          extraArgs.push("-ss", trimStart.toFixed(3));
+        }
+        if (trimEnd > 0 && videoDuration > 0) {
+          // -to = absolute end position = duration - end_trim (adjusted for start trim)
+          const endPos = Math.max(0.1, videoDuration - trimEnd - trimStart);
+          extraArgs.push("-t", endPos.toFixed(3));
         }
 
         const vol = get("volume_db", 0, 0, -30, 30);
@@ -1022,15 +1098,35 @@ export async function processVideos(
           } else {
             vfParts.unshift("format=yuv420p");
           }
-          const insertIdx = color.isHDR ? hdrToSdrFilters().length : 1;
-          vfParts.splice(insertIdx, 0,
-            "scale='min(iw,1920)':'min(ih,1920)':force_original_aspect_ratio=decrease:flags=lanczos",
-          );
+          // No resolution cap — preserve original quality.
           vfParts.push("scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=lanczos");
         }
       }
 
-      const metaArgs = getVideoMetadataArgs();
+      // Metadata only injected if explicitly requested
+      // Without it: original metadata is preserved (only filename changes)
+      const advMetaEnabled = mode === "advanced" && (
+        ranges?.meta_creation_time?.enabled ||
+        ranges?.meta_encoder?.enabled ||
+        ranges?.meta_brand?.enabled ||
+        ranges?.meta_uid?.enabled ||
+        useIphoneMeta
+      );
+      const wantsMeta = mode === "simple"
+        ? packs.includes("metadata") || useIphoneMeta
+        : advMetaEnabled;
+      const metaArgs = wantsMeta
+        ? getVideoMetadataArgs({
+            country: userCountry || undefined,
+            iphoneMeta: useIphoneMeta,
+            controls: mode === "advanced" ? {
+              creation_time: ranges?.meta_creation_time ?? { enabled: false },
+              encoder: ranges?.meta_encoder ?? { enabled: false },
+              brand: ranges?.meta_brand ?? { enabled: false },
+              uid: ranges?.meta_uid ?? { enabled: false },
+            } : undefined,
+          })
+        : [];
       await runFFmpegSafe(
         tmpIn, outPath, vfParts, afParts, extraArgs, metaArgs,
         // Live progress tick: update message with encoded time so users see activity

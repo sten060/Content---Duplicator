@@ -11,10 +11,13 @@ export default async function VideosSimplePage() {
   const files = await listOutVideosSimple();
 
   return (
-    <main className="p-6 space-y-8">
+    <main className="relative p-6 space-y-8">
+      {/* Fond bleu flouté */}
+      <div className="fixed top-0 left-56 right-0 h-[500px] pointer-events-none"
+           style={{ background: "radial-gradient(800px 400px at 50% -100px, rgba(99,102,241,.12), transparent 70%)" }} />
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-extrabold tracking-tight">Duplication Vidéos — Simple</h1>
-        <Link href="/dashboard/videos" className="text-sm underline">Retour</Link>
+        <Link href="/dashboard/videos" className="text-sm text-white/40 hover:text-white/70 transition">← Retour</Link>
       </div>
 
       <VideoFormClient />
