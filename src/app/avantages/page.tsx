@@ -82,76 +82,55 @@ export default function AvantagesPage() {
     <div className="min-h-screen text-white tech-grid">
       <Header />
 
-      {/* Hero — split layout */}
-      <section className="pt-28">
-        <div className="grid md:grid-cols-2 min-h-[500px]">
-          {/* Left — headline */}
-          <div className="px-8 sm:px-16 flex flex-col justify-end pb-16">
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
-              Découvrez les avantages{" "}
-              <span className={G}>DuupFlow</span>{" "}
-              pour votre agence
-            </h1>
-            <p className="mt-4 text-white/50 max-w-md">
-              Plus de rapidité, plus de qualité, plus de performances.
-              Voici pourquoi les meilleures agences nous font confiance.
-            </p>
-          </div>
+      {/* Hero — split layout, full height, no gap */}
+      <section className="min-h-screen grid md:grid-cols-2">
+        {/* Left — headline */}
+        <div className="px-8 sm:px-16 flex flex-col justify-center">
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
+            Découvrez les avantages{" "}
+            <span className={G}>DuupFlow</span>{" "}
+            pour votre agence
+          </h1>
+          <p className="mt-4 text-white/50 max-w-md">
+            Plus de rapidité, plus de qualité, plus de performances.
+            Voici pourquoi les meilleures agences nous font confiance.
+          </p>
+        </div>
 
-          {/* Right — testimonials floating cards */}
-          <div
-            className="relative flex items-center justify-center py-16 px-8 overflow-hidden"
-            style={{ background: "rgba(6,10,28,0.98)" }}
-          >
-            <p className="absolute top-8 left-8 text-[10px] uppercase tracking-[0.2em] text-white/25">Ces agences nous font confiance</p>
+        {/* Right — testimonials wall (full height, starts from top) */}
+        <div
+          className="flex flex-col justify-center gap-5 px-8 sm:px-12 py-32"
+          style={{ background: "rgba(6,10,28,0.98)" }}
+        >
+          <p className="text-[10px] uppercase tracking-[0.2em] text-white/25 mb-2">Ces agences nous font confiance</p>
 
-            {/* Floating testimonial cards */}
-            <div className="relative w-full max-w-sm">
-              {/* Background card — left, blurred */}
-              <div
-                className="absolute -left-12 top-4 w-64 rounded-2xl p-5 border border-white/[0.04] opacity-40 blur-[1px] -rotate-3"
-                style={{ background: "rgba(255,255,255,0.03)" }}
-              >
-                <p className="text-xs text-white/60 italic leading-relaxed">&ldquo;{testimonials[0].quote}&rdquo;</p>
-                <p className="text-[10px] text-white/30 mt-2">{testimonials[0].author}</p>
-              </div>
-
-              {/* Background card — right, blurred */}
-              <div
-                className="absolute -right-12 bottom-4 w-64 rounded-2xl p-5 border border-white/[0.04] opacity-40 blur-[1px] rotate-2"
-                style={{ background: "rgba(255,255,255,0.03)" }}
-              >
-                <p className="text-xs text-white/60 italic leading-relaxed">&ldquo;{testimonials[2].quote}&rdquo;</p>
-                <p className="text-[10px] text-white/30 mt-2">{testimonials[2].author}</p>
-              </div>
-
-              {/* Main card — center, sharp */}
-              <div
-                className="relative z-10 rounded-2xl p-6 border border-white/[0.08] shadow-2xl"
-                style={{ background: "rgba(12,16,40,0.95)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
-              >
-                <p className="text-sm text-white/85 leading-relaxed">
-                  &ldquo;{testimonials[1].quote}&rdquo;
-                </p>
-                <div className="mt-4 flex items-center gap-3">
-                  <div
-                    className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                    style={{ background: "linear-gradient(135deg, #6366F1, #C026D3)" }}
-                  >
-                    {testimonials[1].author.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-white/80">{testimonials[1].author}</p>
-                    <p className="text-xs text-white/40">{testimonials[1].role}</p>
-                  </div>
+          {testimonials.map((t, i) => (
+            <div
+              key={i}
+              className="rounded-2xl p-5 border border-white/[0.06] transition-all hover:border-white/[0.12] hover:translate-y-[-2px]"
+              style={{ background: "rgba(255,255,255,0.025)" }}
+            >
+              <p className="text-sm text-white/80 leading-relaxed italic">
+                &ldquo;{t.quote}&rdquo;
+              </p>
+              <div className="mt-3 flex items-center gap-3">
+                <div
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${["#6366F1","#C026D3","#38BDF8"][i]}, ${["#38BDF8","#6366F1","#10B981"][i]})` }}
+                >
+                  {t.author.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-white/70">{t.author}</p>
+                  <p className="text-[10px] text-white/30">{t.role}</p>
                 </div>
               </div>
             </div>
+          ))}
 
-            <p className="absolute bottom-6 left-0 right-0 text-center text-xs text-white/20">
-              Utilisé par <span className="text-white/40 font-medium">500+ agences</span> marketing & créateurs
-            </p>
-          </div>
+          <p className="text-center text-xs text-white/20 mt-2">
+            Utilisé par <span className="text-white/40 font-medium">500+ agences</span> marketing & créateurs
+          </p>
         </div>
       </section>
 
