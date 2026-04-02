@@ -465,19 +465,24 @@ function getVideoMetadataArgs(opts?: MetaOpts): string[] {
     const sigChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let sig = "";
     for (let i = 0; i < 36; i++) sig += sigChars[Math.floor(Math.random() * sigChars.length)];
-    const iphoneLocation = opts.country || pickRandom(VIDEO_LOCATIONS);
-
     // Override container brand to match iPhone (qt, not isom)
     args.push(
       "-metadata", `major_brand=qt  `,
       "-metadata", `minor_version=0`,
       "-metadata", `compatible_brands=qt  `,
       "-metadata", `creation_time=${iphoneIso}`,
-      "-metadata", `location=${iphoneLocation}`,
+    );
+    // Location + GPS only if user specified a country
+    if (opts.country) {
+      args.push(
+        "-metadata", `location=${opts.country}`,
+        "-metadata", `com.apple.quicktime.location.accuracy.horizontal=${locationAccuracy}`,
+        "-metadata", `com.apple.quicktime.location.ISO6709=${gpsIso6709}`,
+      );
+    }
+    args.push(
       // Apple QuickTime atoms
-      "-metadata", `com.apple.quicktime.location.accuracy.horizontal=${locationAccuracy}`,
       "-metadata", `com.apple.quicktime.full-frame-rate-playback-intent=0`,
-      "-metadata", `com.apple.quicktime.location.ISO6709=${gpsIso6709}`,
       "-metadata", `com.apple.quicktime.make=${device.make}`,
       "-metadata", `com.apple.quicktime.model=${device.model}`,
       "-metadata", `com.apple.quicktime.software=${device.software}`,
@@ -719,7 +724,7 @@ export async function processVideos(
       color: await probeColorInfo(entry.tmpIn, ffmpegBin),
     }))
   );
-  type ValidEntry = typeof fileEntries[number] & { color: ColorInfo };
+  type ValidEntry = typeof fileEntries[number] & { color: ColorInfo; duration: number };
   const validEntries: ValidEntry[] = [];
   for (const { entry, dur, color } of durResults) {
     if (dur <= 0) {
@@ -730,13 +735,13 @@ export async function processVideos(
         if (entry.ownsTmpIn) await fs.unlink(entry.tmpIn).catch(() => {});
       } else {
         console.log(`[processVideos] accepted "${entry.fileName}": probe=0 but 1-frame test passed (likely HEVC)`);
-        validEntries.push({ ...entry, color });
+        validEntries.push({ ...entry, color, duration: dur });
       }
     } else if (dur > MAX_DURATION_S) {
       await onProgress?.(2, `⚠ "${entry.fileName}" dépasse ${MAX_DURATION_S}s (${Math.round(dur)}s) — ignorée.`);
       if (entry.ownsTmpIn) await fs.unlink(entry.tmpIn).catch(() => {});
     } else {
-      validEntries.push({ ...entry, color });
+      validEntries.push({ ...entry, color, duration: dur });
     }
   }
   if (validEntries.length === 0) {
@@ -746,10 +751,10 @@ export async function processVideos(
 
   // ── Flatten all (file × copy) into one pool so every copy of every file
   // runs concurrently — total time ≈ slowest single copy, not SUM. ───────────
-  type Task = { fileName: string; tmpIn: string; fileIndex: number; copyIndex: number; color: ColorInfo };
-  const allTasks: Task[] = validEntries.flatMap(({ fileName, tmpIn, color }, idx) =>
+  type Task = { fileName: string; tmpIn: string; fileIndex: number; copyIndex: number; color: ColorInfo; duration: number };
+  const allTasks: Task[] = validEntries.flatMap(({ fileName, tmpIn, color, duration }, idx) =>
     Array.from({ length: count }, (_, i) => ({
-      fileName, tmpIn, fileIndex: idx + 1, copyIndex: i + 1, color,
+      fileName, tmpIn, fileIndex: idx + 1, copyIndex: i + 1, color, duration,
     }))
   );
 
@@ -769,7 +774,7 @@ export async function processVideos(
   // Check for zscale availability (needed for HDR→SDR tone mapping)
   console.log(`[processVideos] ncpus=${ncpus} MAX_CONCURRENT=${MAX_CONCURRENT} CONCURRENCY=${CONCURRENCY} tasks=${allTasks.length}`);
 
-  const taskErrors = await withConcurrency(allTasks, CONCURRENCY, async ({ fileName, tmpIn, fileIndex, copyIndex, color }) => {
+  const taskErrors = await withConcurrency(allTasks, CONCURRENCY, async ({ fileName, tmpIn, fileIndex, copyIndex, color, duration: videoDuration }) => {
     const startPct = Math.min(99, Math.round((doneCopies / totalCopies) * 100));
     await onProgress?.(startPct, `Encodage ${doneCopies + 1}/${totalCopies}…`);
 
@@ -1043,12 +1048,21 @@ export async function processVideos(
         const gop = get("gop", 0, 0, 10, 300);
         if (gop.enabled) extraArgs.push("-g", String(Math.round(gop.value)));
 
+        // Cut start/end: trim seconds from the beginning and/or end of the video.
+        // Values = seconds to TRIM (not absolute positions).
+        // cut_start 0.05–0.10 → skip random 0.05–0.10s from beginning
+        // cut_end 0.05–0.10 → remove random 0.05–0.10s from the end
         const cStart = get("cut_start", 0, 0, 0, Number.MAX_SAFE_INTEGER);
         const cEnd   = get("cut_end",   0, 0, 0, Number.MAX_SAFE_INTEGER);
-        if (cStart.enabled && cStart.value > 0) extraArgs.push("-ss", cStart.value.toFixed(3));
-        if (cEnd.enabled && cEnd.value > 0) {
-          const to = !cStart.enabled ? cEnd.value : Math.max(cStart.value + 0.05, cEnd.value);
-          extraArgs.push("-to", to.toFixed(3));
+        const trimStart = cStart.enabled && cStart.value > 0 ? cStart.value : 0;
+        const trimEnd   = cEnd.enabled && cEnd.value > 0 ? cEnd.value : 0;
+        if (trimStart > 0) {
+          extraArgs.push("-ss", trimStart.toFixed(3));
+        }
+        if (trimEnd > 0 && videoDuration > 0) {
+          // -to = absolute end position = duration - end_trim (adjusted for start trim)
+          const endPos = Math.max(0.1, videoDuration - trimEnd - trimStart);
+          extraArgs.push("-t", endPos.toFixed(3));
         }
 
         const vol = get("volume_db", 0, 0, -30, 30);
