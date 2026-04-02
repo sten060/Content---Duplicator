@@ -365,36 +365,36 @@ const NEWS_SECTIONS = [
     title: "Duplication Vidéo",
     color: "#6366F1",
     items: [
-      { name: "Priorité d'algorithme", desc: "Simule un iPhone réel (métadonnées Apple, .mov)" },
-      { name: "Pixel magique", desc: "Bruit imperceptible pour hash unique" },
-      { name: "Métadonnées technique", desc: "Bitrate, GOP, FPS, profil H.264 aléatoires" },
-      { name: "Localisation pays", desc: "Injecte le pays dans les métadonnées" },
-      { name: "Qualité originale préservée", desc: "Plus de cap 1920px, 4K reste 4K" },
+      { name: "Priorité d'algorithme", desc: "Simule un iPhone réel (métadonnées Apple, .mov)", detail: "Chaque copie reçoit des métadonnées Apple authentiques (modèle iPhone, version iOS, caméra, GPS, signature). Le fichier sort en .mov — exactement comme une vidéo filmée depuis un iPhone. Les plateformes ne font plus la différence." },
+      { name: "Pixel magique", desc: "Bruit imperceptible pour hash unique", detail: "Ajoute du bruit luma invisible à l'œil nu sur chaque pixel, chaque frame. Le fichier a un hash complètement différent de l'original — les algorithmes de détection de doublons le voient comme un fichier totalement nouveau." },
+      { name: "Métadonnées technique", desc: "Bitrate, GOP, FPS, profil H.264 aléatoires", detail: "Modifie les paramètres techniques d'encodage (bitrate 3–22 Mb/s, GOP, framerate, profil H.264). Chaque copie a une empreinte technique unique sans changement visuel perceptible." },
+      { name: "Localisation pays", desc: "Injecte le pays dans les métadonnées", detail: "Renseigne un pays et il sera intégré dans les métadonnées de chaque copie. Utile pour cibler un marché spécifique ou simuler l'origine géographique du contenu." },
+      { name: "Qualité originale préservée", desc: "Plus de cap 1920px, 4K reste 4K", detail: "Tes vidéos conservent leur résolution d'origine. Une vidéo 1080p reste 1080p, une 4K reste 4K. Aucune perte de qualité liée au redimensionnement." },
     ],
   },
   {
     title: "Duplication Image",
     color: "#C026D3",
     items: [
-      { name: "Priorité d'algorithme", desc: "EXIF Apple authentiques (appareil, GPS, focale)" },
-      { name: "Localisation pays", desc: "Pays injecté dans l'EXIF" },
+      { name: "Priorité d'algorithme", desc: "EXIF Apple authentiques (appareil, GPS, focale)", detail: "Injecte un profil EXIF complet d'iPhone : modèle d'appareil, objectif, focale, ouverture, ISO, GPS, signature Apple. Tes images semblent provenir d'un vrai appareil photo." },
+      { name: "Localisation pays", desc: "Pays injecté dans l'EXIF", detail: "Le pays que tu choisis est intégré dans les données EXIF de chaque copie. Les plateformes associent le contenu à cette localisation." },
     ],
   },
   {
     title: "Comparateur",
     color: "#10B981",
     items: [
-      { name: "Analyse ffprobe", desc: "Compare les métadonnées exactes de deux fichiers" },
-      { name: "Score de similarité", desc: "Pourcentage de ressemblance" },
-      { name: "Drag & drop", desc: "Glisse tes fichiers directement" },
+      { name: "Analyse ffprobe", desc: "Compare les métadonnées exactes de deux fichiers", detail: "Upload deux fichiers et visualise côte à côte toutes leurs métadonnées : format, tags, flux vidéo, flux audio. Tu vois exactement ce qui diffère entre l'original et la copie." },
+      { name: "Score de similarité", desc: "Pourcentage de ressemblance", detail: "Un score automatique calcule le pourcentage de champs identiques entre les deux fichiers. Vert = bien distinct, rouge = trop similaire." },
+      { name: "Drag & drop", desc: "Glisse tes fichiers directement", detail: "Plus besoin de naviguer dans tes dossiers — glisse simplement tes fichiers dans les zones de dépôt pour lancer la comparaison instantanément." },
     ],
   },
   {
     title: "Support",
     color: "#F59E0B",
     items: [
-      { name: "Chatbot intelligent", desc: "Assistance instantanée avec FAQ complète" },
-      { name: "Page Support", desc: "Telegram + Email en un clic" },
+      { name: "Chatbot intelligent", desc: "Assistance instantanée avec FAQ complète", detail: "Un assistant intégré répond à tes questions en temps réel. Il te guide étape par étape pour résoudre les problèmes courants, et redirige vers le support humain si nécessaire." },
+      { name: "Page Support", desc: "Telegram + Email en un clic", detail: "Accède directement au support via Telegram pour une réponse rapide, ou par email pour les demandes plus détaillées. Tout est accessible depuis le dashboard." },
     ],
   },
 ];
@@ -447,11 +447,16 @@ function NewsModal({ onClose }: { onClose: () => void }) {
                 {section.items.map((item) => (
                   <div
                     key={item.name}
-                    className="rounded-lg px-4 py-2.5 text-sm"
+                    className="rounded-lg px-4 py-3 text-sm"
                     style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
                   >
-                    <span className="font-medium text-white/85">{item.name}</span>
-                    <span className="text-white/40"> — {item.desc}</span>
+                    <div>
+                      <span className="font-medium text-white/85">{item.name}</span>
+                      <span className="text-white/40"> — {item.desc}</span>
+                    </div>
+                    {item.detail && (
+                      <p className="mt-1.5 text-xs text-white/35 leading-relaxed">{item.detail}</p>
+                    )}
                   </div>
                 ))}
               </div>
