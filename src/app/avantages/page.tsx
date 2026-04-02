@@ -84,10 +84,10 @@ export default function AvantagesPage() {
 
       {/* Hero — split: headline left, dark wall + testimonials right */}
       <div className="relative min-h-screen overflow-hidden">
-        {/* Dark wall — only covers hero height, not whole page */}
+        {/* Right side — frosted glass blur */}
         <div
           className="absolute top-0 right-0 w-1/2 h-full hidden md:block"
-          style={{ background: "rgba(4,8,22,0.97)" }}
+          style={{ backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)", background: "rgba(6,10,28,0.3)" }}
         />
 
         <div className="relative z-10 min-h-screen grid md:grid-cols-2">
