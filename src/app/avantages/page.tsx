@@ -82,88 +82,107 @@ export default function AvantagesPage() {
     <div className="min-h-screen text-white tech-grid">
       <Header />
 
-      {/* Hero — split: headline left, dark wall + testimonials right */}
-      <div className="relative min-h-screen overflow-hidden">
-        {/* Right side — frosted glass blur */}
-        <div
-          className="absolute top-0 right-0 w-1/2 h-full hidden md:block"
-          style={{ backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)", background: "rgba(6,10,28,0.3)" }}
-        />
+      {/* Frosted glass — fixed, covers right half from top of viewport */}
+      <div
+        className="fixed top-0 right-0 w-1/2 h-screen hidden md:block z-0"
+        style={{ backdropFilter: "blur(40px)", WebkitBackdropFilter: "blur(40px)", background: "rgba(6,10,28,0.25)" }}
+      />
 
-        <div className="relative z-10 min-h-screen grid md:grid-cols-2">
-          {/* Left — headline */}
-          <div className="px-8 sm:px-16 flex flex-col justify-center">
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
-              Découvrez les avantages{" "}
-              <span className={G}>DuupFlow</span>{" "}
-              pour votre agence
-            </h1>
-            <p className="mt-4 text-white/50 max-w-md">
-              Plus de rapidité, plus de qualité, plus de performances.
-              Voici pourquoi les meilleures agences nous font confiance.
+      {/* Hero */}
+      <div className="relative z-10 min-h-screen grid md:grid-cols-2">
+        {/* Left — headline */}
+        <div className="px-8 sm:px-16 flex flex-col justify-center">
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
+            Découvrez les avantages{" "}
+            <span className={G}>DuupFlow</span>{" "}
+            pour votre agence
+          </h1>
+          <p className="mt-4 text-white/50 max-w-md">
+            Plus de rapidité, plus de qualité, plus de performances.
+            Voici pourquoi les meilleures agences nous font confiance.
+          </p>
+        </div>
+
+        {/* Right — testimonials like reference */}
+        <div className="flex flex-col items-center justify-center py-32 px-4 relative overflow-hidden">
+
+          {/* Dashed arc */}
+          <svg className="absolute pointer-events-none opacity-[0.08]" width="500" height="500" viewBox="0 0 500 500">
+            <circle cx="250" cy="250" r="200" fill="none" stroke="white" strokeWidth="1.5" strokeDasharray="8 8" />
+          </svg>
+
+          {/* Left card — cut off at left edge, blurred */}
+          <div
+            className="absolute -left-24 top-[12%] w-[280px] rounded-2xl p-5 opacity-40 blur-[1.5px]"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <p className="text-[11px] text-white/70 leading-relaxed">
+              {testimonials[0].quote}
             </p>
+            <div className="mt-4 flex items-center gap-2">
+              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-indigo-400 to-sky-400" />
+              <div>
+                <p className="text-[11px] font-semibold text-white/60">{testimonials[0].author}</p>
+                <p className="text-[9px] text-white/30">{testimonials[0].role}</p>
+              </div>
+            </div>
           </div>
 
-          {/* Right — floating testimonial cards */}
-          <div className="flex flex-col items-center justify-center py-32 px-4 relative">
-            {/* Decorative dashed arc */}
-            <div
-              className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.07]"
-            >
-              <div className="w-[400px] h-[400px] rounded-full border-2 border-dashed border-white" />
-            </div>
-
-            {/* Side cards — left, partially hidden and blurred */}
-            <div
-              className="absolute left-[-80px] top-[18%] w-[260px] rounded-2xl p-5 border border-white/[0.04] opacity-30 blur-[2px] -rotate-6"
-              style={{ background: "rgba(255,255,255,0.02)" }}
-            >
-              <p className="text-xs text-white/50 italic leading-relaxed">&ldquo;{testimonials[0].quote}&rdquo;</p>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-indigo-500/30" />
-                <p className="text-[10px] text-white/30">{testimonials[0].author}</p>
-              </div>
-            </div>
-
-            {/* Side card — right, partially hidden and blurred */}
-            <div
-              className="absolute right-[-60px] bottom-[20%] w-[240px] rounded-2xl p-5 border border-white/[0.04] opacity-30 blur-[2px] rotate-4"
-              style={{ background: "rgba(255,255,255,0.02)" }}
-            >
-              <p className="text-xs text-white/50 italic leading-relaxed">&ldquo;{testimonials[2].quote}&rdquo;</p>
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-sky-500/30" />
-                <p className="text-[10px] text-white/30">{testimonials[2].author}</p>
-              </div>
-            </div>
-
-            {/* Main card — center, sharp, elevated */}
-            <div
-              className="relative z-20 w-full max-w-sm rounded-2xl p-6 border border-white/[0.10]"
-              style={{ background: "rgba(14,18,42,0.95)", boxShadow: "0 25px 60px rgba(0,0,0,0.6)" }}
-            >
-              <p className="text-sm text-white/85 leading-relaxed">
-                &ldquo;{testimonials[1].quote}&rdquo;
-              </p>
-              <div className="mt-4 flex items-center gap-3">
-                <div
-                  className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                  style={{ background: "linear-gradient(135deg, #C026D3, #6366F1)" }}
-                >
-                  {testimonials[1].author.charAt(0)}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white/85">{testimonials[1].author}</p>
-                  <p className="text-xs text-white/40">{testimonials[1].role}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom text */}
-            <p className="relative z-20 mt-10 text-xs text-white/25">
-              Utilisé par <span className="text-white/50 font-medium">500+ agences</span> marketing & créateurs
+          {/* Right card — cut off at right edge, blurred */}
+          <div
+            className="absolute -right-20 top-[8%] w-[280px] rounded-2xl p-5 opacity-40 blur-[1.5px]"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <p className="text-[11px] text-white/70 leading-relaxed">
+              {testimonials[2].quote}
             </p>
+            <div className="mt-4 flex items-center gap-2">
+              <div className="h-7 w-7 rounded-full bg-gradient-to-br from-sky-400 to-emerald-400" />
+              <div>
+                <p className="text-[11px] font-semibold text-white/60">{testimonials[2].author}</p>
+                <p className="text-[9px] text-white/30">{testimonials[2].role}</p>
+              </div>
+            </div>
           </div>
+
+          {/* Center card — main, white-ish bg, elevated, sharp */}
+          <div
+            className="relative z-20 w-full max-w-[360px] rounded-2xl p-7"
+            style={{
+              background: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.4)",
+            }}
+          >
+            <p className="text-[15px] text-white/90 leading-relaxed">
+              &ldquo;{testimonials[1].quote}&rdquo;
+            </p>
+            <div className="mt-5 flex items-center gap-3">
+              <div
+                className="h-10 w-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+                style={{ background: "linear-gradient(135deg, #C026D3, #6366F1)" }}
+              >
+                {testimonials[1].author.charAt(0)}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white/90">{testimonials[1].author}</p>
+                <p className="text-xs text-white/40">{testimonials[1].role}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Logo circles on the arc — decorative */}
+          <div className="absolute bottom-[22%] left-[12%] h-12 w-12 rounded-full border border-white/[0.08] bg-white/[0.04] flex items-center justify-center">
+            <span className="text-[10px] font-bold text-white/30">DF</span>
+          </div>
+          <div className="absolute bottom-[28%] right-[10%] h-10 w-10 rounded-full border border-white/[0.08] bg-white/[0.04] flex items-center justify-center">
+            <span className="text-[9px] font-bold text-white/25">MV</span>
+          </div>
+
+          {/* Bottom text */}
+          <p className="relative z-20 mt-12 text-xs text-white/25">
+            Utilisé par <span className="text-white/50 font-medium">500+ agences</span> marketing & créateurs
+          </p>
         </div>
       </div>
 
