@@ -6,9 +6,9 @@ import Header from "@/components/Header";
 const G = "bg-gradient-to-r from-indigo-400 to-sky-400 bg-clip-text text-transparent";
 
 const testimonials = [
-  { quote: "DuupFlow a divisé par 10 notre temps de production.", author: "Agence PixelForce" },
-  { quote: "On ne peut plus s'en passer. L'outil est devenu indispensable.", author: "Studio Kreatif" },
-  { quote: "Le meilleur investissement qu'on ait fait cette année.", author: "MediaVibe Agency" },
+  { quote: "DuupFlow a divisé par 10 notre temps de production. On scale nos campagnes sans effort.", author: "Agence PixelForce", role: "Growth Marketing" },
+  { quote: "On ne peut plus s'en passer. L'outil est devenu indispensable pour notre workflow quotidien.", author: "Studio Kreatif", role: "Création de contenu" },
+  { quote: "Le meilleur investissement qu'on ait fait cette année. ROI immédiat.", author: "MediaVibe Agency", role: "Social Media Management" },
 ];
 
 interface Section {
@@ -82,36 +82,58 @@ export default function AvantagesPage() {
     <div className="min-h-screen text-white tech-grid">
       <Header />
 
-      {/* Hero */}
-      <section className="pt-40 pb-20 px-6 max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+      {/* Hero — split layout */}
+      <section className="pt-40 pb-0">
+        <div className="grid md:grid-cols-2 min-h-[400px]">
           {/* Left — headline */}
-          <div>
-            <Link href="/" className="text-sm text-white/40 hover:text-white/70 transition mb-8 inline-block">
-              &larr; Retour à l&apos;accueil
-            </Link>
+          <div className="px-8 sm:px-16 flex flex-col justify-center pb-16">
             <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
               Découvrez les avantages{" "}
               <span className={G}>DuupFlow</span>{" "}
               pour votre agence
             </h1>
             <p className="mt-4 text-white/50 max-w-md">
-              Plus de rapidité, plus de qualité, plus de performances. Voici pourquoi les meilleures agences nous font confiance.
+              Plus de rapidité, plus de qualité, plus de performances.
+              Voici pourquoi les meilleures agences nous font confiance.
             </p>
           </div>
 
-          {/* Right — testimonials panel */}
+          {/* Right — testimonials wall */}
           <div
-            className="rounded-2xl border border-indigo-500/20 p-6 sm:p-8 space-y-5"
-            style={{ background: "rgba(10,14,40,0.8)" }}
+            className="flex flex-col justify-center px-8 sm:px-16 py-16 relative overflow-hidden"
+            style={{ background: "rgba(8,12,32,0.95)" }}
           >
-            <h3 className="text-xs uppercase tracking-widest text-indigo-300/70 mb-2">Ces agences nous font confiance</h3>
-            {testimonials.map((t, i) => (
-              <div key={i} className="border-l-2 border-indigo-500/30 pl-4">
-                <p className="text-sm text-white/70 italic">&ldquo;{t.quote}&rdquo;</p>
-                <p className="text-xs text-white/40 mt-1">— {t.author}</p>
-              </div>
-            ))}
+            <p className="text-[10px] uppercase tracking-[0.2em] text-white/30 mb-8">Ces agences nous font confiance</p>
+
+            <div className="space-y-6">
+              {testimonials.map((t, i) => (
+                <div
+                  key={i}
+                  className="relative rounded-xl p-5 border border-white/[0.06]"
+                  style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(10px)" }}
+                >
+                  <p className="text-sm text-white/80 leading-relaxed italic">
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div
+                      className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                      style={{ background: `linear-gradient(135deg, ${["#6366F1","#C026D3","#38BDF8"][i]}, ${["#38BDF8","#6366F1","#10B981"][i]})` }}
+                    >
+                      {t.author.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-white/70">{t.author}</p>
+                      <p className="text-[10px] text-white/30">{t.role}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-8 text-center text-xs text-white/25">
+              Utilisé par <span className="text-white/50 font-medium">500+ agences</span> marketing & créateurs
+            </p>
           </div>
         </div>
       </section>
