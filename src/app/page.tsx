@@ -713,7 +713,7 @@ function CoreFeaturesAlt() {
         <Reveal>
           <p className="text-xs font-semibold tracking-[0.15em] uppercase text-indigo-400 mb-3 text-center">Fonctionnalités</p>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-white mb-4 tracking-tight text-center">
-            Duplication Images & Vidéos. <span className={G}>Pixel magique & Priorité algorithme.</span>
+            Optez pour un outil à la hauteur du potentiel <span className={G}>de votre agence</span>
           </h2>
           <p className="text-white/65 text-sm sm:text-base max-w-lg mx-auto text-center">
             Chaque publication unique. Chaque fichier indétectable.
@@ -733,12 +733,6 @@ function CoreFeaturesAlt() {
           ]}
           mockup={<AnimImageDup />}
         />
-
-        <Reveal>
-          <div className="text-center py-12 border-t border-white/[0.05]">
-            <p className="text-lg sm:text-xl font-semibold text-white/80">Augmentez le volume, performez, sans perte de qualité</p>
-          </div>
-        </Reveal>
 
         <FeatureRow
           badge="✨ Modification Invisible"
@@ -968,6 +962,11 @@ export default function LandingPage() {
       <div className="max-w-5xl mx-auto px-6">
         <div className="h-px bg-white/[0.12]" />
       </div>
+      <Reveal>
+        <div className="text-center py-12">
+          <p className="text-lg sm:text-xl font-semibold text-white/80">Augmentez le volume, performez, sans perte de qualité</p>
+        </div>
+      </Reveal>
       <FeatureTabs />
       <div className="max-w-5xl mx-auto px-6">
         <div className="h-px bg-white/[0.12]" />

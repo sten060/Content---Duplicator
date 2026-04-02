@@ -79,7 +79,7 @@ function MockupBox({ label, details }: { label: string; details: string[] }) {
 
 export default function AvantagesPage() {
   return (
-    <div className="min-h-screen text-white" style={{ background: "#060918" }}>
+    <div className="min-h-screen text-white" style={{ background: "#050816" }}>
       <Header />
 
       {/* Hero */}
@@ -103,9 +103,9 @@ export default function AvantagesPage() {
           {/* Right — testimonials panel */}
           <div
             className="rounded-2xl border border-indigo-500/20 p-6 sm:p-8 space-y-5"
-            style={{ background: "linear-gradient(145deg, rgba(99,102,241,0.08), rgba(56,189,248,0.05))" }}
+            style={{ background: "rgba(10,14,40,0.8)" }}
           >
-            <h3 className="text-xs uppercase tracking-widest text-indigo-300/70 mb-2">Témoignages</h3>
+            <h3 className="text-xs uppercase tracking-widest text-indigo-300/70 mb-2">Ces agences nous font confiance</h3>
             {testimonials.map((t, i) => (
               <div key={i} className="border-l-2 border-indigo-500/30 pl-4">
                 <p className="text-sm text-white/70 italic">&ldquo;{t.quote}&rdquo;</p>

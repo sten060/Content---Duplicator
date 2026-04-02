@@ -44,7 +44,6 @@ export default function Header() {
           <NavLink href="/avantages" label="Avantages" />
           <NavLink href="/tarifs" label="Tarifs" />
           <NavLink href="https://www.duupflow.com/#faq" label="FAQ" />
-          <NavLink href="/partenaire" label="Partenaire" />
         </nav>
 
         {/* CTA */}
