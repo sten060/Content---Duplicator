@@ -517,6 +517,7 @@ export default function VideoFormSimpleClient() {
             />
           </div>
           <Toggle checked={iphoneMeta} onChange={setIphoneMeta} label="⚡ Priorité d'algorithme" />
+          <InfoTooltip>Simule une vidéo provenant d&apos;un iPhone réel en injectant des métadonnées Apple authentiques (appareil, iOS, caméra, GPS, signature).</InfoTooltip>
         </div>
       </div>
 

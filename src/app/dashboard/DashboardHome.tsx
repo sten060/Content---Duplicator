@@ -105,7 +105,7 @@ const GUIDE_STEPS = [
     title: "Duplication Images",
     subtitle: "Étape 1 / 5 — Le cœur de DuupFlow",
     content:
-      "Charge une image et génère autant de copies que tu veux. Chaque copie a des métadonnées EXIF/XMP uniques — invisible pour les plateformes.",
+      "Génère des copies uniques avec métadonnées EXIF/XMP aléatoires. Active la Priorité d'algorithme pour injecter des EXIF Apple authentiques (appareil, GPS, focale). Ajoute une localisation pays pour un réalisme total.",
     icon: (
       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="3" y="3" width="18" height="18" rx="3" />
@@ -123,7 +123,7 @@ const GUIDE_STEPS = [
     title: "Duplication Vidéos",
     subtitle: "Étape 2 / 5 — Vos vidéos rendues uniques",
     content:
-      "Ré-encode chaque copie avec des paramètres aléatoires — FPS, GOP, bitrate, codec. Chaque fichier est techniquement différent, indétectable.",
+      "Ré-encode chaque copie avec des paramètres uniques. Nouveautés : Priorité d'algorithme (métadonnées iPhone .mov), Pixel magique (hash unique par frame), Métadonnées technique (bitrate, GOP, FPS, profil H.264). Qualité 4K préservée.",
     icon: (
       <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="2" y="5" width="14" height="14" rx="2" />
@@ -140,7 +140,7 @@ const GUIDE_STEPS = [
     title: "Comparateur de similarité",
     subtitle: "Étape 3 / 5 — Valide tes copies",
     content:
-      "Après duplication, vérifie que tes copies sont bien uniques. Le comparateur donne un score précis de similarité visuelle.",
+      "Compare deux fichiers côte à côte avec analyse ffprobe complète. Score de similarité en pourcentage, différences surlignées en vert. Glisse tes fichiers en drag & drop pour une vérification instantanée.",
     icon: (
       <svg viewBox="0 0 24 24" className="h-7 w-7 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="11" cy="11" r="7" />
@@ -157,7 +157,7 @@ const GUIDE_STEPS = [
     title: "Variation IA & Détection IA",
     subtitle: "Étapes 4 & 5 / 5 — La puissance de l'IA",
     content:
-      "Masque la signature IA dans les métadonnées sans toucher au fichier visuellement (disponible maintenant). Le module Variation IA — génération de variantes de contenu par IA — sera bientôt disponible, tu seras notifié dès son lancement 🚀",
+      "La Détection IA efface toutes les signatures IA (EXIF, XMP, IPTC, C2PA) et les remplace par une identité humaine réaliste. Ton contenu IA passe pour un contenu créé par un humain. Le module Variation IA arrive bientôt.",
     icon: (
       <svg viewBox="0 0 24 24" className="h-7 w-7 text-sky-400" fill="none" stroke="currentColor" strokeWidth="1.5">
         <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" />
@@ -367,6 +367,7 @@ export default function DashboardHome({
   agencyName: string | null;
 }) {
   const [showGuide, setShowGuide] = useState(false);
+  const [showNews, setShowNews] = useState(false);
 
   useEffect(() => {
     if (!localStorage.getItem(GUIDE_KEY)) {
@@ -398,16 +399,27 @@ export default function DashboardHome({
           <p className="text-sm text-white/40">
             Choisis un module pour travailler tes contenus.
           </p>
-          <button
-            onClick={() => setShowGuide(true)}
-            className="text-xs text-indigo-400/70 hover:text-indigo-400 transition flex items-center gap-1"
-          >
-            <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="8" cy="8" r="6" />
-              <path d="M8 7v4M8 5.5v.5" />
-            </svg>
-            Guide
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowNews(true)}
+              className="text-xs text-sky-400/70 hover:text-sky-400 transition flex items-center gap-1"
+            >
+              <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M13 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM5 5h6M5 8h6M5 11h3" />
+              </svg>
+              Nouveautés
+            </button>
+            <button
+              onClick={() => setShowGuide(true)}
+              className="text-xs text-indigo-400/70 hover:text-indigo-400 transition flex items-center gap-1"
+            >
+              <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="8" cy="8" r="6" />
+                <path d="M8 7v4M8 5.5v.5" />
+              </svg>
+              Guide
+            </button>
+          </div>
         </div>
       </div>
 
@@ -428,6 +440,9 @@ export default function DashboardHome({
 
       {/* Guide modal */}
       {showGuide && <GuideModal onClose={closeGuide} />}
+
+      {/* News modal */}
+      {showNews && <NewsModal onClose={() => setShowNews(false)} />}
     </div>
   );
 }

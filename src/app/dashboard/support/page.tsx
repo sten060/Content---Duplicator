@@ -9,7 +9,7 @@ export default function SupportPage() {
       <div className="space-y-4">
         {/* Telegram */}
         <a
-          href="https://t.me/duupflow"
+          href="https://t.me/DuupFlow_Support"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 hover:bg-white/[0.06] transition-all"

@@ -15,6 +15,8 @@ const TREE: Record<string, { text: string; options: Option[] }> = {
       { label: "Problème avec une duplication", action: "dup_problem" },
       { label: "Question sur mon abonnement", action: "abo" },
       { label: "Comment utiliser DuupFlow ?", action: "how_to" },
+      { label: "Module Détection IA", action: "ai_detection" },
+      { label: "Nouvelles fonctionnalités", action: "new_features" },
       { label: "Autre question", action: "other" },
     ],
   },
@@ -91,6 +93,74 @@ const TREE: Record<string, { text: string; options: Option[] }> = {
       { label: "Retour au début", action: "start" },
     ],
   },
+  ai_detection: {
+    text: "Que veux-tu savoir sur la Détection IA ?",
+    options: [
+      { label: "À quoi sert ce module ?", action: "ai_what" },
+      { label: "Est-ce que ça modifie le visuel ?", action: "ai_visual" },
+      { label: "Ça fonctionne avec quelles plateformes ?", action: "ai_platforms" },
+      { label: "Autre question", action: "contact" },
+    ],
+  },
+  ai_what: {
+    text: "Le module Détection IA efface toutes les métadonnées IA de tes fichiers (EXIF, XMP, IPTC, C2PA) et les remplace par une identité humaine réaliste.\n\nRésultat : ton contenu généré par IA passe pour un contenu créé par un humain avec un appareil photo réel.",
+    options: [
+      { label: "Compris, merci !", action: "resolved" },
+      { label: "Ça modifie le visuel ?", action: "ai_visual" },
+    ],
+  },
+  ai_visual: {
+    text: "Non, aucune modification visuelle. Seules les métadonnées sont modifiées. Les pixels de ton image/vidéo restent identiques.\n\nPour contourner la détection visuelle des plateformes, combine ce module avec la Duplication Images (filtres visuels).",
+    options: [
+      { label: "OK, compris !", action: "resolved" },
+      { label: "Autre question", action: "start" },
+    ],
+  },
+  ai_platforms: {
+    text: "Ce module supprime les signatures IA détectées par Meta, Instagram, Threads, et toute plateforme utilisant C2PA/JUMBF.\n\nPour une protection maximale, combine avec la Duplication (métadonnées + visuels).",
+    options: [
+      { label: "Parfait, merci !", action: "resolved" },
+      { label: "Contacter le support", action: "contact" },
+    ],
+  },
+  new_features: {
+    text: "Voici les dernières nouveautés de DuupFlow :",
+    options: [
+      { label: "Priorité d'algorithme", action: "feat_iphone" },
+      { label: "Pixel magique", action: "feat_pixel" },
+      { label: "Métadonnées technique", action: "feat_meta_tech" },
+      { label: "Comparateur de métadonnées", action: "feat_comparator" },
+      { label: "Retour", action: "start" },
+    ],
+  },
+  feat_iphone: {
+    text: "⚡ Priorité d'algorithme simule une vidéo/photo provenant d'un vrai iPhone.\n\nElle injecte des métadonnées Apple authentiques : appareil, version iOS, caméra, GPS, signature. Le fichier vidéo sort en format .mov (comme un vrai iPhone).\n\nLes plateformes pensent que le contenu vient d'un appareil réel.",
+    options: [
+      { label: "Super, merci !", action: "resolved" },
+      { label: "Autre nouveauté", action: "new_features" },
+    ],
+  },
+  feat_pixel: {
+    text: "✨ Pixel magique ajoute du bruit imperceptible à chaque pixel de chaque frame.\n\nVisuellement identique, mais le hash du fichier est complètement différent. Les algorithmes de détection de doublons voient un fichier unique.",
+    options: [
+      { label: "Compris !", action: "resolved" },
+      { label: "Autre nouveauté", action: "new_features" },
+    ],
+  },
+  feat_meta_tech: {
+    text: "🔧 Métadonnées technique modifie le bitrate vidéo, le GOP, le FPS et le profil H.264.\n\nCes paramètres techniques rendent chaque copie unique au niveau du codec sans modification visuelle perceptible.",
+    options: [
+      { label: "OK !", action: "resolved" },
+      { label: "Autre nouveauté", action: "new_features" },
+    ],
+  },
+  feat_comparator: {
+    text: "🔍 Le Comparateur de métadonnées analyse deux fichiers et affiche côte à côte toutes leurs métadonnées.\n\nTu peux vérifier que tes duplications sont bien différentes de l'original. Les différences sont surlignées en vert avec un score de similarité.",
+    options: [
+      { label: "Cool !", action: "resolved" },
+      { label: "Autre nouveauté", action: "new_features" },
+    ],
+  },
   resolved: {
     text: "Super ! N'hésite pas si tu as d'autres questions.",
     options: [
@@ -127,7 +197,7 @@ export default function ChatBot() {
     setMessages([{ from: "bot", text: TREE.start.text, options: TREE.start.options }]);
   }
 
-  const panelSize = expanded ? "w-96 max-h-[36rem]" : "w-80 max-h-[28rem]";
+  const panelSize = expanded ? "w-[32rem] max-h-[42rem]" : "w-80 max-h-[28rem]";
 
   return (
     <>
@@ -183,7 +253,7 @@ export default function ChatBot() {
               <div key={i}>
                 <div
                   className={[
-                    "text-sm rounded-xl px-3 py-2 max-w-[85%] whitespace-pre-line",
+                    "text-sm leading-relaxed rounded-xl px-4 py-3 max-w-[85%] whitespace-pre-line",
                     msg.from === "bot"
                       ? "bg-white/[0.06] text-white/80"
                       : "bg-indigo-500/20 text-white/90 ml-auto",

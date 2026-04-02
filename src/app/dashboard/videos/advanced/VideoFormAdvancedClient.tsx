@@ -766,8 +766,9 @@ export default function VideoFormAdvancedClient() {
                       <input type="checkbox" name="iphoneMeta" value="1" className="sr-only peer" />
                       <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white/70 peer-checked:translate-x-4 peer-checked:bg-sky-400 peer-checked:shadow-[0_0_10px_rgba(56,189,248,.9)] transition" />
                     </span>
-                    <span className="text-white/85">Priorite d&apos;algorithme</span>
+                    <span className="text-white/85">⚡ Priorité d&apos;algorithme</span>
                   </label>
+                  <InfoTooltip>Simule une vidéo iPhone avec métadonnées Apple authentiques (QuickTime, GPS, signature). Le fichier sort en .mov.</InfoTooltip>
                 </div>
               )}
             </div>
