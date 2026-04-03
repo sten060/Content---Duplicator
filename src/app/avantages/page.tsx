@@ -7,7 +7,7 @@ const G = "bg-gradient-to-r from-indigo-400 to-sky-400 bg-clip-text text-transpa
 
 const testimonials = [
   { quote: "DuupFlow a divisé par 10 notre temps de production. On scale nos campagnes sans effort.", author: "Agence PixelForce", role: "Agence OFM", avatar: "/testimonials/eli king ★ legacy of gods.jpeg" },
-  { quote: "Avant DuupFlow, on passait 3 heures par semaine à préparer nos contenus pour le multi-posting. Aujourd'hui c'est fait en 5 minutes. On a triplé notre volume de publication sans recruter.", author: "Studio Kreatif", role: "Agence OFM", avatar: "/testimonials/percy jackson — percy jackson and the olympians & the heroes of olympus by rick riordan.jpeg" },
+  { quote: "Avant DuupFlow, on passait 3 heures par semaine à préparer nos contenus pour le multi-posting. Aujourd'hui c'est fait en 5 minutes. On a triplé notre volume de publication sans recruter.", author: "SRK Agency", role: "Agence OFM", avatar: "/testimonials/percy jackson — percy jackson and the olympians & the heroes of olympus by rick riordan.jpeg" },
   { quote: "Le meilleur investissement qu'on ait fait cette année. ROI immédiat.", author: "MediaVibe Agency", role: "Mentor", avatar: "/testimonials/_ (4).jpeg" },
 ];
 
@@ -116,7 +116,7 @@ export default function AvantagesPage() {
 
             {/* Card 1 — top left, partially cut off, blurred */}
             <div
-              className="absolute -left-16 top-[15%] w-[240px] rounded-xl p-4 opacity-35 blur-[1px]"
+              className="absolute -left-16 top-[15%] w-[240px] rounded-xl p-4 opacity-25 blur-[3px]"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
             >
               <p className="text-[11px] text-white/60 leading-relaxed">{testimonials[0].quote}</p>
@@ -131,7 +131,7 @@ export default function AvantagesPage() {
 
             {/* Card 3 — top right, partially cut off, blurred */}
             <div
-              className="absolute -right-12 top-[10%] w-[240px] rounded-xl p-4 opacity-35 blur-[1px]"
+              className="absolute -right-12 top-[10%] w-[240px] rounded-xl p-4 opacity-25 blur-[3px]"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
             >
               <p className="text-[11px] text-white/60 leading-relaxed">{testimonials[2].quote}</p>
