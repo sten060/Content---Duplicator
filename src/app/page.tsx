@@ -80,21 +80,8 @@ function Hero() {
         </p>
       </Reveal>
 
-      {/* CTA buttons — slide-in hover effect */}
+      {/* CTA buttons — slide-in hover effect (CSS in globals.css) */}
       <Reveal delay={240}>
-        <style>{`
-          .slide-btn { position: relative; overflow: hidden; z-index: 1; }
-          .slide-btn::before {
-            content: '';
-            position: absolute; inset: 0; z-index: -1;
-            transform: translateY(100%);
-            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: inherit;
-          }
-          .slide-btn:hover::before { transform: translateY(0); }
-          .slide-btn-primary::before { background: #6366F1; }
-          .slide-btn-outline::before { background: rgba(255,255,255,0.1); }
-        `}</style>
         <div className="flex flex-row gap-3 sm:gap-4 mb-16 sm:mb-24 justify-center">
           <Link href="/register"
             className="slide-btn slide-btn-primary inline-flex items-center gap-2 rounded-xl px-7 sm:px-9 py-3 sm:py-3.5 font-semibold text-white text-sm sm:text-base transition-shadow hover:shadow-[0_8px_40px_rgba(79,70,229,0.5)]"
