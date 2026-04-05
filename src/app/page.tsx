@@ -421,6 +421,126 @@ function FeatureTabs() {
 }
 
 /* ═══════════════════════════════════════════════════════
+ * SECTION 3b — HORIZONTAL SCROLLER (replaces FeatureTabs)
+ * ═══════════════════════════════════════════════════════ */
+const SCROLLER_CARDS = [
+  {
+    title: "Duplication Images & Vidéos",
+    desc: "Dupliquez vos images et vidéos en masse. Chaque copie est unique — métadonnées, empreinte technique, hash. Indétectable par les plateformes.",
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+      </svg>
+    ),
+    accent: "#6366F1",
+  },
+  {
+    title: "Modification Invisible",
+    desc: "Modifiez l'empreinte numérique sans toucher au visuel. Pixel magique change le hash de chaque fichier tout en gardant le contenu visuellement identique.",
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+      </svg>
+    ),
+    accent: "#EC4899",
+  },
+  {
+    title: "Priorité d'algorithme",
+    desc: "Localisez votre contenu et injectez des métadonnées iPhone authentiques. L'algorithme pense que votre contenu vient d'un appareil réel.",
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+      </svg>
+    ),
+    accent: "#38BDF8",
+  },
+  {
+    title: "Détection IA",
+    desc: "Effacez la signature IA de vos contenus. Remplacez les métadonnées Midjourney, DALL-E, Stable Diffusion par une identité humaine réaliste.",
+    icon: (
+      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+      </svg>
+    ),
+    accent: "#F59E0B",
+    badge: "NEW",
+  },
+];
+
+function FeaturesScroller() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <section className="py-20 sm:py-28">
+      <div className="max-w-6xl mx-auto px-6 mb-10">
+        <Reveal>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-2">
+                Augmentez le volume, performez,<br className="hidden sm:block" /> sans perte de qualité
+              </h2>
+              <p className="text-white/45 text-sm sm:text-base max-w-xl">
+                Tous les outils dont vous avez besoin pour scaler votre production de contenu.
+              </p>
+            </div>
+            {/* Scroll arrows */}
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => scrollRef.current?.scrollBy({ left: -380, behavior: "smooth" })}
+                className="h-10 w-10 rounded-full border border-white/15 bg-white/[0.04] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition"
+              >←</button>
+              <button
+                onClick={() => scrollRef.current?.scrollBy({ left: 380, behavior: "smooth" })}
+                className="h-10 w-10 rounded-full border border-white/15 bg-white/[0.04] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition"
+              >→</button>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+
+      <Reveal delay={100}>
+        <div
+          ref={scrollRef}
+          className="flex gap-5 overflow-x-auto scrollbar-none px-6 sm:px-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))]"
+          style={{ scrollSnapType: "x mandatory" }}
+        >
+          {SCROLLER_CARDS.map((card) => (
+            <div
+              key={card.title}
+              className="group shrink-0 w-[320px] sm:w-[360px] rounded-2xl border border-white/[0.08] p-6 sm:p-7 transition hover:border-white/[0.15] hover:bg-white/[0.03]"
+              style={{ background: "rgba(8,12,35,0.6)", scrollSnapAlign: "start" }}
+            >
+              <div
+                className="h-11 w-11 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
+                style={{ background: `${card.accent}15`, border: `1px solid ${card.accent}30`, color: card.accent }}
+              >
+                {card.icon}
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-lg font-semibold text-white">{card.title}</h3>
+                {card.badge && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/25 font-semibold">
+                    {card.badge}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-white/50 leading-relaxed mb-5">{card.desc}</p>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-1.5 text-sm font-medium transition"
+                style={{ color: card.accent }}
+              >
+                En savoir plus <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </Link>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
  * SECTION 4 — FEATURES ALTERNATING ROWS (animated mockups)
  * ═══════════════════════════════════════════════════════ */
 
@@ -997,12 +1117,7 @@ export default function LandingPage() {
       <div className="max-w-5xl mx-auto px-6">
         <div className="h-px bg-white/[0.12]" />
       </div>
-      <Reveal>
-        <div className="text-center py-12">
-          <p className="text-lg sm:text-xl font-semibold text-white/80">Augmentez le volume, performez, sans perte de qualité</p>
-        </div>
-      </Reveal>
-      <FeatureTabs />
+      <FeaturesScroller />
       <div className="max-w-5xl mx-auto px-6">
         <div className="h-px bg-white/[0.12]" />
       </div>
