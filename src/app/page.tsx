@@ -52,13 +52,13 @@ function Hero() {
 
       {/* Social proof avatars */}
       <Reveal>
-        <div className="flex items-center gap-3 mb-8 sm:mb-10">
+        <div className="flex items-center gap-2 sm:gap-3 mb-8 sm:mb-10">
           <div className="flex -space-x-2.5">
             {["/testimonials/_ (1).jpeg", "/testimonials/_ (2).jpeg", "/testimonials/_ (3).jpeg", "/testimonials/_ (4).jpeg"].map((src, i) => (
-              <img key={i} src={src} alt="" className="h-8 w-8 sm:h-9 sm:w-9 rounded-full border-2 border-[#0B0F1A] object-cover" />
+              <img key={i} src={src} alt="" className="h-6 w-6 sm:h-9 sm:w-9 rounded-full border-2 border-[#0B0F1A] object-cover" />
             ))}
           </div>
-          <p className="text-sm sm:text-base text-white/60">
+          <p className="text-xs sm:text-base text-white/60">
             Rejoins <span className="text-white font-semibold">500+</span> agences satisfaites
           </p>
         </div>
@@ -75,8 +75,8 @@ function Hero() {
       {/* Subtitle */}
       <Reveal delay={160}>
         <p className="max-w-2xl text-white/45 text-base sm:text-lg leading-relaxed mb-8 sm:mb-10">
-          Chaque copie est unique et indétectable par les algorithmes des plateformes.
-          Conçu pour les agences qui veulent scaler leur production de contenu.
+          <span className="sm:hidden">Chaque copie unique — indétectable par les plateformes.</span>
+          <span className="hidden sm:inline">Chaque copie est unique et indétectable par les algorithmes des plateformes. Conçu pour les agences qui veulent scaler leur production de contenu.</span>
         </p>
       </Reveal>
 
@@ -499,11 +499,11 @@ function FeaturesScroller() {
     <section ref={stickyRef} className="relative" style={{ height: stickyHeight }}>
       <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center">
         {/* Title */}
-        <div className="px-6 sm:px-12 mb-14">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-2">
-            Augmentez le volume, performez,<br className="hidden sm:block" /> sans perte de qualité
+        <div className="px-6 sm:px-12 mb-20">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-white tracking-tight mb-4 leading-[1.1]">
+            Augmentez le <span className="text-[#5B7BFF]" style={{ textShadow: "0 0 30px rgba(91,123,255,0.5)" }}>volume</span>, performez,<br className="hidden sm:block" /> sans perte de <span className="text-[#5B7BFF]" style={{ textShadow: "0 0 30px rgba(91,123,255,0.5)" }}>qualité</span>
           </h2>
-          <p className="text-white/40 text-sm sm:text-base max-w-xl">
+          <p className="text-white/40 text-sm sm:text-lg max-w-2xl">
             Tous les outils dont vous avez besoin pour scaler votre production de contenu.
           </p>
         </div>
@@ -520,31 +520,29 @@ function FeaturesScroller() {
               className="shrink-0 w-[88vw] sm:w-[78vw] md:w-[70vw] rounded-md border border-white/[0.08] overflow-hidden"
               style={{ background: "rgba(8,12,35,0.6)" }}
             >
-              <div className="grid md:grid-cols-[1fr_1.1fr]">
+              <div className="grid md:grid-cols-[1fr_1.2fr]">
                 {/* Left — text */}
-                <div className="p-6 sm:p-8 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <h3 className="text-xl sm:text-2xl font-semibold text-white">{card.title}</h3>
-                      {card.badge && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/25 font-semibold">
-                          {card.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm sm:text-base text-white/50 leading-relaxed">{card.desc}</p>
+                <div className="p-6 sm:p-8">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-white">{card.title}</h3>
+                    {card.badge && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/25 font-semibold">
+                        {card.badge}
+                      </span>
+                    )}
                   </div>
+                  <p className="text-sm sm:text-base text-white/50 leading-relaxed mb-6">{card.desc}</p>
                   <Link
                     href="/register"
-                    className="inline-flex items-center gap-2 mt-8 text-sm font-medium transition"
+                    className="inline-flex items-center gap-2 text-sm font-medium transition"
                     style={{ color: card.accent }}
                   >
                     Essayer maintenant →
                   </Link>
                 </div>
                 {/* Right — mockup */}
-                <div className="p-5 sm:p-8 flex items-center justify-center border-l border-white/[0.06]" style={{ background: "rgba(0,0,0,0.15)" }}>
-                  <div className="w-full">
+                <div className="p-4 sm:p-6 flex items-stretch border-l border-white/[0.06] overflow-hidden" style={{ background: "rgba(0,0,0,0.15)" }}>
+                  <div className="w-full flex items-center">
                     {MOCKUPS[["duplication", "invisible", "priority", "ai"][i]]}
                   </div>
                 </div>
