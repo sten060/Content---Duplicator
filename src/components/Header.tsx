@@ -44,8 +44,7 @@ export default function Header() {
         {/* CTA */}
         <Link
           href="/register"
-          className="inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-          style={{ background: "#4F46E5" }}
+          className="btn-glow inline-flex items-center gap-1.5 rounded-lg px-5 py-2 text-sm font-semibold text-white"
         >
           Commencer
         </Link>

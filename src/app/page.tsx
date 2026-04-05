@@ -84,8 +84,7 @@ function Hero() {
       <Reveal delay={240}>
         <div className="flex flex-row gap-3 sm:gap-4 mb-16 sm:mb-24 justify-center">
           <Link href="/register"
-            className="slide-btn slide-btn-primary inline-flex items-center gap-2 rounded-xl px-7 sm:px-9 py-3 sm:py-3.5 font-semibold text-white text-sm sm:text-base transition-shadow hover:shadow-[0_8px_40px_rgba(79,70,229,0.5)]"
-            style={{ background: "#4F46E5" }}>
+            className="btn-glow inline-flex items-center gap-2 rounded-xl px-7 sm:px-9 py-3 sm:py-3.5 font-semibold text-white text-sm sm:text-base">
             Commencer gratuitement
           </Link>
           <Link href="/demo"
@@ -951,8 +950,7 @@ function CoreFeaturesAlt() {
         <Reveal>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-6 pb-8">
             <Link href="/register"
-              className="inline-flex items-center gap-2 rounded-xl px-7 py-3.5 font-semibold text-white text-sm transition hover:opacity-90 hover:-translate-y-0.5"
-              style={{ background: "linear-gradient(135deg,#6366F1,#38BDF8)" }}>
+              className="btn-glow inline-flex items-center gap-2 rounded-xl px-7 py-3.5 font-semibold text-white text-sm">
               Commencer maintenant →
             </Link>
             <Link href="/demo"
@@ -1074,8 +1072,7 @@ function CTABanner() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 relative">
               <Link href="/register"
-                className="inline-flex items-center gap-2 rounded-xl px-8 py-3.5 font-semibold text-white text-sm transition hover:opacity-90 hover:-translate-y-0.5"
-                style={{ background: "linear-gradient(135deg,#6366F1,#38BDF8)" }}>
+                className="btn-glow inline-flex items-center gap-2 rounded-xl px-8 py-3.5 font-semibold text-white text-sm">
                 Commencer maintenant →
               </Link>
               <Link href="/demo"
