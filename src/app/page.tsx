@@ -499,7 +499,7 @@ function FeaturesScroller() {
     <section ref={stickyRef} className="relative" style={{ height: stickyHeight }}>
       <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center">
         {/* Title */}
-        <div className="px-6 sm:px-12 mb-8">
+        <div className="px-6 sm:px-12 mb-14">
           <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-2">
             Augmentez le volume, performez,<br className="hidden sm:block" /> sans perte de qualité
           </h2>
@@ -511,16 +511,16 @@ function FeaturesScroller() {
         {/* Horizontal track */}
         <div
           ref={trackRef}
-          className="flex gap-20 will-change-transform"
-          style={{ transform: `translateX(calc(50vw - 35vw - ${scrollX}px))` }}
+          className="flex gap-40 will-change-transform"
+          style={{ transform: `translateX(calc(50vw - 40vw - ${scrollX}px))` }}
         >
           {cards.map((card, i) => (
             <div
               key={card.title}
-              className="shrink-0 w-[85vw] sm:w-[72vw] md:w-[60vw] rounded-lg border border-white/[0.08] overflow-hidden"
+              className="shrink-0 w-[88vw] sm:w-[78vw] md:w-[70vw] rounded-lg border border-white/[0.08] overflow-hidden"
               style={{ background: "rgba(8,12,35,0.6)" }}
             >
-              <div className="grid md:grid-cols-[1fr_1fr]">
+              <div className="grid md:grid-cols-[1.2fr_1fr]">
                 {/* Left — text */}
                 <div className="p-6 sm:p-8 flex flex-col justify-between">
                   <div>
@@ -1130,9 +1130,6 @@ export default function LandingPage() {
         <div className="h-px bg-white/[0.12]" />
       </div>
       <ProblemSolution />
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="h-px bg-white/[0.12]" />
-      </div>
       <FeaturesScroller />
       <div className="max-w-5xl mx-auto px-6">
         <div className="h-px bg-white/[0.12]" />
