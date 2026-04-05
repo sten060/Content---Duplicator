@@ -80,16 +80,29 @@ function Hero() {
         </p>
       </Reveal>
 
-      {/* CTA buttons — matching LanX style */}
+      {/* CTA buttons — slide-in hover effect */}
       <Reveal delay={240}>
+        <style>{`
+          .slide-btn { position: relative; overflow: hidden; z-index: 1; }
+          .slide-btn::before {
+            content: '';
+            position: absolute; inset: 0; z-index: -1;
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: inherit;
+          }
+          .slide-btn:hover::before { transform: translateY(0); }
+          .slide-btn-primary::before { background: #6366F1; }
+          .slide-btn-outline::before { background: rgba(255,255,255,0.1); }
+        `}</style>
         <div className="flex flex-row gap-3 sm:gap-4 mb-16 sm:mb-24 justify-center">
           <Link href="/register"
-            className="inline-flex items-center gap-2 rounded-xl px-7 sm:px-9 py-3 sm:py-3.5 font-semibold text-white text-sm sm:text-base transition hover:-translate-y-0.5 hover:shadow-[0_8px_40px_rgba(79,70,229,0.5)]"
+            className="slide-btn slide-btn-primary inline-flex items-center gap-2 rounded-xl px-7 sm:px-9 py-3 sm:py-3.5 font-semibold text-white text-sm sm:text-base transition-shadow hover:shadow-[0_8px_40px_rgba(79,70,229,0.5)]"
             style={{ background: "#4F46E5" }}>
             Commencer gratuitement
           </Link>
           <Link href="/demo"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.05] px-7 sm:px-9 py-3 sm:py-3.5 font-medium text-sm sm:text-base text-white/80 hover:bg-white/[0.10] hover:border-white/30 transition">
+            className="slide-btn slide-btn-outline inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.05] px-7 sm:px-9 py-3 sm:py-3.5 font-medium text-sm sm:text-base text-white/80 transition">
             Voir la démo
           </Link>
         </div>
@@ -97,21 +110,17 @@ function Hero() {
 
       {/* Platform logos — large text marquee like LanX */}
       <Reveal delay={320}>
-        <div className="relative w-full max-w-5xl overflow-hidden py-6">
-          {/* Fade edges — transparent-based to avoid dark box */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-32 z-10" style={{ background: "linear-gradient(to right, rgba(11,15,26,0.9), transparent)" }} />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-32 z-10" style={{ background: "linear-gradient(to left, rgba(11,15,26,0.9), transparent)" }} />
-
+        <div className="w-screen relative left-1/2 -translate-x-1/2 overflow-hidden py-4">
           <style>{`
             @keyframes marquee-platforms { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
             .marquee-platforms { animation: marquee-platforms 30s linear infinite; }
           `}</style>
 
-          <div className="marquee-platforms flex items-center gap-16 sm:gap-24 w-max">
+          <div className="marquee-platforms flex items-center gap-20 sm:gap-28 w-max">
             {[...Array(2)].map((_, dup) => (
-              <div key={dup} className="flex items-center gap-16 sm:gap-24">
+              <div key={dup} className="flex items-center gap-20 sm:gap-28">
                 {["Instagram", "TikTok", "Reddit", "Threads", "X", "YouTube Shorts"].map((name) => (
-                  <span key={name} className="text-xl sm:text-2xl font-semibold text-white/30 whitespace-nowrap tracking-tight">
+                  <span key={name} className="text-2xl sm:text-3xl font-semibold text-white/25 whitespace-nowrap tracking-tight">
                     {name}
                   </span>
                 ))}
