@@ -468,74 +468,93 @@ const SCROLLER_CARDS = [
 ];
 
 function FeaturesScroller() {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [scrollX, setScrollX] = useState(0);
+
+  useEffect(() => {
+    const container = stickyRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const rect = container.getBoundingClientRect();
+      const stickyTop = 0;
+      // How far the container has scrolled past the top
+      const scrolled = stickyTop - rect.top;
+      const maxScroll = container.offsetHeight - window.innerHeight;
+      const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
+      const track = trackRef.current;
+      if (track) {
+        const totalWidth = track.scrollWidth - window.innerWidth;
+        setScrollX(progress * totalWidth);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const cards = SCROLLER_CARDS;
+  // Height = 100vh per card + 100vh for initial view
+  const stickyHeight = `${(cards.length + 1) * 100}vh`;
 
   return (
-    <section className="py-20 sm:py-28">
-      <div className="max-w-6xl mx-auto px-6 mb-10">
-        <Reveal>
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-2">
-                Augmentez le volume, performez,<br className="hidden sm:block" /> sans perte de qualité
-              </h2>
-              <p className="text-white/45 text-sm sm:text-base max-w-xl">
-                Tous les outils dont vous avez besoin pour scaler votre production de contenu.
-              </p>
-            </div>
-            {/* Scroll arrows */}
-            <div className="hidden sm:flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => scrollRef.current?.scrollBy({ left: -380, behavior: "smooth" })}
-                className="h-10 w-10 rounded-full border border-white/15 bg-white/[0.04] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition"
-              >←</button>
-              <button
-                onClick={() => scrollRef.current?.scrollBy({ left: 380, behavior: "smooth" })}
-                className="h-10 w-10 rounded-full border border-white/15 bg-white/[0.04] flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition"
-              >→</button>
-            </div>
-          </div>
-        </Reveal>
-      </div>
+    <section ref={stickyRef} className="relative" style={{ height: stickyHeight }}>
+      <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center">
+        {/* Title */}
+        <div className="px-6 sm:px-12 mb-8">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight mb-2">
+            Augmentez le volume, performez,<br className="hidden sm:block" /> sans perte de qualité
+          </h2>
+          <p className="text-white/40 text-sm sm:text-base max-w-xl">
+            Tous les outils dont vous avez besoin pour scaler votre production de contenu.
+          </p>
+        </div>
 
-      <Reveal delay={100}>
+        {/* Horizontal track */}
         <div
-          ref={scrollRef}
-          className="flex gap-5 overflow-x-auto scrollbar-none px-6 sm:px-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))]"
-          style={{ scrollSnapType: "x mandatory" }}
+          ref={trackRef}
+          className="flex gap-6 px-6 sm:px-12 will-change-transform"
+          style={{ transform: `translateX(-${scrollX}px)` }}
         >
-          {SCROLLER_CARDS.map((card) => (
+          {cards.map((card, i) => (
             <div
               key={card.title}
-              className="group shrink-0 w-[320px] sm:w-[360px] rounded-2xl border border-white/[0.08] p-6 sm:p-7 transition hover:border-white/[0.15] hover:bg-white/[0.03]"
-              style={{ background: "rgba(8,12,35,0.6)", scrollSnapAlign: "start" }}
+              className="shrink-0 w-[85vw] sm:w-[70vw] md:w-[55vw] rounded-2xl border border-white/[0.08] overflow-hidden"
+              style={{ background: "rgba(8,12,35,0.6)" }}
             >
-              <div
-                className="h-11 w-11 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
-                style={{ background: `${card.accent}15`, border: `1px solid ${card.accent}30`, color: card.accent }}
-              >
-                {card.icon}
+              <div className="grid md:grid-cols-2 h-full">
+                {/* Left — text */}
+                <div className="p-8 sm:p-10 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="text-sm text-white/25 font-mono">{String(i + 1).padStart(2, "0")} / {String(cards.length).padStart(2, "0")}</span>
+                      {card.badge && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/25 font-semibold">
+                          {card.badge}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-semibold text-white mb-4">{card.title}</h3>
+                    <p className="text-sm sm:text-base text-white/50 leading-relaxed">{card.desc}</p>
+                  </div>
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center gap-2 mt-6 text-sm font-medium transition"
+                    style={{ color: card.accent }}
+                  >
+                    Essayer maintenant →
+                  </Link>
+                </div>
+                {/* Right — mockup */}
+                <div className="p-4 sm:p-6 flex items-center justify-center border-l border-white/[0.06]" style={{ background: "rgba(0,0,0,0.2)" }}>
+                  <div className="w-full max-w-[360px]">
+                    {MOCKUPS[["duplication", "invisible", "priority", "ai"][i]]}
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-lg font-semibold text-white">{card.title}</h3>
-                {card.badge && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/25 font-semibold">
-                    {card.badge}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-white/50 leading-relaxed mb-5">{card.desc}</p>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-1.5 text-sm font-medium transition"
-                style={{ color: card.accent }}
-              >
-                En savoir plus <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
             </div>
           ))}
         </div>
-      </Reveal>
+      </div>
     </section>
   );
 }
