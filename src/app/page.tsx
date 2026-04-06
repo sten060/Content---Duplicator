@@ -223,42 +223,26 @@ const TAB_IDS = TABS.map((t) => t.id);
 const TAB_DURATION = 4000;
 const TICK = 50;
 
+/* ── Compact mockups for horizontal scroller cards ── */
 function MockupDuplication() {
   const copies = [
-    { name: "DuupFlow_dup1_47.jpg", type: "Image", size: "2.4 MB", color: "border-fuchsia-500/30 bg-fuchsia-500/[0.08]" },
-    { name: "DuupFlow_dup2_83.mp4", type: "Vidéo", size: "18.7 MB", color: "border-indigo-500/30 bg-indigo-500/[0.08]" },
-    { name: "DuupFlow_dup3_12.jpg", type: "Image", size: "2.4 MB", color: "border-pink-500/30 bg-pink-500/[0.08]" },
-    { name: "DuupFlow_dup4_55.mp4", type: "Vidéo", size: "18.7 MB", color: "border-violet-500/30 bg-violet-500/[0.08]" },
+    { name: "DuupFlow_dup1_47.jpg", type: "Image", size: "2.4 MB" },
+    { name: "DuupFlow_dup2_83.mp4", type: "Vidéo", size: "18.7 MB" },
+    { name: "DuupFlow_dup3_12.jpg", type: "Image", size: "2.4 MB" },
   ];
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-white/50">4 copies générées</span>
-        </div>
-        <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-medium">Images & Vidéos</span>
+    <div className="space-y-2.5 text-xs">
+      <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5 flex items-center gap-2.5">
+        <span className="text-base">📁</span>
+        <div className="flex-1 min-w-0"><p className="text-white/70 font-medium truncate">contenu_source</p><p className="text-[10px] text-white/30">Fichier source</p></div>
+        <span className="px-2 py-0.5 rounded border border-white/10 bg-white/[0.04] text-white/40 text-[10px]">Source</span>
       </div>
-      <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500/20 to-sky-500/20 flex items-center justify-center text-lg">📁</div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm text-white/80 font-medium truncate">contenu_source</p>
-          <p className="text-xs text-white/35">Fichier source · Image ou Vidéo</p>
-        </div>
-        <span className="text-xs px-2 py-1 rounded-full border border-white/10 bg-white/[0.04] text-white/50">Source</span>
-      </div>
-      <div className="flex justify-center py-1">
-        <svg className="h-5 w-5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-      </div>
+      <div className="flex justify-center"><svg className="h-4 w-4 text-white/15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12l7 7 7-7" /></svg></div>
       {copies.map((f) => (
-        <div key={f.name} className={`rounded-xl border p-3 flex items-center gap-3 ${f.color}`}>
-          <div className="h-10 w-10 rounded-lg bg-white/[0.08] flex items-center justify-center text-sm">{f.type === "Image" ? "🖼️" : "🎬"}</div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-white/70 font-mono truncate">{f.name}</p>
-            <p className="text-xs text-white/35">Métadonnées uniques · {f.size}</p>
-          </div>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/[0.06] text-white/40 border border-white/10">{f.type}</span>
-          <svg className="h-4 w-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M20 6 9 17l-5-5" /></svg>
+        <div key={f.name} className="rounded-lg border border-indigo-500/20 bg-indigo-500/[0.04] px-3 py-2.5 flex items-center gap-2.5">
+          <span className="text-base">{f.type === "Image" ? "🖼️" : "🎬"}</span>
+          <div className="flex-1 min-w-0"><p className="text-white/60 font-mono truncate text-[11px]">{f.name}</p><p className="text-[10px] text-white/25">Métadonnées uniques · {f.size}</p></div>
+          <svg className="h-3.5 w-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M20 6 9 17l-5-5" /></svg>
         </div>
       ))}
     </div>
@@ -267,24 +251,23 @@ function MockupDuplication() {
 
 function MockupInvisible() {
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-        <p className="text-xs text-white/40 font-mono mb-1">Original Hash</p>
-        <p className="text-sm text-amber-300 font-mono">a7f3e2d1c4b8...9f0a6e3d</p>
+    <div className="space-y-3 text-xs">
+      <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5">
+        <p className="text-[10px] text-white/30 font-mono mb-0.5">Original Hash</p>
+        <p className="text-indigo-300 font-mono text-[11px]">a7f3e2d1c4b8...9f0a6e3d</p>
       </div>
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-indigo-500/30 bg-indigo-500/[0.10]">
-          <span className="text-sm">✨</span>
-          <span className="text-xs font-semibold text-indigo-300">Pixel magique</span>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/[0.10]">
+          <span className="text-xs">✨</span><span className="text-[11px] font-semibold text-indigo-300">Pixel magique</span>
         </div>
       </div>
-      <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.05] p-4">
-        <p className="text-xs text-white/40 font-mono mb-1">Modified Hash</p>
-        <p className="text-sm text-emerald-300 font-mono">9b2e8f4a7c1d...3b5d2e8f</p>
+      <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] px-3 py-2.5">
+        <p className="text-[10px] text-white/30 font-mono mb-0.5">Modified Hash</p>
+        <p className="text-emerald-300 font-mono text-[11px]">9b2e8f4a7c1d...3b5d2e8f</p>
       </div>
-      <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 text-center">
-        <p className="text-sm text-white/70 font-medium mb-1">Visuellement identique</p>
-        <p className="text-xs text-white/40">Le contenu visuel ne change pas. Seule l&apos;empreinte numérique est modifiée.</p>
+      <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-center">
+        <p className="text-white/60 font-medium text-[11px] mb-0.5">Visuellement identique</p>
+        <p className="text-[10px] text-white/30">Le contenu visuel ne change pas. Seule l&apos;empreinte est modifiée.</p>
       </div>
     </div>
   );
@@ -298,21 +281,21 @@ function MockupPriority() {
     { key: "Location", value: "Paris, France" },
   ];
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="h-8 w-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
-          <svg className="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+    <div className="space-y-2.5 text-xs">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="h-6 w-6 rounded-md bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
+          <svg className="h-3 w-3 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
         </div>
-        <span className="text-xs font-semibold text-amber-300">Métadonnées iPhone injectées</span>
+        <span className="text-[11px] font-semibold text-indigo-300">Métadonnées iPhone injectées</span>
       </div>
       {fields.map((f) => (
-        <div key={f.key} className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-3 flex items-center justify-between">
-          <span className="text-xs text-white/40 font-mono">{f.key}</span>
-          <span className="text-xs text-emerald-300 font-mono">{f.value}</span>
+        <div key={f.key} className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 flex items-center justify-between">
+          <span className="text-white/35 font-mono text-[11px]">{f.key}</span>
+          <span className="text-indigo-300 font-mono text-[11px]">{f.value}</span>
         </div>
       ))}
-      <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/[0.06] p-3 text-center">
-        <p className="text-xs text-indigo-300">L&apos;algorithme traite votre contenu comme un vrai iPhone</p>
+      <div className="rounded-lg border border-indigo-500/15 bg-indigo-500/[0.04] px-3 py-2 text-center">
+        <p className="text-[10px] text-indigo-300/70">L&apos;algorithme traite votre contenu comme un vrai iPhone</p>
       </div>
     </div>
   );
@@ -320,26 +303,20 @@ function MockupPriority() {
 
 function MockupAI() {
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.05] p-4">
-        <p className="text-xs text-amber-400 font-medium mb-3 flex items-center gap-1.5"><span>⚡</span> Signature IA détectée</p>
-        <div className="space-y-2">
-          {[["Software", "Midjourney v6.1"], ["Artist", "Midjourney Bot"], ["Creator", "midjourney.com"], ["DigitalSourceType", "trainedAlgorithmicMedia"]].map(([k, v]) => (
-            <div key={k} className="flex justify-between text-xs">
-              <span className="text-white/40 font-mono">{k}</span>
-              <span className="text-amber-300 font-mono">{v}</span>
-            </div>
+    <div className="space-y-3 text-xs">
+      <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] px-3 py-3">
+        <p className="text-[10px] text-amber-400 font-medium mb-2 flex items-center gap-1"><span>⚡</span> Signature IA détectée</p>
+        <div className="space-y-1.5">
+          {[["Software", "Midjourney v6.1"], ["Artist", "Midjourney Bot"], ["Creator", "midjourney.com"]].map(([k, v]) => (
+            <div key={k} className="flex justify-between"><span className="text-white/35 font-mono text-[11px]">{k}</span><span className="text-amber-300/80 font-mono text-[11px]">{v}</span></div>
           ))}
         </div>
       </div>
-      <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.05] p-4">
-        <p className="text-xs text-emerald-400 font-medium mb-3 flex items-center gap-1.5"><span>🛡️</span> Signature IA effacée</p>
-        <div className="space-y-2">
-          {[["Software", "Adobe Lightroom 7.2"], ["Make", "Sony"], ["Model", "A7 IV"], ["Artist", "Sophie Renaud"]].map(([k, v]) => (
-            <div key={k} className="flex justify-between text-xs">
-              <span className="text-white/40 font-mono">{k}</span>
-              <span className="text-emerald-300 font-mono">{v}</span>
-            </div>
+      <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.04] px-3 py-3">
+        <p className="text-[10px] text-emerald-400 font-medium mb-2 flex items-center gap-1"><span>🛡️</span> Signature IA effacée</p>
+        <div className="space-y-1.5">
+          {[["Software", "Adobe Lightroom 7.2"], ["Make", "Sony"], ["Model", "A7 IV"]].map(([k, v]) => (
+            <div key={k} className="flex justify-between"><span className="text-white/35 font-mono text-[11px]">{k}</span><span className="text-emerald-300/80 font-mono text-[11px]">{v}</span></div>
           ))}
         </div>
       </div>
@@ -422,46 +399,32 @@ function FeatureTabs() {
 /* ═══════════════════════════════════════════════════════
  * SECTION 3b — HORIZONTAL SCROLLER (replaces FeatureTabs)
  * ═══════════════════════════════════════════════════════ */
+const GLOW = "text-[#5B7BFF]";
+const GS = { textShadow: "0 0 25px rgba(91,123,255,0.5)" };
+
 const SCROLLER_CARDS = [
   {
-    title: "Duplication Images & Vidéos",
+    title: <><span className={GLOW} style={GS}>Duplication</span> Images &amp; Vidéos</>,
     desc: "Dupliquez vos images et vidéos en masse. Chaque copie est unique — métadonnées, empreinte technique, hash. Indétectable par les plateformes.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-      </svg>
-    ),
     accent: "#6366F1",
   },
   {
-    title: "Modification Invisible",
+    title: <>Modification <span className={GLOW} style={GS}>Invisible</span></>,
     desc: "Modifiez l'empreinte numérique sans toucher au visuel. Pixel magique change le hash de chaque fichier tout en gardant le contenu visuellement identique.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-      </svg>
-    ),
-    accent: "#EC4899",
+    accent: "#6366F1",
   },
   {
-    title: "Priorité d'algorithme",
+    title: <><span className={GLOW} style={GS}>Priorité</span> d&apos;algorithme</>,
     desc: "Localisez votre contenu et injectez des métadonnées iPhone authentiques. L'algorithme pense que votre contenu vient d'un appareil réel.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-      </svg>
-    ),
-    accent: "#38BDF8",
+    accent: "#6366F1",
   },
   {
-    title: "Détection IA",
+    title: <>Détection <span className={GLOW} style={GS}>IA</span></>,
     desc: "Effacez la signature IA de vos contenus. Remplacez les métadonnées Midjourney, DALL-E, Stable Diffusion par une identité humaine réaliste.",
-    icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-        <path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
-      </svg>
-    ),
-    accent: "#F59E0B",
+    accent: "#6366F1",
+    badge: "NEW",
+  },
+];
     badge: "NEW",
   },
 ];
@@ -498,15 +461,17 @@ function FeaturesScroller() {
   return (
     <section ref={stickyRef} className="relative" style={{ height: stickyHeight }}>
       <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center">
-        {/* Title */}
-        <div className="px-6 sm:px-12 mb-20">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-white tracking-tight mb-4 leading-[1.1]">
-            Augmentez le <span className="text-[#5B7BFF]" style={{ textShadow: "0 0 30px rgba(91,123,255,0.5)" }}>volume</span>, performez,<br className="hidden sm:block" /> sans perte de <span className="text-[#5B7BFF]" style={{ textShadow: "0 0 30px rgba(91,123,255,0.5)" }}>qualité</span>
-          </h2>
-          <p className="text-white/40 text-sm sm:text-lg max-w-2xl">
-            Tous les outils dont vous avez besoin pour scaler votre production de contenu.
-          </p>
-        </div>
+        {/* Title with curtain reveal */}
+        <Reveal>
+          <div className="px-6 sm:px-12 mb-20">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-white tracking-tight mb-4 leading-[1.1]">
+              Augmentez le <span className="text-[#5B7BFF]" style={{ textShadow: "0 0 30px rgba(91,123,255,0.5)" }}>volume</span>, performez,<br className="hidden sm:block" /> sans perte de <span className="text-[#5B7BFF]" style={{ textShadow: "0 0 30px rgba(91,123,255,0.5)" }}>qualité</span>
+            </h2>
+            <p className="text-white/40 text-sm sm:text-lg max-w-2xl">
+              Tous les outils dont vous avez besoin pour scaler votre production de contenu.
+            </p>
+          </div>
+        </Reveal>
 
         {/* Horizontal track */}
         <div
@@ -525,7 +490,7 @@ function FeaturesScroller() {
                 <div className="p-6 sm:p-8">
                   <div className="flex items-center gap-2 mb-3">
                     <h3 className="text-xl sm:text-2xl font-semibold text-white">{card.title}</h3>
-                    {card.badge && (
+                    {"badge" in card && card.badge && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/25 font-semibold">
                         {card.badge}
                       </span>
@@ -534,8 +499,7 @@ function FeaturesScroller() {
                   <p className="text-sm sm:text-base text-white/50 leading-relaxed mb-6">{card.desc}</p>
                   <Link
                     href="/register"
-                    className="inline-flex items-center gap-2 text-sm font-medium transition"
-                    style={{ color: card.accent }}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-indigo-400 hover:text-indigo-300 transition"
                   >
                     Essayer maintenant →
                   </Link>
