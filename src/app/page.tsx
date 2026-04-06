@@ -490,7 +490,7 @@ function FeaturesScroller() {
         >
           {cards.map((card, i) => (
             <div
-              key={card.title}
+              key={i}
               className="shrink-0 w-[88vw] sm:w-[78vw] md:w-[70vw] rounded-md border border-white/[0.08] overflow-hidden"
               style={{ background: "rgba(8,12,35,0.6)" }}
             >
