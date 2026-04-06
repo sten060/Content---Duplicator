@@ -50,37 +50,6 @@ function Hero() {
   return (
     <section className="relative flex flex-col items-center text-center px-6 pt-6 sm:pt-12 pb-20 sm:pb-40 overflow-hidden">
 
-      {/* Liquid glass background — DuupFlow logo colors */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <style>{`
-          @keyframes liquid-move {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(30px, -50px) scale(1.1); }
-            50% { transform: translate(-20px, 20px) scale(0.95); }
-            75% { transform: translate(40px, 30px) scale(1.05); }
-          }
-        `}</style>
-        {/* Deep blue blob */}
-        <div className="absolute top-[-20%] left-[10%] w-[60vw] h-[60vw] max-w-[700px] max-h-[700px] rounded-full opacity-70 blur-[100px]"
-          style={{ background: "radial-gradient(circle, #1a3aab 0%, transparent 70%)", animation: "liquid-move 15s ease-in-out infinite" }} />
-        {/* Purple blob */}
-        <div className="absolute top-[10%] right-[5%] w-[50vw] h-[50vw] max-w-[600px] max-h-[600px] rounded-full opacity-60 blur-[80px]"
-          style={{ background: "radial-gradient(circle, #7c3aed 0%, transparent 70%)", animation: "liquid-move 18s ease-in-out infinite reverse" }} />
-        {/* Royal blue blob */}
-        <div className="absolute top-[30%] left-[30%] w-[45vw] h-[45vw] max-w-[550px] max-h-[550px] rounded-full opacity-50 blur-[100px]"
-          style={{ background: "radial-gradient(circle, #2d5ce8 0%, transparent 70%)", animation: "liquid-move 20s ease-in-out infinite 2s" }} />
-        {/* Light blue accent */}
-        <div className="absolute top-[5%] left-[50%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] rounded-full opacity-45 blur-[70px]"
-          style={{ background: "radial-gradient(circle, #70b0f8 0%, transparent 70%)", animation: "liquid-move 12s ease-in-out infinite 1s" }} />
-        {/* Indigo center */}
-        <div className="absolute top-[20%] left-[40%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] rounded-full opacity-50 blur-[90px]"
-          style={{ background: "radial-gradient(circle, #6366f1 0%, transparent 70%)", animation: "liquid-move 16s ease-in-out infinite 3s" }} />
-        {/* Fade out at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-[50%]"
-          style={{ background: "linear-gradient(to bottom, transparent 0%, rgba(6,12,30,1) 100%)" }} />
-      </div>
-
-      <div className="relative z-10">
       {/* Social proof avatars */}
       <Reveal>
         <div className="flex items-center gap-2 sm:gap-3 mb-8 sm:mb-10">
@@ -154,7 +123,6 @@ function Hero() {
           </div>
         </div>
       </Reveal>
-      </div>{/* close z-10 wrapper */}
     </section>
   );
 }
