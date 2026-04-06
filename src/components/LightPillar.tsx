@@ -75,9 +75,9 @@ export default function LightPillar({
 
     const qualitySettings = {
       low: {
-        iterations: 24,
+        iterations: 16,
         waveIterations: 1,
-        pixelRatio: 0.5,
+        pixelRatio: 0.4,
         precision: "mediump",
         targetFPS: 30,
       },
@@ -399,7 +399,8 @@ export default function LightPillar({
         style={{
           width: "100%",
           height: "100%",
-          background: "#1a1a1a",
+          background: `radial-gradient(ellipse at 40% 50%, ${topColor}33 0%, transparent 60%), radial-gradient(ellipse at 60% 40%, ${bottomColor}22 0%, transparent 50%), #060c1e`,
+          mixBlendMode: mixBlendMode as React.CSSProperties["mixBlendMode"],
           ...(style || {}),
         }}
       />
