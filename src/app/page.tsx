@@ -433,9 +433,6 @@ const SCROLLER_CARDS = [
     badge: "NEW",
   },
 ];
-    badge: "NEW",
-  },
-];
 
 function FeaturesScroller() {
   const stickyRef = useRef<HTMLDivElement>(null);
