@@ -510,8 +510,8 @@ function FeaturesScroller() {
                   </Link>
                 </div>
                 {/* Right — mockup */}
-                <div className="p-4 sm:p-6 flex items-stretch border-l border-white/[0.06] overflow-hidden" style={{ background: "rgba(0,0,0,0.15)" }}>
-                  <div className="w-full flex items-center">
+                <div className="p-6 sm:p-8 flex items-center">
+                  <div className="w-full">
                     {MOCKUPS[["duplication", "invisible", "priority", "ai"][i]]}
                   </div>
                 </div>
