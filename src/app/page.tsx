@@ -451,9 +451,12 @@ function FeaturesScroller() {
       const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
       const track = trackRef.current;
       if (track) {
-        // Subtract only half the viewport so the last card can center on screen
-        const totalWidth = track.scrollWidth - window.innerWidth * 0.5;
-        setScrollX(progress * totalWidth);
+        // Find the last card and calculate how far to scroll so it centers
+        const lastCard = track.lastElementChild as HTMLElement | null;
+        const cardWidth = lastCard?.offsetWidth ?? 0;
+        // Stop when the last card is centered: its left edge should be at (viewport - cardWidth) / 2
+        const maxX = track.scrollWidth - cardWidth - (window.innerWidth - cardWidth) / 2;
+        setScrollX(progress * Math.max(0, maxX));
       }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
