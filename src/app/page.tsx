@@ -434,7 +434,75 @@ const SCROLLER_CARDS = [
   },
 ];
 
-/* ── How It Works — CardShowcase (replaces FeaturesScroller) ── */
+function FeaturesScroller() {
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [scrollX, setScrollX] = useState(0);
+
+  useEffect(() => {
+    const container = stickyRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const rect = container.getBoundingClientRect();
+      const stickyTop = 0;
+      const scrolled = stickyTop - rect.top;
+      const maxScroll = container.offsetHeight - window.innerHeight;
+      const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
+      const track = trackRef.current;
+      if (track) {
+        const lastCard = track.lastElementChild as HTMLElement | null;
+        const cardWidth = lastCard?.offsetWidth ?? 0;
+        const maxX = track.scrollWidth - cardWidth - (window.innerWidth - cardWidth) / 2;
+        setScrollX(progress * Math.max(0, maxX));
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const cards = SCROLLER_CARDS;
+  const stickyHeight = `${(cards.length + 2) * 100}vh`;
+
+  return (
+    <section ref={stickyRef} className="relative" style={{ height: stickyHeight }}>
+      <div className="sticky top-0 h-screen overflow-hidden flex flex-col justify-center">
+        <Reveal>
+          <div className="px-6 sm:px-12 mb-20">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-white tracking-tight mb-4 leading-[1.1]">
+              Augmentez le <span className="text-[#5B7BFF]" style={{ textShadow: "0 0 30px rgba(91,123,255,0.5)" }}>volume</span>, performez,<br className="hidden sm:block" /> sans perte de <span className="text-[#5B7BFF]" style={{ textShadow: "0 0 30px rgba(91,123,255,0.5)" }}>qualité</span>
+            </h2>
+            <p className="text-white/40 text-sm sm:text-lg max-w-2xl">
+              Tous les outils dont vous avez besoin pour scaler votre production de contenu.
+            </p>
+          </div>
+        </Reveal>
+        <div ref={trackRef} className="flex gap-[12vw] will-change-transform" style={{ transform: `translateX(calc(50vw - 35vw - ${scrollX}px))` }}>
+          {cards.map((card, i) => (
+            <div key={i} className="shrink-0 w-[88vw] sm:w-[78vw] md:w-[70vw] rounded-md border border-white/[0.08] overflow-hidden" style={{ background: "rgba(8,12,35,0.6)" }}>
+              <div className="grid md:grid-cols-[1fr_1.2fr]">
+                <div className="p-6 sm:p-8">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-white">{card.title}</h3>
+                    {"badge" in card && card.badge && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/25 font-semibold">{card.badge}</span>
+                    )}
+                  </div>
+                  <p className="text-sm sm:text-base text-white/50 leading-relaxed mb-6">{card.desc}</p>
+                  <Link href="/register" className="inline-flex items-center gap-2 text-sm font-medium text-indigo-400 hover:text-indigo-300 transition">Essayer maintenant →</Link>
+                </div>
+                <div className="p-6 sm:p-8 flex items-center">
+                  <div className="w-full">{MOCKUPS[["duplication", "invisible", "priority", "ai"][i]]}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── How It Works — CardShowcase ── */
 const HOW_STEPS = [
   { num: "01", title: "Importe ton contenu", desc: "Glisse-dépose ton image ou ta vidéo dans DuupFlow. JPG, PNG, WEBP, MP4, MOV, MKV — tous les formats sont acceptés, même en lot.", tag: "Upload" },
   { num: "02", title: "Duplique en illimité", desc: "Choisis le nombre de copies et les options (visuel, semi-visuel, métadonnées). DuupFlow modifie chaque fichier pour qu'il soit unique aux yeux des algorithmes de détection.", tag: "Duplication" },
@@ -857,32 +925,32 @@ function FeatureRow({
   );
 }
 
-/* ── Avantages — Hover Carousel ── */
+/* ── Avantages — Image Expand on Hover (Framer-style) ── */
 const ADVANTAGES = [
   {
     title: "Duplication en masse",
-    desc: "Dupliquez des dizaines de vidéos et d'images en quelques secondes. Chaque copie est générée avec des paramètres uniques.",
     tags: ["Images & Vidéos", "Illimité", "Parallèle", "Instantané"],
+    gradient: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
   },
   {
     title: "Qualité préservée",
-    desc: "Chaque duplication conserve la résolution exacte. 1080p reste 1080p, 4K reste 4K. Aucun downscale, aucune recompression.",
     tags: ["4K", "Lossless", "Pixel Perfect", "Pro"],
+    gradient: "linear-gradient(135deg, #0f0f1a 0%, #1a1a3e 50%, #2d1b69 100%)",
   },
   {
     title: "Invisible pour les algos",
-    desc: "Métadonnées, hash, structure technique — tout est modifié. Pour les algorithmes, chaque copie est un fichier totalement nouveau.",
     tags: ["Anti-détection", "Hash unique", "EXIF", "Indétectable"],
+    gradient: "linear-gradient(135deg, #1a0a2e 0%, #2d1060 50%, #1a1a4e 100%)",
   },
   {
     title: "Priorité algorithme",
-    desc: "Injectez des métadonnées Apple authentiques. Les plateformes traitent votre contenu comme un vrai iPhone.",
     tags: ["iPhone", "GPS", "iOS", "Boost algo"],
+    gradient: "linear-gradient(135deg, #0a1628 0%, #162040 50%, #1e3a5f 100%)",
   },
   {
     title: "Masquage IA",
-    desc: "Effacez les signatures Midjourney, DALL-E, Stable Diffusion. Une identité humaine réaliste est injectée.",
     tags: ["C2PA", "JUMBF", "Anti-IA", "Identité"],
+    gradient: "linear-gradient(135deg, #1a0e30 0%, #261850 50%, #0f2040 100%)",
   },
 ];
 
@@ -903,8 +971,8 @@ function AvantagesCarousel() {
         </Reveal>
 
         <Reveal delay={80}>
-          {/* Desktop: hover carousel */}
-          <div className="hidden md:flex gap-0 w-full" style={{ height: "480px" }}>
+          {/* Desktop: image panels that expand on hover */}
+          <div className="hidden md:flex gap-2 w-full" style={{ height: "520px" }}>
             {ADVANTAGES.map((adv, i) => {
               const isHovered = hoveredIndex === i;
               const isDefault = hoveredIndex === null && i === 0;
@@ -914,44 +982,37 @@ function AvantagesCarousel() {
                   key={i}
                   onMouseEnter={() => setHoveredIndex(i)}
                   onMouseLeave={() => setHoveredIndex(null)}
-                  className="relative border border-white/[0.08] p-6 overflow-hidden cursor-pointer"
+                  className="relative overflow-hidden cursor-pointer"
                   style={{
-                    background: "rgba(8,12,35,0.6)",
-                    flex: isExpanded ? 3 : 1,
-                    transition: "flex 0.5s cubic-bezier(0.4,0,0.2,1)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "flex-end",
+                    flex: isExpanded ? 3.5 : 1,
+                    transition: "flex 0.6s cubic-bezier(0.4,0,0.2,1)",
+                    borderRadius: "4px",
                   }}
                 >
-                  {/* Background gradient accent */}
-                  <div className="absolute inset-0 pointer-events-none" style={{
-                    background: isExpanded
-                      ? "linear-gradient(180deg, transparent 0%, rgba(99,102,241,0.06) 100%)"
-                      : "transparent",
-                    transition: "background 0.5s",
+                  {/* Background image/gradient */}
+                  <div className="absolute inset-0" style={{
+                    background: adv.gradient,
+                    transition: "transform 0.6s cubic-bezier(0.4,0,0.2,1)",
+                    transform: isExpanded ? "scale(1)" : "scale(1.05)",
                   }} />
 
-                  {/* Content */}
-                  <div className="relative z-10">
-                    <h3
-                      className="text-lg font-semibold mb-2"
-                      style={{ color: isExpanded ? "white" : "rgba(255,255,255,0.5)", transition: "color 0.3s" }}
-                    >
-                      {adv.title}
-                    </h3>
-                    <div style={{
-                      opacity: isExpanded ? 1 : 0,
-                      maxHeight: isExpanded ? "200px" : "0px",
-                      overflow: "hidden",
-                      transition: "opacity 0.3s ease, max-height 0.4s ease",
-                    }}>
-                      <p className="text-sm text-white/60 leading-relaxed mb-4">{adv.desc}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {adv.tags.map((tag) => (
-                          <span key={tag} className="text-xs px-2.5 py-1 border border-white/10 bg-white/[0.04] text-white/50">{tag}</span>
-                        ))}
-                      </div>
+                  {/* Dark overlay for non-expanded */}
+                  <div className="absolute inset-0" style={{
+                    background: isExpanded ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.5)",
+                    transition: "background 0.4s",
+                  }} />
+
+                  {/* Tags at bottom — only visible when expanded */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5 z-10" style={{
+                    opacity: isExpanded ? 1 : 0,
+                    transform: isExpanded ? "translateY(0)" : "translateY(10px)",
+                    transition: "opacity 0.4s ease, transform 0.4s ease",
+                  }}>
+                    <h3 className="text-base font-semibold text-white mb-3">{adv.title}</h3>
+                    <div className="flex flex-col gap-1.5">
+                      {adv.tags.map((tag) => (
+                        <span key={tag} className="inline-block w-fit text-xs px-3 py-1.5 bg-black/40 backdrop-blur-sm border border-white/10 text-white/80">{tag}</span>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -960,15 +1021,18 @@ function AvantagesCarousel() {
           </div>
 
           {/* Mobile: vertical stack */}
-          <div className="md:hidden flex flex-col gap-4">
+          <div className="md:hidden flex flex-col gap-3">
             {ADVANTAGES.map((adv, i) => (
-              <div key={i} className="border border-white/[0.08] p-5" style={{ background: "rgba(8,12,35,0.6)" }}>
-                <h3 className="text-lg font-semibold text-white mb-2">{adv.title}</h3>
-                <p className="text-sm text-white/50 leading-relaxed mb-3">{adv.desc}</p>
-                <div className="flex flex-wrap gap-2">
-                  {adv.tags.map((tag) => (
-                    <span key={tag} className="text-xs px-2.5 py-1 border border-white/10 bg-white/[0.04] text-white/50">{tag}</span>
-                  ))}
+              <div key={i} className="relative overflow-hidden" style={{ height: "200px", borderRadius: "4px" }}>
+                <div className="absolute inset-0" style={{ background: adv.gradient }} />
+                <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.25)" }} />
+                <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+                  <h3 className="text-base font-semibold text-white mb-2">{adv.title}</h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {adv.tags.map((tag) => (
+                      <span key={tag} className="text-xs px-2.5 py-1 bg-black/40 backdrop-blur-sm border border-white/10 text-white/70">{tag}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1145,6 +1209,7 @@ export default function LandingPage() {
         <div className="h-px bg-white/[0.12]" />
       </div>
       <ProblemSolution />
+      <FeaturesScroller />
       <HowItWorks />
       <AvantagesCarousel />
       <StatsBanner />

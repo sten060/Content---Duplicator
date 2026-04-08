@@ -44,9 +44,9 @@ export default function Header() {
 
           {/* Nav — desktop only */}
           <nav className="hidden md:flex items-center gap-3">
-            <NavLink href="/how-it-works" label="Comment ça marche" />
-            <NavLink href="/#features" label="Avantages" />
+            <NavLink href="/fonctionnalites" label="Fonctionnalités" />
             <NavLink href="/tarifs" label="Tarifs" />
+            <NavLink href="/#features" label="Avantages" />
             <NavLink href="https://www.duupflow.com/#faq" label="FAQ" />
           </nav>
 
@@ -89,9 +89,9 @@ export default function Header() {
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
         <nav className="flex flex-col gap-1">
-          <NavLink href="/how-it-works" label="Comment ça marche" onClick={() => setMenuOpen(false)} />
-          <NavLink href="/#features" label="Avantages" onClick={() => setMenuOpen(false)} />
+          <NavLink href="/fonctionnalites" label="Fonctionnalités" onClick={() => setMenuOpen(false)} />
           <NavLink href="/tarifs" label="Tarifs" onClick={() => setMenuOpen(false)} />
+          <NavLink href="/#features" label="Avantages" onClick={() => setMenuOpen(false)} />
           <NavLink href="/demo" label="Démo" onClick={() => setMenuOpen(false)} />
           <NavLink href="https://www.duupflow.com/#faq" label="FAQ" onClick={() => setMenuOpen(false)} />
         </nav>
