@@ -70,8 +70,9 @@ function Hero() {
       {/* Main heading — large, elegant, light weight like LanX */}
       <Reveal delay={80}>
         <h1 className="max-w-5xl text-[2.5rem] sm:text-[3.5rem] md:text-[5rem] font-light leading-[1.08] tracking-[-0.02em] text-white/90 mb-6 sm:mb-7">
-          Multiplie ton contenu.{" "}<br className="hidden sm:block" />
-          <span className={G}>Domine l&apos;algorithme.</span>
+          Dupliquer à l&apos;infini{" "}<br className="hidden sm:block" />
+          <span className={G}>Votre contenu sera unique</span>{" "}<br className="hidden sm:block" />
+          aux yeux des algorithmes
         </h1>
       </Reveal>
 
@@ -932,33 +933,101 @@ function FeatureRow({
 const CAROUSEL_CARDS = [
   {
     title: "Duplication en masse",
-    desc: "Dupliquez des dizaines de fichiers en quelques secondes. Chaque copie est unique — métadonnées, hash, structure technique.",
-    tags: ["Images & Vidéos", "Illimité", "Parallèle", "Instantané"],
+    desc: "Dupliquez des dizaines de fichiers en quelques secondes. Chaque copie est unique.",
+    tags: ["Images & Vidéos", "Illimité", "Parallèle"],
     gradient: "linear-gradient(180deg, #0c1a3a 0%, #162850 60%, #0a1628 100%)",
+    mockupHtml: `<div style="width:100%;max-width:220px;display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);">
+        <div style="width:28px;height:28px;border-radius:6px;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;font-size:12px;">📁</div>
+        <div style="flex:1;"><div style="font-size:10px;color:rgba(255,255,255,0.6);">source.mp4</div><div style="font-size:8px;color:rgba(255,255,255,0.25);">24.5 MB</div></div>
+      </div>
+      <div style="text-align:center;color:rgba(255,255,255,0.15);font-size:10px;">↓</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);background:rgba(99,102,241,0.04);">
+        <div style="font-size:10px;">🎬</div><div style="flex:1;font-size:9px;color:rgba(255,255,255,0.5);font-family:monospace;">dup1_47.mp4</div><div style="color:#34d399;font-size:10px;">✓</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);background:rgba(99,102,241,0.04);">
+        <div style="font-size:10px;">🎬</div><div style="flex:1;font-size:9px;color:rgba(255,255,255,0.5);font-family:monospace;">dup2_83.mp4</div><div style="color:#34d399;font-size:10px;">✓</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);background:rgba(99,102,241,0.04);">
+        <div style="font-size:10px;">🎬</div><div style="flex:1;font-size:9px;color:rgba(255,255,255,0.5);font-family:monospace;">dup3_12.mp4</div><div style="color:#34d399;font-size:10px;">✓</div>
+      </div>
+    </div>`,
   },
   {
     title: "Qualité préservée",
-    desc: "Résolution identique pixel par pixel. 1080p reste 1080p, 4K reste 4K. Aucun downscale, aucune recompression.",
-    tags: ["4K", "Lossless", "Pixel Perfect", "Pro"],
+    desc: "1080p reste 1080p, 4K reste 4K. Aucun downscale.",
+    tags: ["4K", "Lossless", "Pixel Perfect"],
     gradient: "linear-gradient(180deg, #0f0f2a 0%, #1a1a45 60%, #0f0f1a 100%)",
+    mockupHtml: `<div style="width:100%;max-width:220px;display:flex;flex-direction:column;gap:8px;">
+      <div style="padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);">
+        <div style="font-size:9px;color:rgba(129,140,248,0.8);margin-bottom:4px;">Original</div>
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:9px;color:rgba(255,255,255,0.35);">Résolution</span><span style="font-size:9px;color:rgba(255,255,255,0.6);">3840×2160</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:9px;color:rgba(255,255,255,0.35);">Codec</span><span style="font-size:9px;color:rgba(255,255,255,0.6);">HEVC</span></div>
+      </div>
+      <div style="text-align:center;color:rgba(255,255,255,0.15);font-size:10px;">≡</div>
+      <div style="padding:10px;border-radius:8px;border:1px solid rgba(52,211,153,0.15);background:rgba(52,211,153,0.04);">
+        <div style="font-size:9px;color:rgba(52,211,153,0.8);margin-bottom:4px;">Copie</div>
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:9px;color:rgba(255,255,255,0.35);">Résolution</span><span style="font-size:9px;color:rgba(255,255,255,0.6);">3840×2160</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="font-size:9px;color:rgba(255,255,255,0.35);">Codec</span><span style="font-size:9px;color:rgba(255,255,255,0.6);">H.264</span></div>
+      </div>
+    </div>`,
   },
   {
     title: "Invisible pour les algos",
-    desc: "Hash, métadonnées, structure technique — tout est modifié. Pour les algorithmes, chaque copie est un fichier nouveau.",
-    tags: ["Anti-détection", "Hash unique", "EXIF", "Indétectable"],
+    desc: "Hash modifié, contenu visuellement identique.",
+    tags: ["Anti-détection", "Hash unique", "EXIF"],
     gradient: "linear-gradient(180deg, #1a0a30 0%, #2d1060 60%, #150a28 100%)",
+    mockupHtml: `<div style="width:100%;max-width:220px;display:flex;flex-direction:column;gap:8px;">
+      <div style="padding:10px;border-radius:8px;border:1px solid rgba(245,158,11,0.15);background:rgba(245,158,11,0.04);">
+        <div style="font-size:8px;color:rgba(255,255,255,0.35);font-family:monospace;margin-bottom:2px;">Hash original</div>
+        <div style="font-size:10px;color:rgba(252,211,77,0.8);font-family:monospace;">a7f3e2d1...9f0a</div>
+      </div>
+      <div style="text-align:center;"><span style="font-size:9px;padding:3px 10px;border-radius:20px;border:1px solid rgba(99,102,241,0.2);background:rgba(99,102,241,0.08);color:rgba(165,180,252,0.8);">✨ Pixel magique</span></div>
+      <div style="padding:10px;border-radius:8px;border:1px solid rgba(52,211,153,0.15);background:rgba(52,211,153,0.04);">
+        <div style="font-size:8px;color:rgba(255,255,255,0.35);font-family:monospace;margin-bottom:2px;">Nouveau hash</div>
+        <div style="font-size:10px;color:rgba(52,211,153,0.8);font-family:monospace;">9b2e8f4a...3b5d</div>
+      </div>
+    </div>`,
   },
   {
     title: "Priorité algorithme",
-    desc: "Injectez des métadonnées Apple authentiques. Les plateformes traitent votre contenu comme un vrai iPhone.",
-    tags: ["iPhone", "GPS", "iOS", "Boost algo"],
+    desc: "Métadonnées iPhone injectées automatiquement.",
+    tags: ["iPhone", "GPS", "iOS"],
     gradient: "linear-gradient(180deg, #0a1830 0%, #162850 60%, #0a1220 100%)",
+    mockupHtml: `<div style="width:100%;max-width:220px;display:flex;flex-direction:column;gap:5px;">
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;">Make</span><span style="font-size:9px;color:rgba(52,211,153,0.8);font-family:monospace;">Apple</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;">Model</span><span style="font-size:9px;color:rgba(52,211,153,0.8);font-family:monospace;">iPhone 16 Pro</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;">iOS</span><span style="font-size:9px;color:rgba(52,211,153,0.8);font-family:monospace;">18.3</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;">GPS</span><span style="font-size:9px;color:rgba(52,211,153,0.8);font-family:monospace;">48.86°N</span>
+      </div>
+    </div>`,
   },
   {
     title: "Masquage IA",
-    desc: "Effacez les signatures Midjourney, DALL-E, Stable Diffusion. Une identité humaine réaliste est injectée.",
-    tags: ["C2PA", "JUMBF", "Anti-IA", "Identité"],
+    desc: "Signatures IA effacées. Identité humaine injectée.",
+    tags: ["C2PA", "JUMBF", "Anti-IA"],
     gradient: "linear-gradient(180deg, #1a0e35 0%, #261850 60%, #0f1830 100%)",
+    mockupHtml: `<div style="width:100%;max-width:220px;display:flex;flex-direction:column;gap:5px;">
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;">C2PA</span><span style="font-size:9px;color:rgba(52,211,153,0.8);">supprimé ✓</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;">JUMBF</span><span style="font-size:9px;color:rgba(52,211,153,0.8);">supprimé ✓</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;">EXIF IA</span><span style="font-size:9px;color:rgba(52,211,153,0.8);">remplacé ✓</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);">
+        <span style="font-size:9px;color:rgba(255,255,255,0.3);font-family:monospace;">Identité</span><span style="font-size:9px;color:rgba(52,211,153,0.8);">humaine ✓</span>
+      </div>
+    </div>`,
   },
 ];
 

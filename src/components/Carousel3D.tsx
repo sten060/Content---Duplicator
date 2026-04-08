@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 interface Carousel3DProps {
-  cards: { title: string; desc: string; gradient: string; tags: string[] }[];
+  cards: { title: string; desc: string; gradient: string; tags: string[]; mockupHtml?: string }[];
   cardWidth?: number;
   cardAspectRatio?: number;
   borderRadius?: number;
@@ -75,13 +75,16 @@ export default function Carousel3D({
         justify-content: flex-end;
       `;
 
-      // Card content
+      // Card content — mockup (70%) + text (30%)
       el.innerHTML = `
-        <div style="padding: 20px; position: relative; z-index: 2;">
-          <div style="font-size: 15px; font-weight: 600; color: white; margin-bottom: 6px;">${card.title}</div>
-          <div style="font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.5; margin-bottom: 10px;">${card.desc}</div>
-          <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-            ${card.tags.map((t) => `<span style="font-size: 10px; padding: 3px 8px; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border-radius: 3px;">${t}</span>`).join("")}
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; z-index: 2;">
+          ${card.mockupHtml || ""}
+        </div>
+        <div style="padding: 16px 20px 20px; position: relative; z-index: 2; background: linear-gradient(0deg, rgba(0,0,0,0.4) 0%, transparent 100%);">
+          <div style="font-size: 14px; font-weight: 600; color: white; margin-bottom: 4px;">${card.title}</div>
+          <div style="font-size: 11px; color: rgba(255,255,255,0.55); line-height: 1.5; margin-bottom: 8px;">${card.desc}</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            ${card.tags.map((t) => `<span style="font-size: 9px; padding: 3px 7px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border-radius: 3px;">${t}</span>`).join("")}
           </div>
         </div>
       `;
