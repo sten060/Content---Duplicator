@@ -871,7 +871,11 @@
     "perMonth": "/ month",
     "copyright": "© {year} Zeno",
     "duupflow": "DuupFlow",
-    "logoAlt": "DuupFlow"
+    "logoAlt": "DuupFlow",
+    "countryNone": "None (no country)",
+    "downloadSelection": "Download selection ({count})",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all"
   },
   "chatbot": {
     "header": "DuupFlow Support",
