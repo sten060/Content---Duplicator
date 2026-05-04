@@ -5,6 +5,7 @@ import path from "path";
 import { spawn } from "child_process";
 import zlib from "zlib";
 import { getOutDirForCurrentUser } from "@/app/dashboard/utils";
+import { pickLocation } from "@/lib/locations";
 
 // On Vercel, native binaries cannot be included in the serverless function bundle
 // via NFT tracing or outputFileTracingIncludes (Next.js zero-config limitation).
@@ -442,9 +443,12 @@ function getVideoMetadataArgs(opts?: MetaOpts): string[] {
     args.push("-metadata:g", `uid=${uid}`);
   }
 
-  // Location
-  if (opts?.country) {
-    args.push("-metadata", `location=${opts.country}`);
+  // Location — resolved once and reused below (so country/ city / GPS all match).
+  const loc = opts?.country ? pickLocation(opts.country) : null;
+  if (loc) {
+    // Real iPhone files put a human-readable place name (city, country) in the
+    // standard `location` metadata — not just a country code.
+    args.push("-metadata", `location=${loc.city}, ${loc.country}`);
   }
 
   // iPhone metadata: overlay Apple QuickTime tags ON TOP of base metadata.
@@ -457,10 +461,9 @@ function getVideoMetadataArgs(opts?: MetaOpts): string[] {
     const tzOffsetH = 1 + Math.floor(Math.random() * 3);
     const pad = (n: number) => String(n).padStart(2, "0");
     const localDate = `${iphoneDate.getFullYear()}-${pad(iphoneDate.getMonth()+1)}-${pad(iphoneDate.getDate())}T${pad(iphoneDate.getHours())}:${pad(iphoneDate.getMinutes())}:${pad(iphoneDate.getSeconds())}+${pad(tzOffsetH)}00`;
-    const lat = (43 + Math.random() * 6).toFixed(4);
-    const lon = (1 + Math.random() * 7).toFixed(4);
-    const alt = (20 + Math.random() * 200).toFixed(3);
-    const gpsIso6709 = `+${lat}+${lon.padStart(8, "0")}+${alt}/`;
+    // GPS comes from the city resolved earlier for this country.
+    // No country picked → no GPS injected (matches the user's "Aucun pays" intent).
+    const gpsIso6709 = loc?.iso6709;
     const locationAccuracy = (5 + Math.random() * 20).toFixed(6);
     const sigChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let sig = "";
@@ -474,10 +477,11 @@ function getVideoMetadataArgs(opts?: MetaOpts): string[] {
       "-metadata", `compatible_brands=qt  `,
       "-metadata", `creation_time=${iphoneIso}`,
     );
-    // Location + GPS only if user specified a country
-    if (opts.country) {
+    // Location + GPS only if user specified a (resolvable) country.
+    // Apple's QuickTime location atom holds the ISO6709 string itself —
+    // not the country name, contrary to what older code did.
+    if (loc) {
       args.push(
-        "-metadata", `location=${opts.country}`,
         "-metadata", `com.apple.quicktime.location.accuracy.horizontal=${locationAccuracy}`,
         "-metadata", `com.apple.quicktime.location.ISO6709=${gpsIso6709}`,
       );

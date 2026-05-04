@@ -8,6 +8,7 @@ import crypto from "crypto";
 import sharp from "sharp";
 import { getOutDirForCurrentUser, cleanupOldFiles } from "@/app/dashboard/utils";
 import { checkUsage, incrementUsage } from "@/lib/usage";
+import { pickLocation } from "@/lib/locations";
 
 export const maxDuration = 300;
 
@@ -125,10 +126,15 @@ async function processImage(
     const iso = Math.floor(Math.random() * 4) * 200 + 50;   // 50, 250, 450, 650
     const exposure = `1/${100 + Math.floor(Math.random() * 9900)}`;
     const shutterSpeed = (6 + Math.random() * 8).toFixed(4);
-    const lat = (43 + Math.random() * 6).toFixed(6);
-    const lon = (-1 + Math.random() * 8).toFixed(6);
-    const alt = (10 + Math.random() * 300).toFixed(1);
-    const locationName = opts?.country || "France";
+
+    // Resolve GPS from a real city in the chosen country (or fall back to
+    // France if user picked nothing). Coords are signed: positive = N/E,
+    // negative = S/W — must match the GPS*Ref tags below.
+    const loc = pickLocation(opts?.country) ?? pickLocation("FR")!;
+    const latAbs = Math.abs(loc.lat).toFixed(6);
+    const lonAbs = Math.abs(loc.lon).toFixed(6);
+    const altStr = Math.abs(loc.alt).toFixed(1);
+    const altRef = loc.alt >= 0 ? "0" : "1"; // 0 = above sea level, 1 = below
 
     const ifd0: Record<string, string> = {
       Make: dev.make, Model: dev.model, Software: dev.software,
@@ -161,12 +167,12 @@ async function processImage(
       ColorSpace: "65535",        // Uncalibrated (Display P3)
     };
     const gps: Record<string, string> = {
-      GPSLatitudeRef: "N",
-      GPSLatitude: lat,
-      GPSLongitudeRef: "E",
-      GPSLongitude: lon,
-      GPSAltitudeRef: "0",
-      GPSAltitude: alt,
+      GPSLatitudeRef: loc.latRef,
+      GPSLatitude: latAbs,
+      GPSLongitudeRef: loc.lonRef,
+      GPSLongitude: lonAbs,
+      GPSAltitudeRef: altRef,
+      GPSAltitude: altStr,
       GPSSpeedRef: "K",
       GPSSpeed: (Math.random() * 5).toFixed(2),
       GPSImgDirectionRef: "T",
@@ -175,6 +181,10 @@ async function processImage(
       GPSDestBearing: (Math.random() * 360).toFixed(2),
       GPSHPositioningError: (3 + Math.random() * 10).toFixed(6),
     };
+    // Sub-location & geocoded place name — what real iPhone photos carry in
+    // IPTC tags. sharp can't write IPTC, so we stash them in IFD0 alongside
+    // the rest. Better than nothing for fingerprinting/exif scanners.
+    ifd0.ImageDescription = `${loc.city}, ${loc.country}`;
     exifMeta = { density: dpi, exif: { IFD0: ifd0, IFD3: gps } as any };
     // Note: sharp's EXIF support is limited; we set what we can via IFD0.
     // For a complete iPhone EXIF profile, IFD0 covers Make/Model/Software/DateTime.

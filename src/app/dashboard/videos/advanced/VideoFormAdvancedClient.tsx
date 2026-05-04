@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Dropzone from "../../Dropzone";
 import InfoTooltip from "@/app/dashboard/components/InfoTooltip";
+import CountrySelect from "@/app/dashboard/components/CountrySelect";
 import { setJob, addCompletedFile, removeJob } from "../jobStore";
 import { useTranslation } from "@/lib/i18n/context";
 import {
@@ -757,11 +758,9 @@ export default function VideoFormAdvancedClient() {
                 <div className="col-span-full flex flex-wrap items-end gap-4 mt-1">
                   <div className="flex-1 min-w-[200px] max-w-xs">
                     <label className="block text-sm font-medium text-white/70 mb-1">{t("dashboard.videosAdvanced.countryLabel")}</label>
-                    <input
-                      type="text"
+                    <CountrySelect
                       name="country"
-                      placeholder={t("dashboard.videosAdvanced.countryPlaceholder")}
-                      className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-sm text-white/90 placeholder:text-white/25"
+                      className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-sm text-white/90"
                     />
                   </div>
                 </div>

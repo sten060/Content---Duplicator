@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Dropzone from "../../Dropzone";
 import InfoTooltip from "@/app/dashboard/components/InfoTooltip";
+import CountrySelect from "@/app/dashboard/components/CountrySelect";
 import { setJob, addCompletedFile, removeJob } from "../jobStore";
 import { useTranslation } from "@/lib/i18n/context";
 
@@ -517,12 +518,11 @@ export default function VideoFormSimpleClient() {
           <Toggle checked={reverse} onChange={setReverse} label="Reverse (miroir horizontal)" />
           <div className="flex-1 min-w-[200px] max-w-xs">
             <label className="block text-sm font-medium text-white/70 mb-1">{t("dashboard.videosSimple.countryLabel")}</label>
-            <input
-              type="text"
+            <CountrySelect
+              name="country_select"
               value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              placeholder={t("dashboard.videosSimple.countryPlaceholder")}
-              className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-sm text-white/90 placeholder:text-white/25"
+              onChange={setCountry}
+              className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-sm text-white/90"
             />
           </div>
           <Toggle checked={iphoneMeta} onChange={setIphoneMeta} label={`⚡ ${t("dashboard.videosSimple.iphoneMetaLabel")}`} />

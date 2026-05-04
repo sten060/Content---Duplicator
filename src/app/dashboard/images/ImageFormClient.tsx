@@ -2,6 +2,7 @@
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import ToggleChip from "../ToggleChip";
+import CountrySelect from "../components/CountrySelect";
 import { setJob, addCompletedFile, removeJob, stopJob } from "../videos/jobStore";
 import ClearImagesButton from "./ClearImagesButton";
 import { useTranslation } from "@/lib/i18n/context";
@@ -67,6 +68,49 @@ export default function ImageFormClient({ initialImages }: Props) {
       name: decodeURIComponent(url.split("/").pop() ?? url),
     }))
   );
+
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+
+  const toggleSelected = useCallback((url: string) => {
+    setSelectedUrls((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  }, []);
+
+  const allSelected =
+    persistedFiles.length > 0 && selectedUrls.size === persistedFiles.length;
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedUrls((prev) =>
+      prev.size === persistedFiles.length
+        ? new Set()
+        : new Set(persistedFiles.map((f) => f.url))
+    );
+  }, [persistedFiles]);
+
+  async function downloadFilesAsZip(
+    list: { url: string; name: string }[],
+    zipName: string,
+  ) {
+    const JSZip = (await import("jszip")).default;
+    const zip = new JSZip();
+    await Promise.all(
+      list.map(async ({ url, name }) => {
+        const res = await fetch(url);
+        const buf = await res.arrayBuffer();
+        zip.file(name, buf);
+      }),
+    );
+    const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = zipName;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -354,12 +398,7 @@ export default function ImageFormClient({ initialImages }: Props) {
         {/* Localisation + Priorité algorithme */}
         <div className="max-w-md">
           <label className="block text-sm font-medium text-white/70 mb-1.5">{t("dashboard.images.countryLabel")} <span className="text-white/30">{t("dashboard.images.countryOptional")}</span></label>
-          <input
-            type="text"
-            name="country"
-            placeholder={t("dashboard.images.countryPlaceholder")}
-            className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-white/90 placeholder:text-white/25"
-          />
+          <CountrySelect name="country" />
         </div>
 
         {/* Priorité d'algorithme */}
@@ -436,29 +475,26 @@ export default function ImageFormClient({ initialImages }: Props) {
       {/* Ready files — shown as they arrive via SSE and persist across navigation */}
       {persistedFiles.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-semibold text-white/80 mr-auto">
               {t("dashboard.images.readyToDownload", { count: String(persistedFiles.length) })}
             </p>
-            <ClearImagesButton onCleared={() => setPersistedFiles([])} />
+            <ClearImagesButton onCleared={() => { setPersistedFiles([]); setSelectedUrls(new Set()); }} />
+            {selectedUrls.size > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const list = persistedFiles.filter((f) => selectedUrls.has(f.url));
+                  downloadFilesAsZip(list, "DuupFlow_images_selection.zip");
+                }}
+                className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-fuchsia-700 hover:bg-fuchsia-600 text-white transition"
+              >
+                {t("common.downloadSelection", { count: String(selectedUrls.size) })}
+              </button>
+            )}
             <button
               type="button"
-              onClick={async () => {
-                const JSZip = (await import("jszip")).default;
-                const zip = new JSZip();
-                await Promise.all(
-                  persistedFiles.map(async ({ url, name }) => {
-                    const res = await fetch(url);
-                    const buf = await res.arrayBuffer();
-                    zip.file(name, buf);
-                  })
-                );
-                const blob = await zip.generateAsync({ type: "blob", compression: "STORE" });
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = "DuupFlow_images.zip";
-                a.click();
-              }}
+              onClick={() => downloadFilesAsZip(persistedFiles, "DuupFlow_images.zip")}
               className="rounded-lg px-3 py-1.5 text-xs font-semibold bg-fuchsia-600 hover:bg-fuchsia-500 text-white transition"
             >
               {t("dashboard.images.downloadAll")}
@@ -466,8 +502,24 @@ export default function ImageFormClient({ initialImages }: Props) {
           </div>
 
           <div className="rounded-xl border border-white/10 bg-white/5 divide-y divide-white/5 max-h-80 overflow-y-auto">
+            <label className="flex items-center gap-3 px-4 py-2 text-xs text-white/60 hover:bg-white/[0.03] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+                className="h-3.5 w-3.5 accent-fuchsia-500"
+              />
+              <span>{allSelected ? t("common.deselectAll") : t("common.selectAll")}</span>
+            </label>
             {persistedFiles.map(({ url, name }, i) => (
-              <div key={i} className="flex items-center justify-between gap-3 px-4 py-2.5">
+              <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={selectedUrls.has(url)}
+                  onChange={() => toggleSelected(url)}
+                  className="h-3.5 w-3.5 accent-fuchsia-500 shrink-0"
+                  aria-label={name}
+                />
                 <span className="text-xs text-white/70 truncate flex-1">{name}</span>
                 <a
                   href={url}
